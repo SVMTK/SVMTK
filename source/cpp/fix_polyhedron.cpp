@@ -3,6 +3,13 @@
 
 #include "fixpolyhedron.h"
 #include "remeshing.h"
+#include "edge_collapse.h"
+#include "hole_filling.h"
+#include "simplify.h"
+
+#include "stitching.h"
+
+
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Surface_mesh<K::Point_3> Mesh;
@@ -15,20 +22,22 @@ namespace PMP = CGAL::Polygon_mesh_processing;
 
 int main(int argc, char* argv[])
 {
-  const char* filename = (argc > 1) ? argv[1] : "data/pig.off";
-  std::ifstream input(filename);
+  const char* filename = argv[1];
+  const char* outputfile = argv[2];
 
   Mesh mesh;
   if (fix_polyhedron<Mesh, K>(filename, mesh)) {
-    // if (!input || !(input >> mesh) || !CGAL::is_triangle_mesh(mesh)) {
-    //   std::cerr << "Not a valid input file." << std::endl;
-    //   return 1;
-    // }
-
     double target_edge_length = 0.04;
     unsigned int nb_iter = 3;
-
+    edge_collapse(mesh);
+    fill_holes(mesh);
+    simplify(mesh);
+    stitching(mesh);
     remeshing(mesh, target_edge_length, nb_iter);
+
+    std::ofstream out(outputfile);
+    out << mesh;
+    out.close();
     return 0;
   }
   return 1;
