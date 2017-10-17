@@ -1,3 +1,5 @@
 # BrainMesh
 
-Using CGAL-4.11
+## Requirements
+CGAL-4.11
+Python3.6
