@@ -63,7 +63,7 @@ def srf2off(data: np.array, num_vertices: int, num_facets: int, outname: str) ->
             outfile.write("3 %d %d %d\n".format(*map(int, line)))
 
 
-def srf2off_np(data: np.array, num_vertices: int, num_facets: int, outname: str) -> None:
+def srf2off_vec(data: np.array, num_vertices: int, num_facets: int, outname: str) -> None:
     """Convert .asc surface to .off.
 
     Arguments:

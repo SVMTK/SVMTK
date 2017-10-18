@@ -4,10 +4,10 @@ import os
 
 from argparse import ArgumentParser
 
-from mesh_conversion_utils import (
+from .mesh_conversion_utils import (
     readFile,
     srf2off,
-    srf2off_np,
+    srf2off_vec,
     srf2stl,
 )
 
@@ -36,7 +36,7 @@ def asc2domain(infilename: str, outfilename: str=None) -> None:
     assert out_suffix in {".off", ".stl"}, msg
 
     if out_suffix == ".off":
-        srf2off_np(ascdata.data, ascdata.num_vertices, ascdata.num_facets, outpath)
+        srf2off_vec(ascdata.data, ascdata.num_vertices, ascdata.num_facets, outpath)
     elif out_suffix == ".stl":
         srf2stl(ascdata.data, ascdata.num_vertices, ascdata.num_facets, outpath)
 
@@ -60,7 +60,11 @@ def create_parser() -> ArgumentParser:
     return parser
 
 
-if __name__=='__main__':
+def main() -> None:
     parser = create_parser()
     args = parser.parse_args()
     asc2domain(args.input, args.output)
+
+
+if __name__ == "__main__":
+    main()
