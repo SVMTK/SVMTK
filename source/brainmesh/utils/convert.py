@@ -1,0 +1,80 @@
+"""Script for converting between surface file formats."""
+import os
+
+from argparse import ArgumentParser
+
+from .mesh_conversion_utils import (
+    readAsc,
+    readOff,
+    srf2off,
+    srf2off_vec,
+    srf2stl,
+)
+
+
+def brainmeshConvert(inpath: str, outpath: str) -> None:
+    """Read `infile`, and save to `outfile`. Formats are inferred from suffixes.
+
+    Arguments:
+        infile: Input file name.
+        outfile: output file name
+
+    Supported input formats are:
+     - .asc
+     - .srf
+     - .off
+
+    Supported output formats are:
+     - .stl
+     - .off
+    """
+    valid_insuffix = {".asc", ".srf", ".off"}
+    valid_outsuffix = {".stl", ".off"}
+
+    insuffix = os.path.splitext(inpath)[-1]
+    outsuffix = os.path.splitext(outpath)[-1]
+
+    msg = "Invalid filetype, Expected {}".format(" or ".join(valid_insuffix))
+    assert insuffix in valid_insuffix, msg
+    msg = "Invalid filetype, Expected {}".format(" or ".join(valid_outsuffix))
+    assert outsuffix in valid_outsuffix, msg
+
+    if insuffix in {".asc", ".srf"}:
+        datatuple = readAsc(inpath)
+    else:
+        datatuple = readOff(inpath)
+
+    if outsuffix == ".off":
+        srf2off_vec(datatuple.data, datatuple.num_vertices, datatuple.num_facets, outpath)
+    elif outsuffix == ".stl":
+        srf2stl(datatuple.data, datatuple.num_vertices, datatuple.num_facets, outpath)
+
+
+def create_parser() -> ArgumentParser:
+    """Create argument parser with option (-i. --input) and optionally (-o, --output)."""
+    parser = ArgumentParser(
+        description="Convert surface file from .asc to .off or .stl"
+    )
+    parser.add_argument(
+        "-i",
+        "--input",
+        help="path to input file",
+        required=True
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="path to output file",
+        required=True
+    )
+    return parser
+
+
+def main() -> None:
+    parser = create_parser()
+    args = parser.parse_args()
+    brainmeshConvert(args.input, args.output)
+
+
+if __name__ == "__main__":
+    main()

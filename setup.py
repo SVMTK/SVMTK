@@ -20,6 +20,7 @@ setup(
     entry_points={
         "console_scripts": [
             "asc2domain = brainmesh.utils.asc2domain:main",
+            "brainmesh-convert = brainmesh.utils.convert:main",
         ]
     }
 )

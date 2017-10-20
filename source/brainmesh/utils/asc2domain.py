@@ -5,7 +5,8 @@ import os
 from argparse import ArgumentParser
 
 from .mesh_conversion_utils import (
-    readFile,
+    readAsc,
+    readOff,
     srf2off,
     srf2off_vec,
     srf2stl,
@@ -21,7 +22,7 @@ def asc2domain(infilename: str, outfilename: str=None) -> None:
 
     Surface format will be inferred from `outfilename` if provided, default is off.
     """
-    ascdata = readFile(infilename)
+    datatuple = readAsc(infilename)
 
     outpath = outfilename
     if outfilename is None:
@@ -36,9 +37,9 @@ def asc2domain(infilename: str, outfilename: str=None) -> None:
     assert out_suffix in {".off", ".stl"}, msg
 
     if out_suffix == ".off":
-        srf2off_vec(ascdata.data, ascdata.num_vertices, ascdata.num_facets, outpath)
+        srf2off_vec(datatuple.data, datatuple.num_vertices, datatuple.num_facets, outpath)
     elif out_suffix == ".stl":
-        srf2stl(ascdata.data, ascdata.num_vertices, ascdata.num_facets, outpath)
+        srf2stl(datatuple.data, datatuple.num_vertices, datatuple.num_facets, outpath)
 
 
 def create_parser() -> ArgumentParser:
