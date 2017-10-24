@@ -9,6 +9,7 @@ from .mesh_conversion_utils import (
     srf2off,
     srf2off_vec,
     srf2stl,
+    write_xyz,
 )
 
 
@@ -27,9 +28,10 @@ def brainmeshConvert(inpath: str, outpath: str) -> None:
     Supported output formats are:
      - .stl
      - .off
+     - .xyz
     """
     valid_insuffix = {".asc", ".srf", ".off"}
-    valid_outsuffix = {".stl", ".off"}
+    valid_outsuffix = {".stl", ".off", ".xyz"}
 
     insuffix = os.path.splitext(inpath)[-1]
     outsuffix = os.path.splitext(outpath)[-1]
@@ -48,9 +50,11 @@ def brainmeshConvert(inpath: str, outpath: str) -> None:
         srf2off_vec(datatuple.data, datatuple.num_vertices, datatuple.num_facets, outpath)
     elif outsuffix == ".stl":
         srf2stl(datatuple.data, datatuple.num_vertices, datatuple.num_facets, outpath)
+    elif outsuffix == ".xyz":
+        write_xyz(datatuple.data, datatuple.num_vertices, outpath)
 
 
-def create_parser() -> ArgumentParser:
+def createParser() -> ArgumentParser:
     """Create argument parser with option (-i. --input) and optionally (-o, --output)."""
     parser = ArgumentParser(
         description="Convert surface file from .asc to .off or .stl"
@@ -71,7 +75,7 @@ def create_parser() -> ArgumentParser:
 
 
 def main() -> None:
-    parser = create_parser()
+    parser = createParser()
     args = parser.parse_args()
     brainmeshConvert(args.input, args.output)
 

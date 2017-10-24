@@ -166,7 +166,12 @@ def readOff(filename: str) -> DataTuple:
         num_vertices, num_facets, _ = tuple(map(int, infile.readline().split()))
         # TODO: Write a regex
 
-        data_lines = list(map(lambda x: x.strip().split(), infile.readlines()))
+        data_lines = list(
+            filter(
+                lambda x: len(x) >= 3,
+                map(lambda x: x.strip().split(), infile.readlines())
+            )
+        )
         vertices = np.array(data_lines[:num_vertices], dtype=np.float32)
         facets = np.array(data_lines[num_vertices:], dtype=np.int16)[:, 1:]
 
@@ -197,3 +202,28 @@ def readSTL(filename: str) -> DataTuple:
         `DataTuple` with number of vertices, facets, the coordinates and the connectivity.
     """
     raise NotImplementedError
+
+
+def write_xyz(data: np.array, num_vertices: int, outname: str) -> None:
+    """Dump the vertices to a file on the format x y z.
+
+    Arguments:
+        data: The points.
+        num_vertices: Number of vertices.
+        outname: Name of the output file.
+    """
+    assert data.shape[1] >= 3, "Points are not in 3D."
+    assert data.shape[0] > num_vertices, "num_vertices > data.shape[0]."
+    np.savetxt(outname, data[:num_vertices])
+
+
+def read_xyz(inname: str) -> np.array:
+    """Read vertices from `inname` on the format 'x, y, z'.
+
+    Arguments:
+        inname: Input file name
+
+    Returns:
+        Return a (N, 3) array, where N is the number of points.
+    """
+    return np.loadtxt(inname)

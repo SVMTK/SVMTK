@@ -16,8 +16,9 @@ typedef CGAL::Sequential_tag Concurrency_tag;
 #endif
 int main(int argc, char** argv)
 {
-  const char* input_filename = (argc>1)?argv[1]:"data/sphere_20k.xyz";
-  const char* output_filename = (argc>2)?argv[2]:"data/sphere_20k_WLOPED.xyz";
+  const char* input_filename = argv[1];
+  const char* output_filename = argv[2];
+
   // Reads a .xyz point set file in points[]
   std::vector<Point> points;
   std::ifstream stream(input_filename);
@@ -27,9 +28,10 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
   std::vector<Point> output;
+
   //parameters
-  const double retain_percentage = 2;   // percentage of points to retain.
-  const double neighbor_radius = 0.5;   // neighbors size.
+  const double retain_percentage = 50;   // percentage of points to retain.
+  const double neighbor_radius = 0.2;   // neighbors size.
   CGAL::wlop_simplify_and_regularize_point_set
                           <Concurrency_tag>
                           (points.begin(), 
