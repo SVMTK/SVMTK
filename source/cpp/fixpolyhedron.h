@@ -1,5 +1,4 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Polyhedron_3.h>
 #include <CGAL/IO/OFF_reader.h>
 #include <CGAL/Polygon_mesh_processing/orient_polygon_soup.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
@@ -8,42 +7,60 @@
 #include <fstream>
 #include <iostream>
 
-// typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-// typedef CGAL::Polyhedron_3<K> Polyhedron;
 
-template< typename Polyhedron , typename Kernel >
-bool fix_polyhedron(const char* filename, Polyhedron& polyhedron) {
-    typedef typename Kernel::Point_3 Point;
-    std::ifstream input(filename);
+template< typename Mesh>
+bool fix_polyhedron( const char* filename, Mesh& mesh)
+{
+  typedef typename Mesh::Point Point;
+  std::ifstream input(filename);
+  std::string file(filename);
+  //TODO: FIX boost linking problem
+  std::string extension = file.substr(file.find_last_of(".")+1);
+
+
+  if (!input)
+  {
+    std::cerr << "Cannot open file " << std::endl;
+    return false;
+  }
+    
+  std::vector<Point> points;
+  std::vector< std::vector<std::size_t> > polygons;
+
+  if ( extension=="off") 
+  {
+     if (!CGAL::read_OFF(input, points, polygons))
+     {
+         std::cerr << "Error parsing the OFF file " << std::endl;
+         return false;
+     }
+  }  
+  else if ( extension=="stl")
+  {
+     if (!read_polygons_STL(input, points, polygons)) // TODO: the connection causes errors 
+     {
+         std::cerr << "Error parsing the STL file " << std::endl;
+         return false;
+     }
+  }
+  else 
+  {
+     return false;
+  } 
+  PMP::orient_polygon_soup(points, polygons);
+
+  PMP::polygon_soup_to_polygon_mesh(points, polygons, mesh); // here
+
+  if (CGAL::is_closed(mesh) && (!PMP::is_outward_oriented(mesh)))
+  {
+   std::cout<< "reverse_face_orientation"<< std::endl;
+
+    PMP::reverse_face_orientations(mesh); 
+  }
+
   
-    if (!input) {
-        std::cerr << "Cannot open file " << std::endl;
-        return false;
-    }
-    
-    std::vector<Point> points;
-    std::vector< std::vector<std::size_t> > polygons;
-    if (!CGAL::read_OFF(input, points, polygons)) {
-        std::cerr << "Error parsing the OFF file " << std::endl;
-        return false;
-    }
-    
-    CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons);
-    CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(
-        points,
-        polygons,
-        polyhedron
-    );
-  
-    if (CGAL::is_closed(polyhedron) && 
-        (!CGAL::Polygon_mesh_processing::is_outward_oriented(polyhedron))) {
-        std::cout<< "reverse_face_orientation"<< std::endl;
-        CGAL::Polygon_mesh_processing::reverse_face_orientations(polyhedron); 
-    }
-    
-    return true;
+  return true;
 }
-
 
 
 
