@@ -20,7 +20,7 @@ endfacet\n
 """
 
 
-AscData = namedtuple("AscData", ["num_facets", "num_vertices", "data"])
+DataTuple = namedtuple("DataTuple", ["num_facets", "num_vertices", "data"])
 
 
 def facetNormals_vec(vertices: np.array) -> np.array:
@@ -122,14 +122,14 @@ def srf2stl(data: np.array, num_vertices: int, num_facets: int, outname: str) ->
         outfile.write("endsolid {name}".format(name=name))
 
 
-def readFile(filename: str) -> AscData:
+def readAsc(filename: str) -> DataTuple:
     """Verify that `filename` has the correct format, and return the data.
 
     Arguments:
        filename: Name of inout file
 
     Returns:
-        `AscData` with number of vertices, facets and the coordinates themselves.
+        `DataTuple` with number of vertices, facets, the coordinates and the connectivity.
     """
     msg = "Cannot fine file {filename}".format(filename=filename)
     assert os.path.isfile(filename), msg
@@ -146,4 +146,54 @@ def readFile(filename: str) -> AscData:
         assert data.shape[0] == num_vertices + num_facets, msg
 
     # Discard the column with number of edges (at least for .off)
-    return AscData(num_facets=num_facets, num_vertices=num_vertices, data=data[:, :-1])
+    return DataTuple(num_facets=num_facets, num_vertices=num_vertices, data=data[:, :-1])
+
+
+def readOff(filename: str) -> DataTuple:
+    """Verify that `filename` has the correct format, and return the data.
+
+    Arguments:
+        filename: Name of input file (.off)
+
+    Returns:
+        `DataTuple` with number of vertices, facets, the coordinates and the connectivity.
+    """
+    msg = "Cannot fine file {filename}".format(filename=filename)
+    assert os.path.isfile(filename), msg
+
+    with open(filename, "r") as infile:
+        assert "OFF" in infile.readline(), "Cannot find 'OFF' in header"
+        num_vertices, num_facets, _ = tuple(map(int, infile.readline().split()))
+        # TODO: Write a regex
+
+        data_lines = list(map(lambda x: x.strip().split(), infile.readlines()))
+        vertices = np.array(data_lines[:num_vertices], dtype=np.float32)
+        facets = np.array(data_lines[num_vertices:], dtype=np.int16)[:, 1:]
+
+    msg = "vertices.shape: {}, facets.shape: {}".format(vertices.shape, facets.shape)
+    assert vertices.shape[1] == facets.shape[1], msg
+    msg = "expected: {}, got {}".format(vertices.shape[0], num_vertices)
+    assert vertices.shape[0] == num_vertices, msg
+    msg = "expected: {}, got {}".format(facets.shape[0], num_facets)
+    assert facets.shape[0] == num_facets, msg
+    data = np.concatenate((vertices, facets))
+
+    # data = np.loadtxt(filename, skiprows=2)
+
+    msg = "Expected data.shape[0] == {0}, got {1}"
+    msg.format(num_vertices + num_facets, data.shape[0])
+    assert data.shape[0] == num_vertices + num_facets, msg
+
+    return DataTuple(num_facets=num_facets, num_vertices=num_vertices, data=data)
+
+
+def readSTL(filename: str) -> DataTuple:
+    """Verify that `filename` has the correct format, and return the data.
+
+    Arguments:
+        filename: Name of input file (.stl)
+
+    Returns:
+        `DataTuple` with number of vertices, facets, the coordinates and the connectivity.
+    """
+    raise NotImplementedError

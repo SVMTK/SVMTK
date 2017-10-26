@@ -7,5 +7,6 @@ from .mesh_conversion_utils import (
     srf2off,
     srf2off_vec,
     srf2stl,
-    readFile,
+    readAsc,
+    readOff,
 )
