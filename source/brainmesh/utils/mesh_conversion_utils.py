@@ -52,15 +52,15 @@ def srf2off(data: np.array, num_vertices: int, num_facets: int, outname: str) ->
 
     with open(outname, "w") as outfile:
         outfile.write("OFF\n")
-        outfile.write("{Nv} {Nf} {Ne}".format(Nv=num_vertices, Nf=num_facets, Ne=0))
+        outfile.write("{Nv} {Nf} {Ne}\n".format(Nv=num_vertices, Nf=num_facets, Ne=0))
 
         # Write vertices
         for line in data[:num_vertices]:
-            outfile.write("%e %e %e\n".format(*map(float, line)))
+            outfile.write("{:f} {:f} {:f}\n".format(*map(float, line)))
 
         # Write facet connectivity
         for line in data[num_vertices:]:
-            outfile.write("3 %d %d %d\n".format(*map(int, line)))
+            outfile.write("3 {:d} {:d} {:d}\n".format(*map(int, line)))
 
 
 def srf2off_vec(data: np.array, num_vertices: int, num_facets: int, outname: str) -> None:
@@ -183,8 +183,6 @@ def readOff(filename: str) -> DataTuple:
     assert facets.shape[0] == num_facets, msg
     data = np.concatenate((vertices, facets))
 
-    # data = np.loadtxt(filename, skiprows=2)
-
     msg = "Expected data.shape[0] == {0}, got {1}"
     msg.format(num_vertices + num_facets, data.shape[0])
     assert data.shape[0] == num_vertices + num_facets, msg
@@ -201,7 +199,23 @@ def readSTL(filename: str) -> DataTuple:
     Returns:
         `DataTuple` with number of vertices, facets, the coordinates and the connectivity.
     """
-    raise NotImplementedError
+    msg = "Cannot fine file {filename}".format(filename=filename)
+    assert os.path.isfile(filename), msg
+    import mshr
+
+    # Read the file
+    surf = mshr.Surface3D(filename)
+    domain = mshr.CSGCGALDomain3D(surf)
+
+    # Get vertces and facets
+    vertices = domain.get_vertices()
+    facets = domain.get_facets()
+
+    return DataTuple(
+        num_facets=facets.shape[0],
+        num_vertices=vertices.shape[0],
+        data=np.concatenate((vertices, facets))
+    )
 
 
 def write_xyz(data: np.array, num_vertices: int, outname: str) -> None:

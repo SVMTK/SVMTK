@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 from .mesh_conversion_utils import (
     readAsc,
     readOff,
+    readSTL,
     srf2off,
     srf2off_vec,
     srf2stl,
@@ -30,7 +31,7 @@ def brainmeshConvert(inpath: str, outpath: str) -> None:
      - .off
      - .xyz
     """
-    valid_insuffix = {".asc", ".srf", ".off"}
+    valid_insuffix = {".asc", ".srf", ".off", ".stl"}
     valid_outsuffix = {".stl", ".off", ".xyz"}
 
     insuffix = os.path.splitext(inpath)[-1]
@@ -43,11 +44,14 @@ def brainmeshConvert(inpath: str, outpath: str) -> None:
 
     if insuffix in {".asc", ".srf"}:
         datatuple = readAsc(inpath)
-    else:
+    elif insuffix == ".off":
         datatuple = readOff(inpath)
+    elif insuffix == ".stl":
+        datatuple = readSTL(inpath)
 
     if outsuffix == ".off":
-        srf2off_vec(datatuple.data, datatuple.num_vertices, datatuple.num_facets, outpath)
+        srf2off(datatuple.data, datatuple.num_vertices, datatuple.num_facets, outpath)
+        # srf2off_vec(datatuple.data, datatuple.num_vertices, datatuple.num_facets, outpath)
     elif outsuffix == ".stl":
         srf2stl(datatuple.data, datatuple.num_vertices, datatuple.num_facets, outpath)
     elif outsuffix == ".xyz":

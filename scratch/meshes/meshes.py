@@ -28,7 +28,6 @@ editor.close()
 plot(mesh)
 input()
 
-"""
 V = FunctionSpace(mesh, "CG", 1)
 
 u = TrialFunction(V)
@@ -47,4 +46,3 @@ solve(M, U_.vector(), b, "cg", "jacobi")
 
 plot(U_)
 input()
-"""
