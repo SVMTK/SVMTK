@@ -2,6 +2,8 @@ CMakeCache.txt
 CMakeFiles/
 Makefile
 cmake_install.cmake
+lib/pybind11
+brainmesh.cpython*
 
 build/
 _data
