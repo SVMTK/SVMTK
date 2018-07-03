@@ -281,8 +281,7 @@ void CGALSurface::smooth_laplacian_region(InputIterator begin , InputIterator en
 
 
 }
-void CGALSurface::adjust_boundary(const double c)
-{
+void CGALSurface::adjust_boundary(const double c) {
     Mesh::Vertex_range::iterator  vb = mesh.vertices().begin(), ve=mesh.vertices().end();
     CGALSurface::adjusting_boundary_region(vb, ve,c);
     //CGALSurface::adjusting_boundary_region(mesh.vertices().begin(), mesh.vertices.end(),c);
@@ -295,13 +294,11 @@ void CGALSurface::smooth_laplacian(const double c)
 
 
 template< typename Polyhedron_3>
-void CGALSurface::get_polyhedron(Polyhedron_3& polyhedron_3 )
-{
-
-    CGAL::copy_face_graph(mesh,polyhedron_3);
-
-
+void CGALSurface::get_polyhedron(Polyhedron_3& polyhedron_3) {
+    CGAL::copy_face_graph(mesh, polyhedron_3);
 }
+
+
 template<typename Implicit_function>
 CGALSurface::CGALSurface(Implicit_function implicit_function,
              double bounding_sphere_radius,
