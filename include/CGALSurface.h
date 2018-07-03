@@ -101,7 +101,7 @@ class CGALSurface
         bool self_intersections();
 
         template< typename Polyhedron_3>
-        void get_polyhedron(Polyhedron_3 &polyhedron_3 );
+        void get_polyhedron(Polyhedron_3 &polyhedron_3);
 
         void save(const char* outpath);
 
