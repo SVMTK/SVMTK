@@ -1,0 +1,2 @@
+# c++ CGALSurface.cpp CGALSurface.h -lCGAL -lgmp -lmpfr -frounding-math -I/home/jakobes/dev/eigen-eigen-5a0156e40feb -o a.out
+c++ CGALMeshCreator.cpp CGALMeshCreator.h CGALSurface.h -lCGAL -lgmp -lmpfr -frounding-math -I/home/jakobes/dev/eigen-eigen-5a0156e40feb -o b.out

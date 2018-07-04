@@ -1,7 +1,5 @@
 #ifndef  __Polyhedral_vector_to_labeled_function_wrapper_H
-
 #define __Polyhedral_vector_to_labeled_function_wrapper_H
-
 
 
 #include <boost/dynamic_bitset.hpp>
@@ -14,63 +12,52 @@
 #include "SubdomainMap.h"
 
 
-
-
 namespace CGAL {
-        template<class Function_, class BGT>
-        class Polyhedral_vector_to_labeled_function_wrapper
-        {
-            public:
-                // Types
-                typedef int return_type;
-                typedef std::vector<Function_*>   Function_vector;
-                typedef typename BGT::Point_3	  Point_3;
-                typedef boost::dynamic_bitset<>   Bmask;
+    template<class Function_, class BGT>
+    class Polyhedral_vector_to_labeled_function_wrapper {
+        public:
+           // Types
+           typedef int return_type;
+           typedef std::vector<Function_*>   Function_vector;
+           typedef typename BGT::Point_3	  Point_3;
+           typedef boost::dynamic_bitset<>   Bmask;
 
-         
-                Polyhedral_vector_to_labeled_function_wrapper(std::vector<Function_*>& v) : function_vector_(v) 
-                {
-                    DefaultMap* map = new DefaultMap();
-                    subdmap =map ;
-                }
-                
-                Polyhedral_vector_to_labeled_function_wrapper(std::vector<Function_*>& v, const AbstractMap& map) : function_vector_(v)
-                {
-                    subdmap =&map;
+            Polyhedral_vector_to_labeled_function_wrapper(std::vector<Function_*>& v) : function_vector_(v) {
+                DefaultMap* map = new DefaultMap();
+                subdmap =map ;
+            }
 
-                }
-                ~Polyhedral_vector_to_labeled_function_wrapper() {}
+            Polyhedral_vector_to_labeled_function_wrapper(
+                    std::vector<Function_*>& v, const AbstractMap& map) : function_vector_(v) {
+                subdmap = &map;
+            }
 
-                return_type operator()(const Point_3& p, bool use_cache = false) const
-                {
-                    int nb_func = function_vector_.size();
-                    Bmask bits(nb_func);
+            ~Polyhedral_vector_to_labeled_function_wrapper() {}
 
-                    for ( int i = 0 ; i < nb_func ; ++i )
-                    {
-                        bits[i] =  function_vector_[i]->is_in_domain_object()(p);
-                    }
+            return_type operator()(const Point_3& p, bool use_cache = false) const {
+                int nb_func = function_vector_.size();
+                Bmask bits(nb_func);
 
-                    return subdmap->index(bits);
+                for ( int i = 0 ; i < nb_func ; ++i ) {
+                    bits[i] = function_vector_[i]->is_in_domain_object()(p);
                 }
 
-                Bbox_3 bbox() const
-                {
-                    int nb_func = function_vector_.size();
+                return subdmap->index(bits);
+            }
 
-                    Bbox_3 sum_bbox;
-                    for ( int i = 0 ; i < nb_func ; ++i )
-                    {
-                        sum_bbox+= function_vector_[i]->bbox();
-                    }
-                    return sum_bbox;
+            Bbox_3 bbox() const {
+                int nb_func = function_vector_.size();
+
+                Bbox_3 sum_bbox;
+                for (int i = 0 ; i < nb_func ; ++i) {
+                    sum_bbox += function_vector_[i]->bbox();
                 }
+                return sum_bbox;
+           }
 
-
-
-            private:
-                Function_vector function_vector_;
-                AbstractMap* subdmap;
-        };
+        private:
+            Function_vector function_vector_;
+            AbstractMap* subdmap;
+    };
 }
 #endif
