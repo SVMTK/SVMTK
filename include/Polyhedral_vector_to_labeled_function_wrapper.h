@@ -19,7 +19,10 @@ namespace CGAL {
            // Types
            typedef int return_type;
            typedef std::vector<Function_*>   Function_vector;
-           typedef typename BGT::Point_3	  Point_3;
+           typedef typename BGT::Point_3     Point_3;
+           /* typedef std::vector< boost::optional<int> > Bmask; */
+           /* typedef std::vector<typename Function_::Subdomain_index>   Bmask; */
+           /* typedef std::vector<int>   Bmask; */
            typedef boost::dynamic_bitset<>   Bmask;
 
             Polyhedral_vector_to_labeled_function_wrapper(std::vector<Function_*>& v) : function_vector_(v) {
@@ -37,9 +40,12 @@ namespace CGAL {
             return_type operator()(const Point_3& p, bool use_cache = false) const {
                 int nb_func = function_vector_.size();
                 Bmask bits(nb_func);
-
-                for ( int i = 0 ; i < nb_func ; ++i ) {
-                    bits[i] = function_vector_[i]->is_in_domain_object()(p);
+                boost::optional<int> tmp;
+                for (int i = 0; i < nb_func; ++i) {
+                    tmp = function_vector_[i]->is_in_domain_object()(p);
+                    if (tmp) {
+                       bits[i] = tmp.get();
+                    }
                 }
 
                 return subdmap->index(bits);
