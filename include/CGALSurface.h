@@ -30,6 +30,12 @@
 // copy_face_graph
 #include <CGAL/boost/graph/copy_face_graph.h>
 
+// points inside/outside
+#include <CGAL/Side_of_triangle_mesh.h>
+
+// Corefine and compute difference
+#include <CGAL/Polygon_mesh_processing/corefinement.h>
+
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel; // Change to exact -> copy face_ graph to inexact ??
 typedef Kernel::Point_3 Point_3;
@@ -37,11 +43,10 @@ typedef CGAL::Surface_mesh<Point_3> Mesh;
 typedef Kernel::Vector_3 Vector_3;
 typedef boost::graph_traits<Mesh>::face_descriptor        face_descriptor;
 typedef boost::graph_traits<Mesh>::vertex_descriptor      vertex_descriptor;
+typedef CGAL::Side_of_triangle_mesh<Mesh, Kernel> inside; //  TODO: Cnange name, unintuitive
 
 
 class CGALSurface {
-    /* typedef std::vector<vertex_descriptor>                    vertex_vector; */
-    /* typedef CGAL::Side_of_triangle_mesh<Mesh,Kernel> Inside; // */
     /*     typedef CGAL::Surface_mesh_default_triangulation_3 Tr; */
     /*     typedef Tr::Geom_traits GT; */
 
@@ -54,18 +59,11 @@ class CGALSurface {
         template<typename Polyhedron_3>
         void get_polyhedron(Polyhedron_3 &polyhedron_3);
 
-    /* CGALSurface( Implicit_function implicit_function, */
-    /*              double bounding_sphere_radius, */
-    /*              double angular_bound, */
-    /*              double radius_bound, */
-    /*              double distance_bound); */
+        void operator^=( CGALSurface& other);
 
+        void operator+=( CGALSurface& other );
 
-    /*     void operator^=( CGALSurface& other); */
-
-    /*     void operator+=( CGALSurface& other ); */
-
-    /*     void operator-=( CGALSurface& other ); */
+        void operator-=( CGALSurface& other );
 
         Mesh& get_mesh();
 
@@ -89,11 +87,10 @@ class CGALSurface {
         template<typename InputIterator>
         void smooth_laplacian_region(InputIterator, InputIterator, const int);
 
-    /*     vertex_vector points_inside(CGALSurface& other); */
+        std::vector<vertex_descriptor> points_inside(CGALSurface &);
 
-    /*     vertex_vector points_outside(CGALSurface& other); */
+        std::vector<vertex_descriptor> points_outside(CGALSurface& other);
 
-    /*     Mesh& get_mesh(); */
     /*     //Polyhedron& polyhedron(); */
 
         bool self_intersections();
@@ -104,7 +101,7 @@ class CGALSurface {
 
         void preprocess(const double, const int);
 
-        /* void fair(CGALSurface::vertex_vector vector); */
+        void fair(std::vector<vertex_descriptor> &);
 
     /*     template<typename Implicit_function> */
     /*     CGALSurface(Implicit_function implicit_function, */
@@ -258,5 +255,55 @@ void CGALSurface::preprocess(const double target_edge_length, const int nb_iter)
     CGALSurface::triangulate_faces();
     CGALSurface::isotropic_remeshing(target_edge_length, nb_iter, false);
 };
+
+
+std::vector<vertex_descriptor> CGALSurface::points_inside(CGALSurface &other) {
+    std::vector<vertex_descriptor> result;
+    inside inside_poly2(other.get_mesh());
+    for (const auto &v_it: mesh.vertices()) {
+        const CGAL::Bounded_side res = inside_poly2(mesh.point(v_it));
+        if (res == CGAL::ON_BOUNDED_SIDE or res == CGAL::ON_BOUNDARY) {
+            result.push_back(v_it);
+        }
+    }
+    return result;
+}
+
+
+std::vector<vertex_descriptor> CGALSurface::points_outside(CGALSurface& other) {
+    std::vector<vertex_descriptor> result;
+    inside inside_poly2(other.get_mesh());
+
+    for (const auto &v_it: mesh.vertices()) {
+        const CGAL::Bounded_side res = inside_poly2(mesh.point(v_it));
+        if (res == CGAL::ON_UNBOUNDED_SIDE) {
+              result.push_back(v_it);
+        }
+    }
+    return result;
+}
+
+
+void CGALSurface::fair(std::vector<vertex_descriptor> &vector) {
+    CGAL::Polygon_mesh_processing::fair(mesh, vector);
+}
+
+
+void CGALSurface::operator^=(CGALSurface &other) {
+    CGAL::Polygon_mesh_processing::corefine_and_compute_intersection(mesh, other.get_mesh(), mesh);
+}
+
+
+void CGALSurface::operator+=(CGALSurface& other) {
+    CGAL::Polygon_mesh_processing::corefine_and_compute_union(
+            mesh,
+            other.get_mesh(),
+            mesh);
+}
+
+
+void CGALSurface::operator-=(CGALSurface& other) {
+    CGAL::Polygon_mesh_processing::corefine_and_compute_difference(mesh, other.get_mesh(), mesh);
+}
 
 #endif
