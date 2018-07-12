@@ -3,12 +3,6 @@
 
 
 #include <boost/dynamic_bitset.hpp>
-
-
-#include <list>
-#include <string>
-#include <iostream>
-#include <fstream>
 #include "SubdomainMap.h"
 
 
@@ -20,9 +14,6 @@ namespace CGAL {
            typedef int return_type;
            typedef std::vector<Function_*>   Function_vector;
            typedef typename BGT::Point_3     Point_3;
-           /* typedef std::vector< boost::optional<int> > Bmask; */
-           /* typedef std::vector<typename Function_::Subdomain_index>   Bmask; */
-           /* typedef std::vector<int>   Bmask; */
            typedef boost::dynamic_bitset<>   Bmask;
 
             Polyhedral_vector_to_labeled_function_wrapper(std::vector<Function_*>& v) : function_vector_(v) {
@@ -31,7 +22,7 @@ namespace CGAL {
             }
 
             Polyhedral_vector_to_labeled_function_wrapper(
-                    std::vector<Function_*>& v, const AbstractMap& map) : function_vector_(v) {
+                    std::vector<Function_*>& v, AbstractMap& map) : function_vector_(v) {
                 subdmap = &map;
             }
 

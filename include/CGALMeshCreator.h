@@ -4,16 +4,11 @@
 #define BOOST_PARAMETER_MAX_ARITY 12
 
 #include "CGALSurface.h"
-
-/* //LOCAL */
-/* #include "SubdomainMap.h" */
-/* #include "../CGALSurface/CGALSurface.cpp" */
+#include "Polyhedral_vector_to_labeled_function_wrapper.h"
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>     // Kernel
 #include <CGAL/Mesh_triangulation_3.h>
 #include <CGAL/Mesh_polyhedron_3.h>
-
-#include "Polyhedral_vector_to_labeled_function_wrapper.h"
 
 #include <CGAL/Labeled_mesh_domain_3.h>     //
 #include <CGAL/Mesh_domain_with_polyline_features_3.h>
@@ -23,35 +18,12 @@
 // Mesh criteria
 #include <CGAL/Mesh_criteria_3.h>
 
-// Mesh_complex_3_in_triangulation_3
 #include <CGAL/Mesh_complex_3_in_triangulation_3.h>
-
 #include <CGAL/make_mesh_3.h>
-
-/* #include <CGAL/Mesh_criteria_3.h> */
-/* #include <CGAL/Mesh_cell_base_3.h> */
-/* #include <CGAL/Mesh_vertex_base_3.h> */
-/* #include <CGAL/remove_far_points_in_mesh_3.h> */
-/* #include <CGAL/config.h> */
-/* #include <CGAL/assertions.h> */
-
-/* #include <CGAL/IO/File_medit.h> */
-/* #include <CGAL/make_mesh_3.h> */
-/* #include <CGAL/refine_mesh_3.h> */
-/* #include <CGAL/IO/Polyhedron_iostream.h> */
-
-
-
-
-/* typedef CGAL::Mesh_3::Lipschitz_sizing<K, Mesh_domain> Lip_sizing; */
-
-
-
 
 
 class CGALMeshCreator {
     typedef std::map<std::string, double> Parameters;
-
     typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
     typedef Kernel::Point_3 Point_3;
     typedef CGAL::Mesh_polyhedron_3<Kernel>::type Polyhedron;
@@ -67,23 +39,87 @@ class CGALMeshCreator {
     typedef Polyhedral_mesh_domain_3::Curve_segment_index Curve_segment_index;
     typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr, Corner_index, Curve_segment_index> C3t3;
 
+    typedef CGAL::Mesh_3::Lipschitz_sizing<Kernel, Mesh_domain> Lip_sizing;
+
     Parameters parameters;
-        std::unique_ptr<Mesh_domain> domain_ptr;
-        /* std::unique_ptr<Lip_sizing>  lip_sizing_ptr; */
-        C3t3 c3t3;
+    std::unique_ptr<Mesh_domain> domain_ptr;
+    std::unique_ptr<Lip_sizing> lip_sizing_ptr;
+    C3t3 c3t3;
 
     public:
+        CGALMeshCreator(
+                std::vector<CGALSurface> surfaces,
+                CGAL::Bbox_3 bbox_3,
+                AbstractMap &map);
+
+        CGALMeshCreator(std::vector<CGALSurface> surfaces, AbstractMap& map);
+
+        CGALMeshCreator(CGALSurface& surface, CGAL::Bbox_3 bbox_3);
+
         CGALMeshCreator(CGALSurface &);
 
         void set_parameters(const Parameters &);
 
         void set_parameter(const std::string, const double);
 
+        template<typename InputIterator>
+        void add_polylines(InputIterator begin, InputIterator end); //wrapper double to points
+
+        void lipschitz_size_field(const int, const int, const double, const double);
+
         void create_mesh(const int initial_points = 0);
 
         void default_parameters();
+
+        void save_mesh(std::string);
+
 };
 
+
+CGALMeshCreator::CGALMeshCreator(
+        std::vector<CGALSurface> surfaces,
+        CGAL::Bbox_3 bbox_3,
+        AbstractMap& map) {
+    Function_vector v;
+    Polyhedron polyhedron;
+    for (auto &surf: surfaces) {
+        surf.get_polyhedron(polyhedron);
+        Polyhedral_mesh_domain_3 *polyhedral_domain = new Polyhedral_mesh_domain_3(polyhedron);
+        v.push_back(polyhedral_domain);
+    }
+    Function_wrapper wrapper(v, map);
+    Mesh_domain domain(wrapper, bbox_3);
+    domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, bbox_3));
+    default_parameters();
+}
+
+
+CGALMeshCreator::CGALMeshCreator(std::vector<CGALSurface> surfaces, AbstractMap &map) {
+    Function_vector v;
+    Polyhedron polyhedron;
+    for (auto &surf: surfaces) {
+        surf.get_polyhedron(polyhedron);
+        Polyhedral_mesh_domain_3 *polyhedral_domain = new Polyhedral_mesh_domain_3(polyhedron);
+        v.push_back(polyhedral_domain);
+    }
+    Function_wrapper wrapper(v, map);
+    Mesh_domain domain(wrapper, wrapper.bbox());
+
+    domain_ptr = std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox()));
+    default_parameters();
+}
+
+CGALMeshCreator::CGALMeshCreator(CGALSurface &surface, CGAL::Bbox_3 bbox_3) {
+    Function_vector v;
+    Polyhedron polyhedron;
+    surface.get_polyhedron(polyhedron);
+    Polyhedral_mesh_domain_3 *polyhedral_domain = new Polyhedral_mesh_domain_3(polyhedron);
+    v.push_back(polyhedral_domain);
+    Function_wrapper wrapper(v);
+    Mesh_domain domain(wrapper,bbox_3);
+    domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, bbox_3));
+    default_parameters();
+}
 
 CGALMeshCreator::CGALMeshCreator(CGALSurface &surface) {
     default_parameters();
@@ -152,6 +188,34 @@ void CGALMeshCreator::create_mesh(const int initial_points) {
     /* } */
     /* if( parameters["exude_optimize"] ) { */
     /* } */
+}
+
+
+void CGALMeshCreator::save_mesh(std::string out_path) {
+    std::ofstream medit_file_stream(out_path);
+    c3t3.output_to_medit(medit_file_stream);
+    medit_file_stream.close();
+}
+
+
+void CGALMeshCreator::lipschitz_size_field(
+        const int subdomain_id,
+        const int k,
+        const double min_size,
+        const double max_size) {
+    if (lip_sizing_ptr) {
+        lip_sizing_ptr->add_parameters_for_subdomain(subdomain_id, k, min_size, max_size);
+    } else {
+        lip_sizing_ptr = std::unique_ptr<Lip_sizing>(new Lip_sizing(*domain_ptr.get()));
+        lip_sizing_ptr.get()->add_parameters_for_subdomain(
+                subdomain_id, k, min_size, max_size);
+    }
+}
+
+
+template<typename InputIterator>
+void CGALMeshCreator::add_polylines(InputIterator begin, InputIterator end) {
+    domain_ptr->add_features(begin, end);
 }
 
 #endif
