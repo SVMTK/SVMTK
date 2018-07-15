@@ -4,7 +4,6 @@
 #define BOOST_PARAMETER_MAX_ARITY 12
 
 #include "utils.h"
-
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -59,11 +58,12 @@ class CGALSurface {
         template<typename Polyhedron_3>
         void get_polyhedron(Polyhedron_3 &polyhedron_3);
 
-        void operator^=( CGALSurface& other);
-
-        void operator+=( CGALSurface& other );
-
-        void operator-=( CGALSurface& other );
+        /* void operator^=(CGALSurface &other); */
+        /* void operator+=(CGALSurface &other); */
+        /* void operator-=(CGALSurface &other); */
+        void surface_intersection(CGALSurface &other);
+        void surface_union(CGALSurface &other);
+        void surface_difference(CGALSurface &other);
 
         Mesh& get_mesh();
 
@@ -179,13 +179,13 @@ void CGALSurface::isotropic_remeshing(
 
 
 void CGALSurface::adjust_boundary(const double c) {
-    Mesh::Vertex_range::iterator vb = mesh.vertices().begin(), ve=mesh.vertices().end();
+    Mesh::Vertex_range::iterator vb = mesh.vertices().begin(), ve = mesh.vertices().end();
     CGALSurface::adjusting_boundary_region(vb, ve, c);
 }
 
 
 void CGALSurface::smooth_laplacian(const double c) {
-    Mesh::Vertex_range::iterator  vb = mesh.vertices().begin(), ve=mesh.vertices().end();
+    Mesh::Vertex_range::iterator vb = mesh.vertices().begin(), ve = mesh.vertices().end();
     CGALSurface::smooth_laplacian_region(vb, ve, c);
 }
 
@@ -197,7 +197,7 @@ void CGALSurface::adjusting_boundary_region(
         const double c) {
     std::vector<std::pair<vertex_descriptor, Point_3> > smoothed; //rename
     for ( ; begin != end; ++begin) {
-        Vector_3 delta= CGAL::Polygon_mesh_processing::compute_vertex_normal(*begin,mesh);
+        Vector_3 delta = CGAL::Polygon_mesh_processing::compute_vertex_normal(*begin,mesh);
         Point_3 p = mesh.point(*begin) + c*delta;
         smoothed.push_back(std::make_pair(*begin, p));
     }
@@ -289,12 +289,12 @@ void CGALSurface::fair(std::vector<vertex_descriptor> &vector) {
 }
 
 
-void CGALSurface::operator^=(CGALSurface &other) {
+void CGALSurface::surface_intersection(CGALSurface &other) {
     CGAL::Polygon_mesh_processing::corefine_and_compute_intersection(mesh, other.get_mesh(), mesh);
 }
 
 
-void CGALSurface::operator+=(CGALSurface& other) {
+void CGALSurface::surface_union(CGALSurface &other) {       // Probably bad to use union name
     CGAL::Polygon_mesh_processing::corefine_and_compute_union(
             mesh,
             other.get_mesh(),
@@ -302,7 +302,7 @@ void CGALSurface::operator+=(CGALSurface& other) {
 }
 
 
-void CGALSurface::operator-=(CGALSurface& other) {
+void CGALSurface::surface_difference(CGALSurface &other) {
     CGAL::Polygon_mesh_processing::corefine_and_compute_difference(mesh, other.get_mesh(), mesh);
 }
 
