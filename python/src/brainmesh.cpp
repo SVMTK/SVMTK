@@ -34,7 +34,11 @@ PYBIND11_MODULE(brainmesh, m) {
         .def("save", &CGALSurface::save)
         .def("collapse_edges", &CGALSurface::collapse_edges)
         .def("preprocess", &CGALSurface::preprocess)
-        .def("fair", &CGALSurface::fair);
+
+        .def("num_faces", &CGALSurface::num_faces)
+        .def("num_edges", &CGALSurface::num_edges)
+        .def("num_vertices", &CGALSurface::num_vertices)
+        /* .def("fair", &CGALSurface::fair); */
 
         // TODO
         /* .def("insert_surface", &CGALSurface::insert_surface) */  // TODO cpp side

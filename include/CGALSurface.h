@@ -103,6 +103,12 @@ class CGALSurface {
 
         void fair(std::vector<vertex_descriptor> &);
 
+        int num_faces() const;
+
+        int num_edges() const;
+
+        int num_vertices() const;
+
     /*     template<typename Implicit_function> */
     /*     CGALSurface(Implicit_function implicit_function, */
     /*          double bounding_sphere_radius, */
@@ -243,11 +249,11 @@ int CGALSurface::collapse_edges(const double stop_ratio) {
     SMS::Count_ratio_stop_predicate<Mesh> stop(stop_ratio);
 
     const int r = SMS::edge_collapse(
-    mesh,
-    stop,
-    CGAL::parameters::get_cost(SMS::Edge_length_cost <Mesh>())
-        .get_placement(SMS::Midpoint_placement<Mesh>()));
-        /* .visitor(vis)); */
+        mesh,
+        stop,
+        CGAL::parameters::get_cost(SMS::Edge_length_cost <Mesh>())
+            .get_placement(SMS::Midpoint_placement<Mesh>()));
+            /* .visitor(vis)); */
     return r;
 }
 
@@ -304,6 +310,21 @@ void CGALSurface::surface_union(CGALSurface &other) {       // Probably bad to u
 
 void CGALSurface::surface_difference(CGALSurface &other) {
     CGAL::Polygon_mesh_processing::corefine_and_compute_difference(mesh, other.get_mesh(), mesh);
+}
+
+
+int CGALSurface::num_faces() const {
+    return mesh.number_of_faces();
+}
+
+
+int CGALSurface::num_edges() const {
+    return mesh.number_of_edges();
+}
+
+
+int CGALSurface::num_vertices() const {
+    return mesh.number_of_vertices();
 }
 
 #endif
