@@ -22,14 +22,14 @@ namespace utils {
     int read_off(Mesh &mesh, const std::string filename) {
         std::ifstream input(filename);
         if (!input) {
-            std::cerr << "Cannot open file " << std::endl;
+            std::cout << "Cannot open file " << std::endl;
             return 1;
         }
 
         std::vector<Kernel::Point_3> points;
         std::vector< std::vector<std::size_t> > polygons;
         if (!CGAL::read_OFF(input, points, polygons)) {
-            std::cerr << "Error parsing the OFF file " << std::endl;
+            std::cout << "Error parsing the OFF file " << std::endl;
             return 1;
         }
         CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons);
