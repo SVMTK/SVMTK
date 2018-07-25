@@ -2,8 +2,10 @@
 #define CGALSurface_H
 
 #define BOOST_PARAMETER_MAX_ARITY 12
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 #include "utils.h"
+
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -44,8 +46,13 @@ typedef boost::graph_traits<Mesh>::face_descriptor        face_descriptor;
 typedef boost::graph_traits<Mesh>::vertex_descriptor      vertex_descriptor;
 typedef CGAL::Side_of_triangle_mesh<Mesh, Kernel> inside; //  TODO: Cnange name, unintuitive
 
+// For poisson reconstruction
+typedef CGAL::Exact_predicates_inexact_constructions_kernel ReconstructKernel;
+typedef CGAL::Polyhedron_3<ReconstructKernel> Polyhedron;
+
 
 class CGALSurface {
+    // What TODO: were these two for?
     /*     typedef CGAL::Surface_mesh_default_triangulation_3 Tr; */
     /*     typedef Tr::Geom_traits GT; */
 
@@ -54,6 +61,8 @@ class CGALSurface {
 
     public:
         CGALSurface(const std::string f);
+
+        CGALSurface(Polyhedron &);
 
         template<typename Polyhedron_3>
         void get_polyhedron(Polyhedron_3 &polyhedron_3);
@@ -91,9 +100,9 @@ class CGALSurface {
 
         std::vector<vertex_descriptor> points_outside(CGALSurface& other);
 
-    /*     //Polyhedron& polyhedron(); */
-
         bool self_intersections();
+
+        int num_self_intersections();
 
         void save(const std::string);
 
@@ -105,7 +114,7 @@ class CGALSurface {
 
         int num_faces() const;
 
-        int num_edges() const;
+        int num_edges() const; 
 
         int num_vertices() const;
 
@@ -121,6 +130,11 @@ class CGALSurface {
 
 CGALSurface::CGALSurface(const std::string f) {
     utils::read_off(mesh, f);
+}
+
+
+CGALSurface::CGALSurface(Polyhedron &polyhedron) {
+    CGAL::copy_face_graph(polyhedron, mesh);
 }
 
 
@@ -236,6 +250,13 @@ bool CGALSurface::self_intersections() {
     return CGAL::Polygon_mesh_processing::does_self_intersect(mesh,
                 CGAL::Polygon_mesh_processing::parameters::vertex_point_map(
                     get(CGAL::vertex_point, mesh)));
+}
+
+
+int CGALSurface::num_self_intersections() {
+    std::vector< std::pair<face_descriptor, face_descriptor> > intersected_tris;
+    CGAL::Polygon_mesh_processing::self_intersections(mesh, std::back_inserter(intersected_tris));
+    return intersected_tris.size();  // Could actually return the triangles themselves
 }
 
 
