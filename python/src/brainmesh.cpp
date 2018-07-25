@@ -30,20 +30,22 @@ PYBIND11_MODULE(brainmesh, m) {
         .def("points_inside", &CGALSurface::points_inside)
         .def("points_outside", &CGALSurface::points_outside)
         .def("self_intersections", &CGALSurface::self_intersections)
+        .def("num_self_intersections", &CGALSurface::num_self_intersections)
 
         .def("save", &CGALSurface::save)
         .def("collapse_edges", &CGALSurface::collapse_edges)
         .def("preprocess", &CGALSurface::preprocess)
 
-        .def("num_faces", &CGALSurface::num_faces)
-        .def("num_edges", &CGALSurface::num_edges)
-        .def("num_vertices", &CGALSurface::num_vertices)
-        /* .def("fair", &CGALSurface::fair); */
+        /* .def("fair", &CGALSurface::fair) */
 
         // TODO
         /* .def("insert_surface", &CGALSurface::insert_surface) */  // TODO cpp side
         /* .def("getMesh", &CGALSurface::get_mesh) */       // No need to expose
         /* .def("get_polyhedron", &CGALSurface::get_polyhedron); */ // No need to expose
+
+        .def("num_faces", &CGALSurface::num_faces)
+        .def("num_edges", &CGALSurface::num_edges)
+        .def("num_vertices", &CGALSurface::num_vertices);
 
     py::class_<CGALMeshCreator>(m, "BrainMesh")
         .def(py::init<CGALSurface &>())
