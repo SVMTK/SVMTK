@@ -5,3 +5,6 @@ cmake_install.cmake
 .mypy_cache/
 
 examples/results/
+dist/
+build/
+*.so

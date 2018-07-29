@@ -65,13 +65,13 @@ setup(
     long_description="",
     ext_modules=[CMakeExtension("brainmesh")],
     cmdclass=dict(build_ext=CMakeBuild),
-    # packages=find_packages("source"),
-    # package_dir={"": "source"},
-    # entry_points={
-    #     "console_scripts": [
-    #         "asc2domain = brainmesh.utils.asc2domain:main",
-    #         "brainmesh-convert = brainmesh.utils.convert:main",
-    #     ]
-    # },
+    packages=find_packages("source"),
+    package_dir={"": "source"},
+    entry_points={
+        "console_scripts": [
+            # "asc2domain = brainmesh.utils.asc2domain:main",
+            "brainmesh-convert = brainmesh.convert:main",
+        ]
+    },
     zip_safe=False
 )
