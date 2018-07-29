@@ -98,6 +98,8 @@ class CGALSurface {
 
         void smooth_laplacian(const double);
 
+        void smooth_taubin(const size_t);
+
         template<typename InputIterator>
         void adjusting_boundary_region(InputIterator, InputIterator, const double);
 
@@ -221,6 +223,14 @@ void CGALSurface::adjust_boundary(const double c) {
 void CGALSurface::smooth_laplacian(const double c) {
     Mesh::Vertex_range::iterator vb = mesh.vertices().begin(), ve = mesh.vertices().end();
     CGALSurface::smooth_laplacian_region(vb, ve, c);
+}
+
+
+void CGALSurface::smooth_taubin(const size_t nb_iter) {
+    for (size_t i = 0; i < nb_iter; ++i) {
+        this->smooth_laplacian(0.8);
+        this->smooth_laplacian(-0.805);
+    }
 }
 
 
