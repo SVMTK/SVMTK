@@ -1,8 +1,5 @@
 #ifndef __CGAL_MESH_CREATOR_H
-
-
 #define __CGAL_MESH_CREATOR_H
-
 
 
 //LOCAL
@@ -11,9 +8,7 @@
 #include "Polyhedral_vector_to_labeled_function_wrapper.h"
 
 
-
 //CGAL
-
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Mesh_triangulation_3.h>
 #include <CGAL/Labeled_mesh_domain_3.h>
@@ -30,12 +25,11 @@
 #include <CGAL/config.h>
 #include <CGAL/assertions.h>
 
+
 #include <CGAL/IO/File_medit.h>
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/refine_mesh_3.h>
 #include <CGAL/IO/Polyhedron_iostream.h>
-
-
 
 
 //Boost
@@ -126,10 +120,6 @@ class CGALMeshCreator
             std::unique_ptr<Lip_sizing>  lip_sizing_ptr;
             Parameters parameters;
             C3t3 c3t3;
-              
 };
-
-
-
 
 #endif

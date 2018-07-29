@@ -1,6 +1,6 @@
 #include "CGALSurface.h"
 #include "read_polygons_STL.h"
-#include "surface_mesher.h"
+//#include "surface_mesher.h"
 
 #include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
 #include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
@@ -121,7 +121,6 @@ void CGALSurface::operator^= (CGALSurface& other )
 void CGALSurface::operator-=(CGALSurface& other)
 {
     CGAL::Polygon_mesh_processing::corefine_and_compute_difference(mesh , other.get_mesh(),mesh);
-
 }
 
 void CGALSurface::operator+=( CGALSurface& other )
@@ -306,7 +305,8 @@ CGALSurface::CGALSurface(Implicit_function implicit_function,
              double radius_bound,
              double distance_bound)
 {
-     surface_mesher(mesh,implicit_function,bounding_sphere_radius,angular_bound,radius_bound, distance_bound);
+    // TODO: FIXME
+     // surface_mesher(mesh,implicit_function,bounding_sphere_radius,angular_bound,radius_bound, distance_bound);
 }
 void CGALSurface::save(const char* outpath)
 {
