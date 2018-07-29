@@ -36,6 +36,8 @@ PYBIND11_MODULE(brainmesh, m) {
         .def("adjust_boundary", &CGALSurface::adjust_boundary)
 
         .def("smooth_laplacian", &CGALSurface::smooth_laplacian)
+        .def("smooth_taubin", &CGALSurface::smooth_taubin)
+
 
         // Either use these two for operator overloading, or return the vertices
         /* .def("points_inside", &CGALSurface::points_inside) */
