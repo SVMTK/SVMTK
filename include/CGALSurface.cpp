@@ -1,4 +1,5 @@
 #include "CGALSurface.h"
+#include "reconstruct_surface.h"
 
 
 int main() {
@@ -7,5 +8,8 @@ int main() {
     foo.triangulate_faces();
     foo.stitch_borders();
     foo.self_intersections();
+
+    auto reconstruct_surface(foo);
+
     std::cout << "Hello, world!" << std::endl;
 }

@@ -2,12 +2,12 @@
 #define CGALSurface_H
 
 #define BOOST_PARAMETER_MAX_ARITY 12
+
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 #include "utils.h"
 
 #include <iostream>
-#include <fstream>
 #include <vector>
 
 #include <CGAL/Surface_mesh.h>
@@ -20,11 +20,12 @@
 #include <CGAL/Polygon_mesh_processing/remesh.h>
 #include <CGAL/Polygon_mesh_processing/border.h>
 
-// Edge collapse
-// Simplification function
+// Edge collapse -- Simplification function
 #include <CGAL/Surface_mesh_simplification/edge_collapse.h>
+
 // Stop-condition policy
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_ratio_stop_predicate.h>
+
 // Non-default cost and placement policies
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_and_length.h> 
 
@@ -37,18 +38,25 @@
 // Corefine and compute difference
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
 
+// Poisson reconstruction
+#include <CGAL/Point_with_normal_3.h>
+#include <CGAL/poisson_surface_reconstruction.h>
+
+// Poisson reconstruction definitions- NB! Another Kernel
+typedef CGAL::Exact_predicates_inexact_constructions_kernel ReconstructKernel;
+typedef CGAL::Polyhedron_3<ReconstructKernel> RPolyhedron;
+typedef ReconstructKernel::Point_3 RPoint;
+typedef ReconstructKernel::Vector_3 RVector;
+typedef std::pair<RPoint, RVector> RPwn;
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel; // Change to exact -> copy face_ graph to inexact ??
 typedef Kernel::Point_3 Point_3;
 typedef CGAL::Surface_mesh<Point_3> Mesh;
 typedef Kernel::Vector_3 Vector_3;
-typedef boost::graph_traits<Mesh>::face_descriptor        face_descriptor;
-typedef boost::graph_traits<Mesh>::vertex_descriptor      vertex_descriptor;
+typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
+typedef boost::graph_traits<Mesh>::face_descriptor face_descriptor;
+typedef boost::graph_traits<Mesh>::vertex_descriptor vertex_descriptor;
 typedef CGAL::Side_of_triangle_mesh<Mesh, Kernel> inside; //  TODO: Cnange name, unintuitive
-
-// For poisson reconstruction
-typedef CGAL::Exact_predicates_inexact_constructions_kernel ReconstructKernel;
-typedef CGAL::Polyhedron_3<ReconstructKernel> Polyhedron;
 
 
 class CGALSurface {
@@ -112,9 +120,15 @@ class CGALSurface {
 
         void fair(std::vector<vertex_descriptor> &);
 
+        // Experimental reconstruction
+        void reconstruct_surface(
+            const double sm_angle = 20.0,
+            const double sm_radius = 30.0,
+            const double sm_distance = 0.375);
+
         int num_faces() const;
 
-        int num_edges() const; 
+        int num_edges() const;
 
         int num_vertices() const;
 
@@ -233,7 +247,7 @@ void CGALSurface::smooth_laplacian_region(InputIterator begin, InputIterator end
     for ( ; begin != end; ++begin) {
         Point_3 current = mesh.point(*begin);
         Vector_3 delta = CGAL::NULL_VECTOR;
-        CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(*begin),mesh), done(vbegin);
+        CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(*begin), mesh), done(vbegin);
         do {
             delta += Vector_3(mesh.point(*vbegin) - current);
             *vbegin++;
@@ -331,6 +345,37 @@ void CGALSurface::surface_union(CGALSurface &other) {       // Probably bad to u
 
 void CGALSurface::surface_difference(CGALSurface &other) {
     CGAL::Polygon_mesh_processing::corefine_and_compute_difference(mesh, other.get_mesh(), mesh);
+}
+
+
+void CGALSurface::reconstruct_surface(
+        const double sm_angle,
+        const double sm_radius,
+        const double sm_distance) {
+    RPolyhedron input_polyhedron;
+    this->get_polyhedron(input_polyhedron);
+    std::deque<RPwn> points;
+
+    // TODO: Can I do some sort of casting to avoid copying the whole mesh above?
+    for (boost::graph_traits<RPolyhedron>::vertex_descriptor vd: vertices(input_polyhedron)) {
+        const RPoint p = vd->point();
+        const RVector n = CGAL::Polygon_mesh_processing::compute_vertex_normal(vd, input_polyhedron);
+        points.push_back(std::make_pair(p, n));
+    }
+
+    RPolyhedron output_mesh;
+
+    double average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(
+            points.begin(), points.end(),
+            CGAL::First_of_pair_property_map<RPwn>(), 6);
+
+    CGAL::poisson_surface_reconstruction_delaunay(
+            points.begin(), points.end(),
+            CGAL::First_of_pair_property_map<RPwn>(),
+            CGAL::Second_of_pair_property_map<RPwn>(),
+            output_mesh, average_spacing);
+
+    CGAL::copy_face_graph(output_mesh, this->mesh);
 }
 
 

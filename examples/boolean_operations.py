@@ -1,4 +1,4 @@
-"""Compute the intersection between blobby and eight."""
+"""Compute boolean operations between blobby and eight."""
 
 import brainmesh as bm
 from pathlib import Path
@@ -41,8 +41,7 @@ class BooleanOperation:
 
 if __name__ == "__main__":
     outdir = Path("results")
-    if not outdir.exists():
-        outdir.mkdir()
+    outdir.mkdir(exist_ok=True)
 
     bop = BooleanOperation(
         "data/blobby.off",

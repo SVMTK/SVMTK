@@ -1,16 +1,5 @@
 #ifndef ReconstructSurface_H
 #define ReconstructSurface_H
-// poisson_reconstruction.cpp
-
-//----------------------------------------------------------
-// Poisson Delaunay Reconstruction method.
-// Reads a point set or a mesh's set of vertices, reconstructs a surface using Poisson,
-// and saves the surface.
-// Output format is .off.
-//----------------------------------------------------------
-// poisson_reconstruction file_in file_out [options]
-
-#include "CGALSurface.h"
 
 // CGAL
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -20,22 +9,27 @@
 #include <CGAL/Timer.h>
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
 #include <CGAL/make_surface_mesh.h>
-#include <CGAL/Poisson_implicit_surface_3.h>
-#include <CGAL/IO/output_surface_facets_to_polyhedron.h>
 #include <CGAL/Poisson_reconstruction_function.h>
+/* #include <CGAL/Poisson_implicit_surface_3.h> */
+#include <CGAL/Implicit_surface_3.h>
+
+#include <CGAL/IO/output_surface_facets_to_polyhedron.h>
 #include <CGAL/compute_average_spacing.h>
 
-/* #include <deque> */
-/* #include <cstdlib> */
-/* #include <fstream> */
-/* #include <math.h> */
+// Local
+#include "CGALSurface.h"
+
+#include <deque>
+#include <cstdlib>
+#include <fstream>
+#include <math.h>
 
 // ----------------------------------------------------------------------------
 // Types
 // ----------------------------------------------------------------------------
 
 // kernel -- Moved to CGALSurface
-/* typedef CGAL::Exact_predicates_inexact_constructions_kernel ReconstructKernel; */
+typedef CGAL::Exact_predicates_inexact_constructions_kernel ReconstructKernel;
 
 // Simple geometric types
 typedef ReconstructKernel::FT FT;
@@ -46,7 +40,7 @@ typedef ReconstructKernel::Sphere_3 Sphere;
 typedef std::deque<Point_with_normal> PointList;
 
 // polyhedron -- Moved to CGALSurface
-typedef CGAL::Polyhedron_3<ReconstructKernel> Polyhedron;
+typedef CGAL::Polyhedron_3<ReconstructKernel> RPolyhedron;
 
 // Poisson implicit function
 typedef CGAL::Poisson_reconstruction_function<ReconstructKernel> Poisson_reconstruction_function;
@@ -54,7 +48,8 @@ typedef CGAL::Poisson_reconstruction_function<ReconstructKernel> Poisson_reconst
 // Surface mesher
 typedef CGAL::Surface_mesh_default_triangulation_3 STr;
 typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<STr> C2t3;
-typedef CGAL::Poisson_implicit_surface_3<ReconstructKernel, Poisson_reconstruction_function> Surface_3;
+/* typedef CGAL::Poisson_implicit_surface_3<ReconstructKernel, Poisson_reconstruction_function> Surface_3; */
+typedef CGAL::Implicit_surface_3<ReconstructKernel, Poisson_reconstruction_function> Surface_3;
 
 struct Counter {
     std::size_t i, N;
@@ -81,22 +76,31 @@ struct InsertVisitor {
 // ----------------------------------------------------------------------------
 
 
-CGALSurface* reconstruct_surface(Polyhedron &input_mesh) {
+CGALSurface* poisson_reconstruction(
+        RPolyhedron &input_mesh,
+        const double sm_angle = 20.0,
+        const double sm_radius = 100.0,
+        const double sm_distance = 0.25,
+        const double approximation_ratio = 0.02,
+        const double average_spacing_ratio = 5.0) {
     //***************************************
     // decode parameters
     //***************************************
 
     // usage
     // Poisson options
-    FT sm_angle = 20.0; // Min triangle angle (degrees).
-    FT sm_radius = 100; // Max triangle size w.r.t. point set average spacing.
-    FT sm_distance = 0.25; // Approximation error w.r.t. point set average spacing.
-    double approximation_ratio = 0.02;
-    double average_spacing_ratio = 5;
+    /* FT sm_angle = 20.0; // Min triangle angle (degrees). */
+    /* FT sm_radius = 100; // Max triangle size w.r.t. point set average spacing. */
+    /* FT sm_distance = 0.25; // Approximation error w.r.t. point set average spacing. */
+    /* double sm_angle = 20.0; // Min triangle angle (degrees). */
+    /* double sm_radius = 100; // Max triangle size w.r.t. point set average spacing. */
+    /* double sm_distance = 0.25; // Approximation error w.r.t. point set average spacing. */
+    /* double approximation_ratio = 0.02; */
+    /* double average_spacing_ratio = 5; */
 
     CGAL::Timer task_timer; task_timer.start();
     PointList points;
-    for (boost::graph_traits<Polyhedron>::vertex_descriptor vd: vertices(input_mesh)) {
+    for (boost::graph_traits<RPolyhedron>::vertex_descriptor vd: vertices(input_mesh)) {
         const Point& p = vd->point();
         Vector n = CGAL::Polygon_mesh_processing::compute_vertex_normal(vd, input_mesh);
         points.push_back(Point_with_normal(p, n));
@@ -175,8 +179,7 @@ CGALSurface* reconstruct_surface(Polyhedron &input_mesh) {
     // conservative bounding sphere centered at inner point.
     FT sm_sphere_radius = 5.0*radius;
     FT sm_dichotomy_error = sm_distance*average_spacing/1000.0; // Dichotomy error must be << sm_distance
-    Surface_3 surface(
-            function,
+    Surface_3 surface(function,
             Sphere(inner_point, sm_sphere_radius*sm_sphere_radius),
             sm_dichotomy_error/sm_sphere_radius);
 
@@ -204,19 +207,23 @@ CGALSurface* reconstruct_surface(Polyhedron &input_mesh) {
     }
 
     // Converts to polyhedron
-    Polyhedron output_mesh;
+    RPolyhedron output_mesh;
     CGAL::output_surface_facets_to_polyhedron(c2t3, output_mesh);
+
+    // Change kernel back
+    Polyhedron tmp_mesh;
+    CGAL::copy_face_graph(output_mesh, tmp_mesh);
 
     // Prints total reconstruction duration
     std::cout << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";
-    return new CGALSurface(output_mesh);
+    return new CGALSurface(tmp_mesh);
 }
 
 
 CGALSurface reconstruct_surface(CGALSurface &surface) {
-    Polyhedron polyhedron;
+    RPolyhedron polyhedron;
     surface.get_polyhedron(polyhedron);
-    return *reconstruct_surface(polyhedron);
+    return *poisson_reconstruction(polyhedron);
 }
 
 #endif
