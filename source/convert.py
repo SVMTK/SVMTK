@@ -1,4 +1,7 @@
-"""Script for converting between surface file formats."""
+"""Convert between mesh formats.
+
+Can read asc and srf files and falls back to meshio for everything else.
+"""
 
 from argparse import ArgumentParser
 from pathlib import Path
@@ -79,6 +82,7 @@ def create_parser() -> ArgumentParser:
 
 
 def main() -> None:
+    """brainmesh-convert entry point."""
     parser = create_parser()
     args = parser.parse_args()
     brainmeshConvert(args.input, args.output)
