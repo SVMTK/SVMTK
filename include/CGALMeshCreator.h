@@ -21,6 +21,9 @@
 #include <CGAL/Mesh_complex_3_in_triangulation_3.h>
 #include <CGAL/make_mesh_3.h>
 
+// Remove isolated vertices
+#include "remove_isolated_vertices.h"
+
 
 class CGALMeshCreator {
     typedef std::map<std::string, double> Parameters;
@@ -37,14 +40,14 @@ class CGALMeshCreator {
 
     typedef Polyhedral_mesh_domain_3::Corner_index Corner_index;
     typedef Polyhedral_mesh_domain_3::Curve_segment_index Curve_segment_index;
-    typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr, Corner_index, Curve_segment_index> C3t3;
+    typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr, Corner_index, Curve_segment_index> C3T3;
 
     typedef CGAL::Mesh_3::Lipschitz_sizing<Kernel, Mesh_domain> Lip_sizing;
 
     Parameters parameters;
     std::unique_ptr<Mesh_domain> domain_ptr;
     std::unique_ptr<Lip_sizing> lip_sizing_ptr;
-    C3t3 c3t3;
+    C3T3 c3t3;
 
     public:
         CGALMeshCreator(
@@ -73,6 +76,7 @@ class CGALMeshCreator {
 
         void save_mesh(std::string);
 
+        void remove_isolated_vertices(C3T3 &);
 };
 
 
@@ -176,7 +180,7 @@ void CGALMeshCreator::create_mesh(const int initial_points) {
             CGAL::parameters::cell_size=parameters["cell_size"]);
 
     /* CGAL::internal::Mesh_3::init_c3t3(c3t3, *domain_ptr.get(), criteria, initial_points); */
-    C3t3 c3t3= CGAL::make_mesh_3<C3t3>(*domain_ptr.get(), criteria);
+    C3T3 c3t3 = CGAL::make_mesh_3<C3T3>(*domain_ptr.get(), criteria);
     /* refine_mesh_3(c3t3, *domain_ptr.get(), criteria, CGAL::parameters::no_reset_c3t3()); */
 
     /* if(parameters["odt_optimize"] ) { */
@@ -217,5 +221,11 @@ template<typename InputIterator>
 void CGALMeshCreator::add_polylines(InputIterator begin, InputIterator end) {
     domain_ptr->add_features(begin, end);
 }
+
+
+void CGALMeshCreator::remove_isolated_vertices(C3T3 &c3t3) {
+    remove_isolated_vertices(c3t3);
+}
+
 
 #endif
