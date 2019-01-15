@@ -47,6 +47,7 @@ namespace utils {
         std::ofstream out(outpath);
         out << mesh;
         out.close();
+        return 1;
     }
 
 }

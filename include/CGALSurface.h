@@ -376,8 +376,7 @@ void CGALSurface::reconstruct_surface(
     RPolyhedron output_mesh;
 
     double average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(
-            points.begin(), points.end(),
-            CGAL::First_of_pair_property_map<RPwn>(), 6);
+            points, 6, CGAL::parameters::point_map(CGAL::First_of_pair_property_map<RPwn>()));
 
     CGAL::poisson_surface_reconstruction_delaunay(
             points.begin(), points.end(),

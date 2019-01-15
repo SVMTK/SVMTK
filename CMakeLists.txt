@@ -25,7 +25,7 @@ add_subdirectory(external/pybind11)
 include_directories(${source_dir}/include)
 set(PYBIND11_PYTHON_VERSION 3.6)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -frounding-math")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -frounding-math")
 
 
 # headers
