@@ -102,7 +102,7 @@ class CGALSurface {
 
         Mesh& get_mesh();
 
-        unsigned int fill_holes();
+        int fill_holes();
 
         bool triangulate_faces();
 
@@ -152,16 +152,18 @@ class CGALSurface {
 
         int num_vertices() const;
 
+        void split_edges(double target_edge_length);
+
         // TODO: What does this do?
         void clear(){ mesh.clear();}
 
         // TODO: Add this for tomorrow
         /* void fix_close_junctures(double c); */
 
-        // TODO
-        /* void split_edges(double  target_edge_length); */
         /* void make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1, double radius,  int number_of_segments=360) ; */
+
         /* void make_cone( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0 , double r1,  int number_of_segments=360) ; */
+        // TODO
         /* void make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1); */
         /* void make_sphere( double x0, double y0, double  z0, double r0); */
         /* void insert_mesh(CGALSurface& surf){mesh+=surf.get_mesh();} */
@@ -197,7 +199,7 @@ Mesh& CGALSurface::get_mesh() {
     return mesh;
 }
 
-unsigned int CGALSurface::fill_holes() {
+int CGALSurface::fill_holes() {
     unsigned int nb_holes = 0;
     for (auto h: halfedges(mesh)) {
         if(is_border(h, mesh)) {
@@ -278,7 +280,7 @@ void CGALSurface::adjusting_boundary_region(
         Point_3 p = mesh.point(*begin) + c*delta;
         smoothed.push_back(std::make_pair(*begin, p));
     }
-    for (const std::pair<vertex_descriptor, Point_3> s: smoothed) {
+    for (auto &s: smoothed) {
         mesh.point(s.first) = s.second;
     }
 }
@@ -294,11 +296,12 @@ void CGALSurface::smooth_laplacian_region(InputIterator begin, InputIterator end
         do {
             delta += Vector_3(mesh.point(*vbegin) - current);
             *vbegin++;
-        } while(vbegin != done);
+        }
+        while(vbegin != done);
         Point_3 p = current + c*delta/mesh.degree(*begin);
         smoothed.push_back(std::make_pair(*begin, p));
     }
-    for (const std::pair<vertex_descriptor, Point_3> s : smoothed) {
+    for (auto &s: smoothed) {
         mesh.point(s.first) = s.second;
     }
 }
@@ -400,7 +403,7 @@ void CGALSurface::reconstruct_surface(
     std::deque<RPwn> points;
 
     // TODO: Can I do some sort of casting to avoid copying the whole mesh above?
-    for (boost::graph_traits<RPolyhedron>::vertex_descriptor vd: vertices(input_polyhedron)) {
+    for (auto &vd: vertices(input_polyhedron)) {
         const RPoint p = vd->point();
         const RVector n = CGAL::Polygon_mesh_processing::compute_vertex_normal(vd, input_polyhedron);
         points.push_back(std::make_pair(p, n));
@@ -433,6 +436,10 @@ int CGALSurface::num_edges() const {
 
 int CGALSurface::num_vertices() const {
     return mesh.number_of_vertices();
+}
+
+void CGALSurface::split_edges(double target_edge_length) {
+     CGAL::Polygon_mesh_processing::split_long_edges(edges(mesh), target_edge_length, mesh);
 }
 
 #endif

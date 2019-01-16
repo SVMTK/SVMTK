@@ -30,7 +30,7 @@ namespace CGAL {
         {
             public:
                 // Types
-                typedef int return_type;  
+                typedef int return_type;
 
                 typedef std::vector<Function_*>   Function_vector;
 
