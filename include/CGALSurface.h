@@ -27,7 +27,7 @@
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_ratio_stop_predicate.h>
 
 // Non-default cost and placement policies
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_and_length.h> 
+#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_and_length.h>
 
 // copy_face_graph
 #include <CGAL/boost/graph/copy_face_graph.h>
@@ -41,6 +41,7 @@
 // Poisson reconstruction
 #include <CGAL/Point_with_normal_3.h>
 #include <CGAL/poisson_surface_reconstruction.h>
+
 
 // Poisson reconstruction definitions- NB! Another Kernel
 typedef CGAL::Exact_predicates_inexact_constructions_kernel ReconstructKernel;
@@ -68,9 +69,25 @@ class CGALSurface {
         Mesh mesh;
 
     public:
+        CGALSurface(); // empty constructor
+
         CGALSurface(const std::string f);
 
         CGALSurface(Polyhedron &);
+
+        /* CGALSurface( Implicit_function implicit_function, */
+        /*              double bounding_sphere_radius, */
+        /*              double angular_bound, */
+        /*              double radius_bound, */
+        /*              double distance_bound); */
+
+        /* template<typename Implicit_function> */
+        /* CGALSurface(Implicit_function implicit_function, */
+        /*          double bounding_sphere_radius, */
+        /*          double angular_bound=30., */
+        /*          double radius_bound=0.1 , */
+        /*          double distance_bound=0.1   ); */
+
 
         template<typename Polyhedron_3>
         void get_polyhedron(Polyhedron_3 &polyhedron_3);
@@ -81,6 +98,7 @@ class CGALSurface {
         void surface_intersection(CGALSurface &other);
         void surface_union(CGALSurface &other);
         void surface_difference(CGALSurface &other);
+
 
         Mesh& get_mesh();
 
@@ -134,6 +152,21 @@ class CGALSurface {
 
         int num_vertices() const;
 
+        // TODO: What does this do?
+        void clear(){ mesh.clear();}
+
+        // TODO: Add this for tomorrow
+        /* void fix_close_junctures(double c); */
+
+        // TODO
+        /* void split_edges(double  target_edge_length); */
+        /* void make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1, double radius,  int number_of_segments=360) ; */
+        /* void make_cone( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0 , double r1,  int number_of_segments=360) ; */
+        /* void make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1); */
+        /* void make_sphere( double x0, double y0, double  z0, double r0); */
+        /* void insert_mesh(CGALSurface& surf){mesh+=surf.get_mesh();} */
+        /* void insert_points(std::vector<Point_3>& points) ; */
+
     /*     template<typename Implicit_function> */
     /*     CGALSurface(Implicit_function implicit_function, */
     /*          double bounding_sphere_radius, */
@@ -141,7 +174,7 @@ class CGALSurface {
     /*          double radius_bound=0.1 , */
     /*          double distance_bound=0.1   ); */
 
-    /*     ~CGALSurface(){} */
+        ~CGALSurface(){}
 };
 
 CGALSurface::CGALSurface(const std::string f) {
