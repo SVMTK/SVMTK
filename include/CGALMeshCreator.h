@@ -72,8 +72,11 @@ class CGALMeshCreator {
         // FIXME: There is a problem with the function wrapper
         typedef CGAL::Polyhedral_vector_to_labeled_function_wrapper<Polyhedral_mesh_domain_3, K  > Function_wrapper; //
         typedef Function_wrapper::Function_vector Function_vector; //
-        typedef CGAL::Labeled_mesh_domain_3<Function_wrapper, K> Labeled_Mesh_Domain;
+        typedef CGAL::Labeled_mesh_domain_3<K> Labeled_Mesh_Domain;
         typedef CGAL::Mesh_domain_with_polyline_features_3<Labeled_Mesh_Domain> Mesh_domain; // labeled mesh_domain function wrapper 
+
+        /* typedef CGAL::Labeled_mesh_domain_3<Function_wrapper, K> Mesh_domain; */
+        /* typedef CGAL::Labeled_mesh_domain_3<K> Mesh_domain; */
 
         typedef CGAL::Mesh_3::Lipschitz_sizing<K, Mesh_domain> Lip_sizing;
         typedef CGAL::Mesh_triangulation_3<Mesh_domain>::type Tr;
@@ -98,80 +101,79 @@ class CGALMeshCreator {
 
 
         CGALMeshCreator(CGALSurface& surface);
-        CGALMeshCreator(std::vector<CGALSurface> surfaces, CGAL::Bbox_3 bbox_3 , AbstractMap &map);
-        CGALMeshCreator(std::vector<CGALSurface> surfaces, AbstractMap& map);
-        CGALMeshCreator(std::vector<CGALSurface> surfaces);
-        CGALMeshCreator(CGALSurface& surface,  CGAL::Bbox_3 bbox_3 );
+        /* CGALMeshCreator(std::vector<CGALSurface> surfaces, CGAL::Bbox_3 bbox_3 , AbstractMap &map); */
+        /* CGALMeshCreator(std::vector<CGALSurface> surfaces, AbstractMap& map); */
+        /* CGALMeshCreator(std::vector<CGALSurface> surfaces); */
+        /* CGALMeshCreator(CGALSurface& surface,  CGAL::Bbox_3 bbox_3 ); */
 
+        /* ~CGALMeshCreator() {} */
 
-        ~CGALMeshCreator() {}
-
-            void lipschitz_size_field(int subdomain_id, int k,double min_size,double max_size);
+        /*     void lipschitz_size_field(int subdomain_id, int k,double min_size,double max_size); */
 
         void set_parameters(Parameters new_parameters);
 
         void set_parameter(std::string key, double value);
 
-        void create_mesh();
+        void refine_mesh();
 
-            void create_mesh( int initial_points);
+        /*     void create_mesh( int initial_points); */
 
         void default_parameters() {
-            parameters["mesh_resolution"]=64.0;
-            parameters["perturb_optimize"] =0.0;
-            parameters["exude_optimize"] = 0.0;
-            parameters["lloyd_optimize"] =  0.0;
-            parameters["odt_optimize"]   =  0.0;
-            parameters["edge_size"]      =   0.25;
-            parameters["facet_angle"]    = 25.0;
-            parameters["facet_size"]     = 0.1;
-            parameters["facet_distance"] =  0.1;
+            parameters["mesh_resolution"]        = 64.0;
+            parameters["perturb_optimize"]       = 0.0;
+            parameters["exude_optimize"]         = 0.0;
+            parameters["lloyd_optimize"]         = 0.0;
+            parameters["odt_optimize"]           = 0.0;
+            parameters["edge_size"]              = 0.25;
+            parameters["facet_angle"]            = 25.0;
+            parameters["facet_size"]             = 0.1;
+            parameters["facet_distance"]         = 0.1;
             parameters["cell_radius_edge_ratio"] = 3.0;
-            parameters["cell_size"] = 0.1;
-            parameters["detect_sharp_features"] = 1.0;
-            parameters["feature_threshold"]= 70.;
+            parameters["cell_size"]              = 0.1;
+            parameters["detect_sharp_features"]  = 1.0;
+            parameters["feature_threshold"]      = 70.;
         }
 
         void save_mesh(std::string OutPath);
 
-            void add_sharp_edges(Polyhedron& polyhedron) ;
+        /*     void add_sharp_edges(Polyhedron& polyhedron) ; */
 
-            void refine_mesh();
+        /*     void refine_mesh(); */
 
-            Polylines& get_polylines() {return pedges; }
+        /*     Polylines& get_polylines() {return pedges; } */
 
-            void add_polyline(Polyline_3 polyline) { pedges.push_back(polyline);}   
+        /*     void add_polyline(Polyline_3 polyline) { pedges.push_back(polyline);} */   
 
-            void reset_polyline(){pedges.clear();}
+        /*     void reset_polyline(){pedges.clear();} */
 
-            void set_polylines(){domain_ptr.get()->add_features(get_polylines().begin(), get_polylines().end());} 
+        /*     void set_polylines(){domain_ptr.get()->add_features(get_polylines().begin(), get_polylines().end());} */ 
 
-            template< typename InputIterator> // Polylines::iterator
-            void set_polylines(InputIterator begin, InputIterator end){domain_ptr->add_features(begin, end);}
+        /*     template< typename InputIterator> // Polylines::iterator */
+        /*     void set_polylines(InputIterator begin, InputIterator end){domain_ptr->add_features(begin, end);} */
 
-            template< typename InputIterator>
-            void insert_edges(InputIterator begin, InputIterator end); 
+        /*     template< typename InputIterator> */
+        /*     void insert_edges(InputIterator begin, InputIterator end); */ 
 
-            template < typename InputIterator>
-            void insert_edge(InputIterator begin, InputIterator end);
+        /*     template < typename InputIterator> */
+        /*     void insert_edge(InputIterator begin, InputIterator end); */
 
-            /* // Built due to private mesh, better option ? */ 
-            /* void lloyd(double time_limit= 0, int max_iteration_number = 0, double convergence = 0.02,double freeze_bound = 0.01, bool do_freeze = true) */
-            /* {CGAL::lloyd_optimize_mesh_3(c3t3, *domain_ptr.get(), time_limit=time_limit, max_iteration_number=max_iteration_number,convergence=convergence, freeze_bound  = freeze_bound, do_freeze = do_freeze); } */ 
+        /*     /1* // Built due to private mesh, better option ? *1/ */ 
+        /*     /1* void lloyd(double time_limit= 0, int max_iteration_number = 0, double convergence = 0.02,double freeze_bound = 0.01, bool do_freeze = true) *1/ */
+        /*     /1* {CGAL::lloyd_optimize_mesh_3(c3t3, *domain_ptr.get(), time_limit=time_limit, max_iteration_number=max_iteration_number,convergence=convergence, freeze_bound  = freeze_bound, do_freeze = do_freeze); } *1/ */ 
 
-            /* void excude( double time_limit = 0, double sliver_bound = 0 ){ CGAL::exude_mesh_3(c3t3, sliver_bound=sliver_bound, time_limit=time_limit);} */
+        /*     /1* void excude( double time_limit = 0, double sliver_bound = 0 ){ CGAL::exude_mesh_3(c3t3, sliver_bound=sliver_bound, time_limit=time_limit);} *1/ */
 
-            /* void perturb( double time_limit=0, double sliver_bound=0){CGAL::perturb_mesh_3 ( c3t3, *domain_ptr.get(), time_limit=time_limit, sliver_bound=sliver_bound) ;} */
+        /*     /1* void perturb( double time_limit=0, double sliver_bound=0){CGAL::perturb_mesh_3 ( c3t3, *domain_ptr.get(), time_limit=time_limit, sliver_bound=sliver_bound) ;} *1/ */
 
-            /* void odt(double time_limit= 0, int max_iteration_number = 0, double convergence = 0.02,double freeze_bound = 0.01, bool do_freeze = true) */ 
-            /* {CGAL::odt_optimize_mesh_3(c3t3, *domain_ptr.get(), time_limit=time_limit, max_iteration_number=max_iteration_number,convergence=convergence, freeze_bound  = freeze_bound, do_freeze = do_freeze); } */ 
-            //
+        /*     /1* void odt(double time_limit= 0, int max_iteration_number = 0, double convergence = 0.02,double freeze_bound = 0.01, bool do_freeze = true) *1/ */ 
+        /*     /1* {CGAL::odt_optimize_mesh_3(c3t3, *domain_ptr.get(), time_limit=time_limit, max_iteration_number=max_iteration_number,convergence=convergence, freeze_bound  = freeze_bound, do_freeze = do_freeze); } *1/ */ 
+        /*     // */
 
-            void label_boundary_cells(int btag, int ntag); // Work around 
+        /*     void label_boundary_cells(int btag, int ntag); // Work around */ 
 
-            void remove_label_cells(int tag);    // tags 
+        /*     void remove_label_cells(int tag);    // tags */ 
 
-            //void dolfin_mesh(); require linking to dolfin 
+        /*     //void dolfin_mesh(); require linking to dolfin */ 
 
     private :
         std::unique_ptr<Mesh_domain> domain_ptr;
@@ -182,6 +184,56 @@ class CGALMeshCreator {
 };
 
 
+CGALMeshCreator::CGALMeshCreator(CGALSurface &surface) {
+    Function_vector v;
+    Polyhedron polyhedron;
+    surface.get_polyhedron(polyhedron);
+
+    // detect all  features in polyhedron :
+    /* detect_features(polyhedron, 90); */
+    /* add_sharp_edges(polyhedron); */
+
+    Polyhedral_mesh_domain_3 *polyhedral_domain = new Polyhedral_mesh_domain_3(polyhedron);
+    v.push_back(polyhedral_domain);
+    Function_wrapper wrapper(v);
+
+    Mesh_domain domain(wrapper,wrapper.bbox());
+
+    default_parameters();
+
+    domain_ptr = std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox()));
+}
+
+
+void CGALMeshCreator::save_mesh(std::string OutPath) {
+    std::ofstream  medit_file(OutPath);
+    c3t3.output_to_medit(medit_file);
+    medit_file.close();
+}
+
+
+void CGALMeshCreator::refine_mesh() {
+    Mesh_criteria criteria(CGAL::parameters::edge_size  =parameters["edge_size"],
+                           CGAL::parameters::facet_angle=parameters["facet_angle"],
+                           CGAL::parameters::facet_size =parameters["facet_size"],
+                           CGAL::parameters::facet_distance=parameters["facet_distance"],
+                           CGAL::parameters::cell_radius_edge_ratio=parameters["cell_radius_edge_ratio"],
+                           CGAL::parameters::cell_size=parameters["cell_size"]);
+    refine_mesh_3(c3t3, *domain_ptr.get(), criteria, CGAL::parameters::no_reset_c3t3());
+}
+
+
+void CGALMeshCreator::set_parameters(Parameters new_parameters) {
+    // for (Parameters::iterator pit = new_parameters.begin(); pit!=new_parameters.end(); ++pit ) {
+    for (const auto pit: new_parameters) {
+        parameters[pit.first] = static_cast<double>(pit.second);
+        std::cout << pit.first <<" " << pit.second << std::endl;
+    }
+}
+
+void CGALMeshCreator::set_parameter(std::string key, double value) {
+   parameters[key] = value;
+}
 
 
 #endif

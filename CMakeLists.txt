@@ -22,16 +22,18 @@ include_directories(${MPFR_INCLUDE_DIR})
 # pybin11
 add_subdirectory(external/pybind11)
 include_directories(${source_dir}/include)
-# set(PYBIND11_PYTHON_VERSION 3.7)
+set(PYBIND11_PYTHON_VERSION 3.6)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -frounding-math")
 
-add_library(CGALMeshCreator include/CGALMeshCreator.cpp)
-set(BMLIB CGALMeshCreator)
+# add_library(CGALMeshCreator include/CGALMeshCreator.cpp)
+# set(BMLIB CGALMeshCreator)
 
-include_directories(include)
+# target_link_libraries(brainmesh PRIVATE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${GOBJECT_LIBRARIES} ${OpenMesh} ${Eigen3} ${Boost} ${MPFR} ${BMLIB})
+
 pybind11_add_module(brainmesh SHARED python/src/brainmesh.cpp)
-target_link_libraries(brainmesh PRIVATE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${GOBJECT_LIBRARIES} ${OpenMesh} ${Eigen3} ${Boost} ${MPFR} ${BMLIB})
+include_directories(include)
+target_link_libraries(brainmesh PRIVATE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${GOBJECT_LIBRARIES} ${OpenMesh} ${Eigen3} ${Boost} ${MPFR})
 
 #    target_link_libraries(${exe_name} ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} )
 

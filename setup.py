@@ -31,7 +31,7 @@ class CMakeBuild(build_ext):
             out = subprocess.check_output(["cmake", "--version"])
         except OSError:
             names = ", ".join(e.name for e in self.extensions)
-            msg = f"CMake must be installed to build the following extensions: {names}"
+            msg = "CMake must be installed to build the following extensions: {names}".format(names=names)
             raise RuntimeError(msg)
 
         for ext in self.extensions:
@@ -40,8 +40,8 @@ class CMakeBuild(build_ext):
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         cmake_args = [
-            f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}",
-            f"-DPYTHON_EXECUTABLE={sys.executable}"
+            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}".format(extdir=extdir),
+            "-DPYTHON_EXECUTABLE={}".format(sys.executable)
         ]
 
         cfg = "Debug" if self.debug else "Release"
