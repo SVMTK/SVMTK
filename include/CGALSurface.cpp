@@ -15,6 +15,7 @@
 #include <CGAL/Polygon_mesh_processing/remesh.h>
 #include <CGAL/Polygon_mesh_processing/border.h>
 #include <CGAL/Polygon_mesh_processing/stitch_borders.h>
+#include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
 
 #include <CGAL/Search_traits_3.h>
@@ -26,11 +27,16 @@
 #include <CGAL/Mesh_3/Detect_features_in_polyhedra.h>
 #include <CGAL/Poisson_reconstruction_function.h>
 
-// CGAL IO
+// CGAL IO 
 #include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/IO/Complex_2_in_triangulation_3_file_writer.h>
 
-#include <assert.h>
+#include <CGAL/Surface_mesh_simplification/edge_collapse.h>
+#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_ratio_stop_predicate.h>
+#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_and_length.h>
+
+
+#include <assert.h>  
 #include <boost/foreach.hpp>
 #include <iterator>
 
@@ -67,54 +73,62 @@ void surface_overlapp(CGALSurface& surf1 , CGALSurface& surf2 )
 }
 
 template< typename Mesh> // seperate because -> typedef mesh in CGALSurface
-bool load_surface(std::string filename, Mesh& mesh)
+bool load_surface(const std::string filename, Mesh& mesh)
 {
-    std::ifstream input(filename);
-    std::string file(filename);
-    std::string extension = file.substr(file.find_last_of(".")+1);//TODO: FIX boost linking problem
-    if (!input) {
-        std::cerr << "Cannot open file " << std::endl;
-        return false;
-    }
+  std::ifstream input(filename);
+  std::string file(filename);
+  std::string extension = file.substr(file.find_last_of(".")+1);//TODO: FIX boost linking problem
+  if (!input)
+  {
+    std::cerr << "Cannot open file " << std::endl;
+    return false;
+  }
 
-    typedef typename Mesh::Point Point_3;
-    std::vector<Point_3> points;
-    std::vector< std::vector<std::size_t> > polygons;
+  typedef typename Mesh::Point Point_3;
+  std::vector<Point_3> points;
+  std::vector< std::vector<std::size_t> > polygons;
 
-    if ( extension=="off") {
+  if ( extension=="off")
+  {
 
-       if (input >> mesh) // NO ERROR, gives error {
-            return true;
-       }
-
-       std::cout<< "reading off" << std::endl;
-       if (!CGAL::read_OFF(input, points, polygons)) {
-           std::cerr << "Error parsing the OFF file " << std::endl;
-           return false;
-       }
-       std::cout<< "finished" << std::endl;
-    }
-    else if ( extension=="stl") {
-       if (!read_polygons_STL(input, points, polygons)) { // TODO: the connection causes errors 
-           std::cerr << "Error parsing the STL file " << std::endl;
-           return false;
-       }
-    }
-    else {
-         std::cerr << "Error unkown file" << std::endl;
+    //  if (input >> mesh) // ERROR
+    //    return true;
+    // }
+ 
+ 
+     std::cout<< "reading off" << std::endl;
+     if (!CGAL::read_OFF(input, points, polygons))
+     {
+         std::cerr << "Error parsing the OFF file " << std::endl;
          return false;
-    }
-    std::cout<< "Step 1" << std::endl;
-    CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons);
-    std::cout<< "Step 2" << std::endl;
-    CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons,mesh);
+     }
+     std::cout<< "finished" << std::endl;
+  }
+  else if ( extension=="stl")
+  {
+     if (!read_polygons_STL(input, points, polygons)) // TODO: the connection causes errors 
+     {
+         std::cerr << "Error parsing the STL file " << std::endl;
+         return false;
+     }
+  }
+  else
+  {
+     std::cerr << "Error unkown file" << std::endl;
+     return false;
+  }
 
-    if (CGAL::is_closed(mesh) && (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh))) {
-       std::cout<< "reverse_face_orientation"<< std::endl;
+  CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons);
 
-       CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
-    }
-    return true;
+  CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons,mesh);
+
+  if (CGAL::is_closed(mesh) && (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)))
+  {
+   std::cout<< "reverse_face_orientation"<< std::endl;
+
+    CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
+  }
+  return true;
 }
 
 
@@ -122,12 +136,27 @@ bool load_surface(std::string filename, Mesh& mesh)
 //--------------------------------------------
 //      CGALSURFACE FUNCTIONS
 //--------------------------------------------
-CGALSurface::Mesh& CGALSurface::get_mesh() {
+CGALSurface::Mesh& CGALSurface::get_mesh()
+{
     return mesh;
 }
 
-CGALSurface::CGALSurface(std::string filename) {
-    load_surface(filename, mesh);
+CGALSurface::CGALSurface(const std::string filename)
+{
+    load_surface(filename,mesh);
+}
+void CGALSurface::surface_intersection( CGALSurface& other)
+{
+     CGAL::Polygon_mesh_processing::corefine_and_compute_intersection(mesh, other.get_mesh(),mesh) ;
+}
+void CGALSurface::surface_difference( CGALSurface& other)
+{
+     CGAL::Polygon_mesh_processing::corefine_and_compute_difference(mesh , other.get_mesh(),mesh);
+}
+
+void CGALSurface::surface_union( CGALSurface& other)
+{
+     CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh, other.get_mesh(),mesh);
 }
 
 void CGALSurface::operator^= (CGALSurface& other )
@@ -145,6 +174,39 @@ void CGALSurface::operator+=( CGALSurface& other )
 {
    CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh, other.get_mesh(),mesh);
 }
+
+void CGALSurface::smooth_taubin(const size_t nb_iter) {
+    for (size_t i = 0; i < nb_iter; ++i) {
+        this->smooth_laplacian(0.8);
+        this->smooth_laplacian(-0.805);
+    }
+}
+
+int CGALSurface::num_self_intersections() {
+    std::vector< std::pair<face_descriptor, face_descriptor> > intersected_tris;
+    CGAL::Polygon_mesh_processing::self_intersections(mesh, std::back_inserter(intersected_tris));
+    return intersected_tris.size();  // Could actually return the triangles themselves
+}
+
+int CGALSurface::collapse_edges(const double stop_ratio) {
+    
+    CGAL::Surface_mesh_simplification::Count_ratio_stop_predicate<Mesh> stop(stop_ratio);
+
+    const int r = CGAL::Surface_mesh_simplification::edge_collapse(
+        mesh,
+        stop,
+        CGAL::parameters::get_cost(CGAL::Surface_mesh_simplification::Edge_length_cost<Mesh>())
+            .get_placement(CGAL::Surface_mesh_simplification::Midpoint_placement<Mesh>()));
+
+    return r;
+}
+
+
+
+
+
+
+
 bool CGALSurface::self_intersections()
 {
     return CGAL::Polygon_mesh_processing::does_self_intersect(mesh,
@@ -165,11 +227,12 @@ void CGALSurface::isotropic_remeshing(double target_edge_length, unsigned int nb
 
 }
 
-int CGALSurface::fill_holes() {
+int CGALSurface::fill_holes()
+{
     unsigned int nb_holes = 0;
     BOOST_FOREACH(halfedge_descriptor h, halfedges(mesh))
     {
-      if(is_border(h, mesh))
+      if(is_border(h,mesh))
       {
         std::vector<face_descriptor>  patch_facets;
         std::vector<vertex_descriptor> patch_vertices;
@@ -194,7 +257,6 @@ int CGALSurface::fill_holes() {
 
     return nb_holes;
 }
-
 bool CGALSurface::triangulate_faces()
 {
     CGAL::Polygon_mesh_processing::triangulate_faces(mesh);

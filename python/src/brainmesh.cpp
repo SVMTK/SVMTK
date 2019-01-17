@@ -1,6 +1,6 @@
 #include <pybind11/pybind11.h>
 /* #include <pybind11/operators.h> */
-
+#include <pybind11/stl_bind.h>
 #include "CGALSurface.h"
 #include "CGALMeshCreator.h"
 /* #include "reconstruct_surface.h" */
@@ -8,6 +8,22 @@
 
 namespace py = pybind11;
 
+
+//class PyAbstractMap : public AbstractMap{
+//public:
+    
+//    using AbstractMap::AbstractMap; /* Inherit constructors */
+
+//    return_type index(const Bmask bits) override {
+        /* Generate wrapping code that enables native function overloading */
+//        PYBIND11_OVERLOAD(
+//            int,         /* Return type */
+//            AbstractMap, /* Parent class */
+//            index,         /* Name of function */
+//            bits        /* Argument(s) */
+//        );
+//   }
+//};
 
 PYBIND11_MODULE(brainmesh, m) {
 
@@ -18,6 +34,18 @@ PYBIND11_MODULE(brainmesh, m) {
         /* py::arg("sm_distance") = 0.25, */
         /* py::arg("approximation_ratio") = 0.02, */
         /* py::arg("average_spacing_ratio") = 5.0); */
+
+
+
+    //py::class_<AbstractMap,PyAbstractMap> abstractmap(m,"AbstractMap");
+    //abstractmap
+    //   .def(py::init<>())
+    //   .def("index", &AbstractMap::index);
+
+    py::class_<SubdomainMap>(m, "SubdomainMap")
+        .def(py::init<>())
+    //    .def("index", &SubdomainMap::index) don't need exposing
+        .def("add", &SubdomainMap::add);
 
     py::class_<CGALSurface>(m, "BrainSurface")
         .def(py::init<std::string &>())
@@ -50,7 +78,7 @@ PYBIND11_MODULE(brainmesh, m) {
         .def("preprocess", &CGALSurface::preprocess)
 
         .def("fair", &CGALSurface::fair)
-
+        .def("fix_close_junctures", &CGALSurface::fix_close_junctures)
         // TODO
         /* .def("insert_surface", &CGALSurface::insert_surface) */  // TODO cpp side
         /* .def("getMesh", &CGALSurface::get_mesh) */       // No need to expose
@@ -67,15 +95,20 @@ PYBIND11_MODULE(brainmesh, m) {
         .def("num_vertices", &CGALSurface::num_vertices);
 
     py::class_<CGALMeshCreator>(m, "BrainMesh")
-        .def(py::init<CGALSurface &>());
+        .def(py::init<CGALSurface &>())
+        .def(py::init< std::vector<CGALSurface >>())
+        //.def(py::init<std::vector<CGALSurface &>, CGAL::Bbox_3, abstract_map>())
+
+        .def("create_mesh", (void (CGALMeshCreator::*)()) &CGALMeshCreator::create_mesh) 
+        .def("create_mesh", (void (CGALMeshCreator::*)(int)) &CGALMeshCreator::create_mesh)
 
     /*     // TODO: What to do about theese two? Need more classes? */
-    /*     /1* .def(py::init<std::vector<CGALSurface>, CGAL::Bbox_3, abstract_map>()) *1/ */
+    /*     /1*  *1/ */
     /*     /1* .def("lipschitz_size_field", &CGALMeshCreator::lipschitz_size_field) *1/ */
 
     /*     .def("set_parameters", &CGALMeshCreator::set_parameters) */
     /*     .def("set_parameter", &CGALMeshCreator::set_parameter) */
-    /*     .def("create_mesh", &CGALMeshCreator::create_mesh) */
+         
     /*     .def("default_parameters", &CGALMeshCreator::default_parameters) */
-    /*     .def("save_mesh", &CGALMeshCreator::save_mesh); */
+         .def("save_mesh", &CGALMeshCreator::save_mesh); 
 }

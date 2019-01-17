@@ -18,8 +18,8 @@ class AbstractMap
         typedef boost::dynamic_bitset<> Bmask;
         virtual return_type index(const Bmask bits) = 0;
         
-        AbstractMap() {}
-        ~AbstractMap() {}
+       // AbstractMap() {}
+        virtual ~AbstractMap() {}
 };
 
 

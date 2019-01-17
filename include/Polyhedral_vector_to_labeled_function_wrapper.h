@@ -35,14 +35,7 @@ namespace CGAL {
                 typedef std::vector<Function_*>   Function_vector;
 
                 typedef typename BGT::Point_3       Point_3;
-                typedef typename BGT::Iso_cuboid_3  Iso_cuboid_3;
-                typedef typename BGT::Sphere_3      Sphere_3;
-
-                typedef typename BGT::Segment_3      Segment_3;
-                typedef typename BGT::Line_3      Line_3;
-                typedef typename BGT::Ray_3      Ray_3;
-                typedef typename BGT::Vector_3      Vector_3;
-
+           
                 typedef boost::dynamic_bitset<>   Bmask;
                 //typedef typename Function_::FT    FT;
                 typedef typename BGT::FT FT;

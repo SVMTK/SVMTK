@@ -72,7 +72,7 @@ class CGALMeshCreator {
         // FIXME: There is a problem with the function wrapper
         typedef CGAL::Polyhedral_vector_to_labeled_function_wrapper<Polyhedral_mesh_domain_3, K  > Function_wrapper; //
         typedef Function_wrapper::Function_vector Function_vector; //
-        typedef CGAL::Labeled_mesh_domain_3<Function_wrapper, K> Labeled_Mesh_Domain;
+        typedef CGAL::Labeled_mesh_domain_3< K> Labeled_Mesh_Domain;
         typedef CGAL::Mesh_domain_with_polyline_features_3<Labeled_Mesh_Domain> Mesh_domain; // labeled mesh_domain function wrapper 
 
         typedef CGAL::Mesh_3::Lipschitz_sizing<K, Mesh_domain> Lip_sizing;

@@ -1,438 +1,181 @@
 #ifndef CGALSurface_H
+
+
 #define CGALSurface_H
 
-#define BOOST_PARAMETER_MAX_ARITY 12
+#ifndef BOOST_PARAMETER_MAX_ARITY
+# define BOOST_PARAMETER_MAX_ARITY 12
+#endif
+class Implicit_function; // forward declartion 
+                        
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+// surface mesher 
+// #include <CGAL/make_surface_mesh.h>
+// #include <CGAL/Implicit_surface_3.h>
+// #include <CGAL/Complex_2_in_triangulation_3.h>
+//#include <CGAL/IO/output_surface_facets_to_polyhedron.h>
+//#include <array> 
 
-#include "utils.h"
 
-#include <iostream>
-#include <vector>
 
-#include <CGAL/Surface_mesh.h>
+//#include <iterator>
+//#include <memory>
+
+
+//#include <CGAL/Surface_mesh_default_criteria_3.h>
+
+
+// needed headers
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
-#include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
-#include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
-#include <CGAL/Polygon_mesh_processing/stitch_borders.h>
-
-// Isotropic remeshing
-#include <CGAL/Polygon_mesh_processing/remesh.h>
-#include <CGAL/Polygon_mesh_processing/border.h>
-
-// Edge collapse -- Simplification function
-#include <CGAL/Surface_mesh_simplification/edge_collapse.h>
-
-// Stop-condition policy
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_ratio_stop_predicate.h>
-
-// Non-default cost and placement policies
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_and_length.h>
-
-// copy_face_graph
+#include <CGAL/Surface_mesh.h>
+#include <CGAL/Surface_mesh_default_triangulation_3.h>
+#include <vector>
+#include <CGAL/Side_of_triangle_mesh.h> // 1 typedef 
 #include <CGAL/boost/graph/copy_face_graph.h>
-
-// points inside/outside
-#include <CGAL/Side_of_triangle_mesh.h>
-
-// Corefine and compute difference
-#include <CGAL/Polygon_mesh_processing/corefinement.h>
-
-// Poisson reconstruction
-#include <CGAL/Point_with_normal_3.h>
-#include <CGAL/poisson_surface_reconstruction.h>
+//////////?? 
 
 
-// Poisson reconstruction definitions- NB! Another Kernel
-typedef CGAL::Exact_predicates_inexact_constructions_kernel ReconstructKernel;
-typedef CGAL::Polyhedron_3<ReconstructKernel> RPolyhedron;
-typedef ReconstructKernel::Point_3 RPoint;
-typedef ReconstructKernel::Vector_3 RVector;
-typedef std::pair<RPoint, RVector> RPwn;
-
-typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel; // Change to exact -> copy face_ graph to inexact ??
-typedef Kernel::Point_3 Point_3;
-typedef CGAL::Surface_mesh<Point_3> Mesh;
-typedef Kernel::Vector_3 Vector_3;
-typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
-typedef boost::graph_traits<Mesh>::face_descriptor face_descriptor;
-typedef boost::graph_traits<Mesh>::vertex_descriptor vertex_descriptor;
-typedef CGAL::Side_of_triangle_mesh<Mesh, Kernel> inside; //  TODO: Cnange name, unintuitive
 
 
-class CGALSurface {
-    // What TODO: were these two for?
-    /*     typedef CGAL::Surface_mesh_default_triangulation_3 Tr; */
-    /*     typedef Tr::Geom_traits GT; */
-
-    private:
-        Mesh mesh;
-
-    public:
-        CGALSurface(); // empty constructor
-
-        CGALSurface(const std::string f);
-
-        CGALSurface(Polyhedron &);
-
-        /* CGALSurface( Implicit_function implicit_function, */
-        /*              double bounding_sphere_radius, */
-        /*              double angular_bound, */
-        /*              double radius_bound, */
-        /*              double distance_bound); */
-
-        /* template<typename Implicit_function> */
-        /* CGALSurface(Implicit_function implicit_function, */
-        /*          double bounding_sphere_radius, */
-        /*          double angular_bound=30., */
-        /*          double radius_bound=0.1 , */
-        /*          double distance_bound=0.1   ); */
 
 
-        template<typename Polyhedron_3>
-        void get_polyhedron(Polyhedron_3 &polyhedron_3);
-
-        /* void operator^=(CGALSurface &other); */
-        /* void operator+=(CGALSurface &other); */
-        /* void operator-=(CGALSurface &other); */
-        void surface_intersection(CGALSurface &other);
-        void surface_union(CGALSurface &other);
-        void surface_difference(CGALSurface &other);
 
 
-        Mesh& get_mesh();
 
-        unsigned int fill_holes();
+class CGALSurface
+{
+   public:
+  
 
-        bool triangulate_faces();
 
-        void stitch_borders(); 
+    typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel; // Change to exact -> copy face_ graph to inexact ??
+    typedef Kernel::Point_3 Point_3;
+    typedef CGAL::Surface_mesh<Point_3> Mesh;
+    typedef CGAL::Surface_mesh_default_triangulation_3 Tr;
+    typedef Tr::Geom_traits GT;
+    typedef Kernel::Vector_3 Vector_3;
 
-    /*     void insert_surface(CGALSurface& surface); */    // TODO
+    typedef boost::graph_traits<Mesh>::halfedge_descriptor    halfedge_descriptor;
+    typedef boost::graph_traits<Mesh>::face_descriptor        face_descriptor;
+    typedef boost::graph_traits<Mesh>::vertex_descriptor      vertex_descriptor;
+    typedef std::vector<vertex_descriptor>                    vertex_vector;
+    typedef CGAL::Side_of_triangle_mesh<Mesh,Kernel> Inside; // declear inside implementation ? 
+    typedef Mesh::Vertex_index Index;
+    typedef std::vector<Point_3>  Polyline_3; 
+    typedef std::vector<Polyline_3> Polylines; 
+    typedef Kernel::FT FT;
 
-        void isotropic_remeshing(const double, const unsigned int, const bool);
+    CGALSurface(); // empty constructor
 
-        void adjust_boundary(const double);
 
-        void smooth_laplacian(const double);
+    CGALSurface(const std::string  filename);
 
-        void smooth_taubin(const size_t);
+    CGALSurface( Implicit_function implicit_function,
+                 double bounding_sphere_radius,
+                 double angular_bound,
+                 double radius_bound,
+                 double distance_bound);
 
-        template<typename InputIterator>
-        void adjusting_boundary_region(InputIterator, InputIterator, const double);
+    template<typename Implicit_function>
+    CGALSurface(Implicit_function implicit_function,
+             double bounding_sphere_radius,
+             double angular_bound=30.,
+             double radius_bound=0.1 ,
+             double distance_bound=0.1   );
 
-        template<typename InputIterator>
-        void smooth_laplacian_region(InputIterator, InputIterator, const int);
+    ~CGALSurface(){}
 
-        std::vector<vertex_descriptor> points_inside(CGALSurface &);
 
-        std::vector<vertex_descriptor> points_outside(CGALSurface& other);
+        void split_edges(double  target_edge_length);
 
-        bool self_intersections();
+        void make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1, double radius,  int number_of_segments=360) ;
+
+        void make_cone( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0 , double r1,  int number_of_segments=360) ;
+
+        void make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1);
+
+ 
+        void make_sphere( double x0, double y0, double  z0, double r0);
+
+        void operator^=( CGALSurface& other);
+
+        void operator+=( CGALSurface& other ); 
+
+        void operator-=( CGALSurface& other );
+
+        void surface_intersection( CGALSurface& other);
+
+        void surface_difference( CGALSurface& other);
+
+        void surface_union( CGALSurface& other);
+
+        void smooth_taubin(const size_t nb_iter); 
 
         int num_self_intersections();
 
-        void save(const std::string);
-
         int collapse_edges(const double stop_ratio);
 
-        void preprocess(const double, const int);
+        int fill_holes();
 
-        void fair(std::vector<vertex_descriptor> &);
+        bool triangulate_faces();
+      
+        void stitch_borders();
+         
+        void insert_surface(CGALSurface& surface);
 
-        // Experimental reconstruction
-        void reconstruct_surface(
-            const double sm_angle = 20.0,
-            const double sm_radius = 30.0,
-            const double sm_distance = 0.375);
+        void isotropic_remeshing(double target_edge_length, unsigned int nb_iter, bool protect_border);
+       
+        void adjust_boundary(const double c);
 
-        int num_faces() const;
+        void smooth_laplacian(const double c);
 
-        int num_edges() const;
+        template<typename InputIterator>  // -> operation on surface_mesh-> index-based 
+        void adjusting_boundary_region(InputIterator begin , InputIterator  end, const double c);
 
-        int num_vertices() const;
+        template<typename InputIterator>
+        void smooth_laplacian_region(InputIterator begin , InputIterator end ,const int c);
 
-        // TODO: What does this do?
+        vertex_vector points_inside(CGALSurface& other);
+
+        vertex_vector points_outside(CGALSurface& other);
+
+        Mesh& get_mesh();
+
+
+        int num_faces() const {return mesh.number_of_faces();}
+
+
+        int num_edges() const { return mesh.number_of_edges();}
+
+
+        int num_vertices() const {return mesh.number_of_vertices();}
+
+        bool insert_mesh(CGALSurface& surf){mesh+=surf.get_mesh();}
+        
+        bool self_intersections();
+
+        template< typename Polyhedron_3>  // Template to address the different kernels in CGAL
+        void get_polyhedron(Polyhedron_3 &polyhedron_3 ){CGAL::copy_face_graph(mesh,polyhedron_3);}
+
+        void save(const char* outpath);
+
+        void preprocess(double target_edge_length, int nb_iter);
+
+        void fair(CGALSurface::vertex_vector vector  );
+
+        void poisson_reconstruction() ;
+
         void clear(){ mesh.clear();}
 
-        // TODO: Add this for tomorrow
-        /* void fix_close_junctures(double c); */
+        void insert_points(std::vector<Point_3>& points) ;
 
-        // TODO
-        /* void split_edges(double  target_edge_length); */
-        /* void make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1, double radius,  int number_of_segments=360) ; */
-        /* void make_cone( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0 , double r1,  int number_of_segments=360) ; */
-        /* void make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1); */
-        /* void make_sphere( double x0, double y0, double  z0, double r0); */
-        /* void insert_mesh(CGALSurface& surf){mesh+=surf.get_mesh();} */
-        /* void insert_points(std::vector<Point_3>& points) ; */
+        void fix_close_junctures(double c);
 
-    /*     template<typename Implicit_function> */
-    /*     CGALSurface(Implicit_function implicit_function, */
-    /*          double bounding_sphere_radius, */
-    /*          double angular_bound=30., */
-    /*          double radius_bound=0.1 , */
-    /*          double distance_bound=0.1   ); */
+   //private :
+   protected:
+       Mesh mesh;
 
-        ~CGALSurface(){}
+
 };
-
-CGALSurface::CGALSurface(const std::string f) {
-    utils::read_off(mesh, f);
-}
-
-
-CGALSurface::CGALSurface(Polyhedron &polyhedron) {
-    CGAL::copy_face_graph(polyhedron, mesh);
-}
-
-
-template<typename Polyhedron_3>
-void CGALSurface::get_polyhedron(Polyhedron_3 &polyhedron_3) {
-    CGAL::copy_face_graph(mesh, polyhedron_3);
-}
-
-
-Mesh& CGALSurface::get_mesh() {
-    return mesh;
-}
-
-unsigned int CGALSurface::fill_holes() {
-    unsigned int nb_holes = 0;
-    for (auto h: halfedges(mesh)) {
-        if(is_border(h, mesh)) {
-            std::vector<face_descriptor> patch_facets;
-            std::vector<vertex_descriptor> patch_vertices;
-            bool success = CGAL::cpp11::get<0>(
-            CGAL::Polygon_mesh_processing::triangulate_refine_and_fair_hole(mesh, h, std::back_inserter(patch_facets),
-                std::back_inserter(patch_vertices),
-                CGAL::Polygon_mesh_processing::parameters::vertex_point_map(get(CGAL::vertex_point, mesh)).geom_traits(Kernel())) );
-            std::cout << "* Number of facets in constructed patch: " << patch_facets.size() << std::endl;
-            std::cout << "  Number of vertices in constructed patch: " << patch_vertices.size() << std::endl;
-            std::cout << "  Is fairing successful: " << success << std::endl;
-            nb_holes++;
-        }
-    }
-    std::cout << std::endl;
-    std::cout << nb_holes << " holes have been filled" << std::endl;
-    return nb_holes;
-}
-
-
-bool CGALSurface::triangulate_faces() {
-    CGAL::Polygon_mesh_processing::triangulate_faces(mesh);
-    for (auto fit: faces(mesh)) {
-        if (next(next(halfedge(fit,  mesh), mesh), mesh) != prev(halfedge(fit, mesh), mesh)) {
-            std::cerr << "Error: non-triangular face left in mesh." << std::endl;
-        }
-    }
-    return true;
-}
-
-
-void CGALSurface::stitch_borders() {
-    CGAL::Polygon_mesh_processing::stitch_borders(mesh);
-}
-
-
-void CGALSurface::isotropic_remeshing(
-    const double target_edge_length,
-    const unsigned int nb_iter,
-    const bool protect_border) {
-    CGAL::Polygon_mesh_processing::split_long_edges(edges(mesh), target_edge_length, mesh);
-    CGAL::Polygon_mesh_processing::isotropic_remeshing(faces(mesh),
-            target_edge_length, mesh,
-            CGAL::Polygon_mesh_processing::parameters::number_of_iterations(nb_iter)
-            .protect_constraints(protect_border));
-}
-
-
-void CGALSurface::adjust_boundary(const double c) {
-    Mesh::Vertex_range::iterator vb = mesh.vertices().begin(), ve = mesh.vertices().end();
-    CGALSurface::adjusting_boundary_region(vb, ve, c);
-}
-
-
-void CGALSurface::smooth_laplacian(const double c) {
-    Mesh::Vertex_range::iterator vb = mesh.vertices().begin(), ve = mesh.vertices().end();
-    CGALSurface::smooth_laplacian_region(vb, ve, c);
-}
-
-
-void CGALSurface::smooth_taubin(const size_t nb_iter) {
-    for (size_t i = 0; i < nb_iter; ++i) {
-        this->smooth_laplacian(0.8);
-        this->smooth_laplacian(-0.805);
-    }
-}
-
-
-template<typename InputIterator>
-void CGALSurface::adjusting_boundary_region(
-        InputIterator begin,
-        InputIterator end,
-        const double c) {
-    std::vector<std::pair<vertex_descriptor, Point_3> > smoothed; //rename
-    for ( ; begin != end; ++begin) {
-        Vector_3 delta = CGAL::Polygon_mesh_processing::compute_vertex_normal(*begin,mesh);
-        Point_3 p = mesh.point(*begin) + c*delta;
-        smoothed.push_back(std::make_pair(*begin, p));
-    }
-    for (const std::pair<vertex_descriptor, Point_3> s: smoothed) {
-        mesh.point(s.first) = s.second;
-    }
-}
-
-
-template<typename InputIterator>
-void CGALSurface::smooth_laplacian_region(InputIterator begin, InputIterator end, const int c) {
-    std::vector<std::pair<vertex_descriptor, Point_3> > smoothed;
-    for ( ; begin != end; ++begin) {
-        Point_3 current = mesh.point(*begin);
-        Vector_3 delta = CGAL::NULL_VECTOR;
-        CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(*begin), mesh), done(vbegin);
-        do {
-            delta += Vector_3(mesh.point(*vbegin) - current);
-            *vbegin++;
-        } while(vbegin != done);
-        Point_3 p = current + c*delta/mesh.degree(*begin);
-        smoothed.push_back(std::make_pair(*begin, p));
-    }
-    for (const std::pair<vertex_descriptor, Point_3> s : smoothed) {
-        mesh.point(s.first) = s.second;
-    }
-}
-
-bool CGALSurface::self_intersections() {
-    return CGAL::Polygon_mesh_processing::does_self_intersect(mesh,
-                CGAL::Polygon_mesh_processing::parameters::vertex_point_map(
-                    get(CGAL::vertex_point, mesh)));
-}
-
-
-int CGALSurface::num_self_intersections() {
-    std::vector< std::pair<face_descriptor, face_descriptor> > intersected_tris;
-    CGAL::Polygon_mesh_processing::self_intersections(mesh, std::back_inserter(intersected_tris));
-    return intersected_tris.size();  // Could actually return the triangles themselves
-}
-
-
-void CGALSurface::save(const std::string outpath) {
-    utils::save_off(mesh, outpath);
-};
-
-
-int CGALSurface::collapse_edges(const double stop_ratio) {
-    namespace SMS = CGAL::Surface_mesh_simplification;
-    SMS::Count_ratio_stop_predicate<Mesh> stop(stop_ratio);
-
-    const int r = SMS::edge_collapse(
-        mesh,
-        stop,
-        CGAL::parameters::get_cost(SMS::Edge_length_cost <Mesh>())
-            .get_placement(SMS::Midpoint_placement<Mesh>()));
-            /* .visitor(vis)); */
-    return r;
-}
-
-void CGALSurface::preprocess(const double target_edge_length, const int nb_iter) {
-    CGALSurface::triangulate_faces();
-    CGALSurface::isotropic_remeshing(target_edge_length, nb_iter, false);
-};
-
-
-std::vector<vertex_descriptor> CGALSurface::points_inside(CGALSurface &other) {
-    std::vector<vertex_descriptor> result;
-    inside inside_poly2(other.get_mesh());
-    for (const auto &v_it: mesh.vertices()) {
-        const CGAL::Bounded_side res = inside_poly2(mesh.point(v_it));
-        if (res == CGAL::ON_BOUNDED_SIDE or res == CGAL::ON_BOUNDARY) {
-            result.push_back(v_it);
-        }
-    }
-    return result;
-}
-
-
-std::vector<vertex_descriptor> CGALSurface::points_outside(CGALSurface& other) {
-    std::vector<vertex_descriptor> result;
-    inside inside_poly2(other.get_mesh());
-
-    for (const auto &v_it: mesh.vertices()) {
-        const CGAL::Bounded_side res = inside_poly2(mesh.point(v_it));
-        if (res == CGAL::ON_UNBOUNDED_SIDE) {
-              result.push_back(v_it);
-        }
-    }
-    return result;
-}
-
-
-void CGALSurface::fair(std::vector<vertex_descriptor> &vector) {
-    CGAL::Polygon_mesh_processing::fair(mesh, vector);
-}
-
-
-void CGALSurface::surface_intersection(CGALSurface &other) {
-    CGAL::Polygon_mesh_processing::corefine_and_compute_intersection(mesh, other.get_mesh(), mesh);
-}
-
-
-void CGALSurface::surface_union(CGALSurface &other) {       // Probably bad to use union name
-    CGAL::Polygon_mesh_processing::corefine_and_compute_union(
-            mesh,
-            other.get_mesh(),
-            mesh);
-}
-
-
-void CGALSurface::surface_difference(CGALSurface &other) {
-    CGAL::Polygon_mesh_processing::corefine_and_compute_difference(mesh, other.get_mesh(), mesh);
-}
-
-
-void CGALSurface::reconstruct_surface(
-        const double sm_angle,
-        const double sm_radius,
-        const double sm_distance) {
-    RPolyhedron input_polyhedron;
-    this->get_polyhedron(input_polyhedron);
-    std::deque<RPwn> points;
-
-    // TODO: Can I do some sort of casting to avoid copying the whole mesh above?
-    for (boost::graph_traits<RPolyhedron>::vertex_descriptor vd: vertices(input_polyhedron)) {
-        const RPoint p = vd->point();
-        const RVector n = CGAL::Polygon_mesh_processing::compute_vertex_normal(vd, input_polyhedron);
-        points.push_back(std::make_pair(p, n));
-    }
-
-    RPolyhedron output_mesh;
-
-    double average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(
-            points, 6, CGAL::parameters::point_map(CGAL::First_of_pair_property_map<RPwn>()));
-
-    CGAL::poisson_surface_reconstruction_delaunay(
-            points.begin(), points.end(),
-            CGAL::First_of_pair_property_map<RPwn>(),
-            CGAL::Second_of_pair_property_map<RPwn>(),
-            output_mesh, average_spacing);
-
-    CGAL::copy_face_graph(output_mesh, this->mesh);
-}
-
-
-int CGALSurface::num_faces() const {
-    return mesh.number_of_faces();
-}
-
-
-int CGALSurface::num_edges() const {
-    return mesh.number_of_edges();
-}
-
-
-int CGALSurface::num_vertices() const {
-    return mesh.number_of_vertices();
-}
 
 #endif
