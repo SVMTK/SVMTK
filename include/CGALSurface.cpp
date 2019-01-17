@@ -365,7 +365,7 @@ void CGALSurface::make_cone( double x0, double y0, double  z0,  double x1, doubl
         //TODO: Handle case for r1=0 or r0=0
         Mesh m;
 
-    
+
         Index v0 = m.add_vertex(Point_3(x0,y0,z0));
         Index v1 = m.add_vertex(Point_3(x1,y1,z1));
         
@@ -419,8 +419,6 @@ void CGALSurface::make_cone( double x0, double y0, double  z0,  double x1, doubl
 
         m.add_face(vt, vb, Index(3));
         m.add_face(Index(2), Index(3), vb);
-
-
 
         this->mesh = m;
 }

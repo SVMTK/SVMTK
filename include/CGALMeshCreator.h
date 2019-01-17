@@ -26,8 +26,10 @@
 #include <CGAL/assertions.h>
 
 //#include <CGAL/IO/File_medit.h>
-//#include <CGAL/make_mesh_3.h>
+#include <CGAL/make_mesh_3.h>
 #include <CGAL/refine_mesh_3.h>
+
+#include "remove_isolated_vertices.h"
 //#include <CGAL/IO/Polyhedron_iostream.h>
 
 // 	Mesh_facet_topology parameters::facet_topology  	= CGAL::FACET_VERTICES_ON_SURFACE, 
@@ -116,6 +118,8 @@ class CGALMeshCreator {
 
         void refine_mesh();
 
+        void create_mesh();
+
         /*     void create_mesh( int initial_points); */
 
         void default_parameters() {
@@ -137,8 +141,6 @@ class CGALMeshCreator {
         void save_mesh(std::string OutPath);
 
         /*     void add_sharp_edges(Polyhedron& polyhedron) ; */
-
-        /*     void refine_mesh(); */
 
         /*     Polylines& get_polylines() {return pedges; } */
 
@@ -197,7 +199,7 @@ CGALMeshCreator::CGALMeshCreator(CGALSurface &surface) {
     v.push_back(polyhedral_domain);
     Function_wrapper wrapper(v);
 
-    Mesh_domain domain(wrapper,wrapper.bbox());
+    Mesh_domain domain(wrapper, wrapper.bbox());
 
     default_parameters();
 
@@ -213,9 +215,9 @@ void CGALMeshCreator::save_mesh(std::string OutPath) {
 
 
 void CGALMeshCreator::refine_mesh() {
-    Mesh_criteria criteria(CGAL::parameters::edge_size  =parameters["edge_size"],
+    Mesh_criteria criteria(CGAL::parameters::edge_size=parameters["edge_size"],
                            CGAL::parameters::facet_angle=parameters["facet_angle"],
-                           CGAL::parameters::facet_size =parameters["facet_size"],
+                           CGAL::parameters::facet_size=parameters["facet_size"],
                            CGAL::parameters::facet_distance=parameters["facet_distance"],
                            CGAL::parameters::cell_radius_edge_ratio=parameters["cell_radius_edge_ratio"],
                            CGAL::parameters::cell_size=parameters["cell_size"]);
@@ -223,8 +225,15 @@ void CGALMeshCreator::refine_mesh() {
 }
 
 
+void CGALMeshCreator::create_mesh() {
+    std::cout << "begin_meshing" << std::endl;
+    Mesh_criteria criteria(CGAL::parameters::cell_size=parameters["cell_size"]);
+    c3t3 = CGAL::make_mesh_3<C3t3>(*domain_ptr.get(), criteria);
+    remove_isolated_vertices(c3t3);
+}
+
+
 void CGALMeshCreator::set_parameters(Parameters new_parameters) {
-    // for (Parameters::iterator pit = new_parameters.begin(); pit!=new_parameters.end(); ++pit ) {
     for (const auto pit: new_parameters) {
         parameters[pit.first] = static_cast<double>(pit.second);
         std::cout << pit.first <<" " << pit.second << std::endl;

@@ -67,7 +67,10 @@ PYBIND11_MODULE(brainmesh, m) {
         .def("num_vertices", &CGALSurface::num_vertices);
 
     py::class_<CGALMeshCreator>(m, "BrainMesh")
-        .def(py::init<CGALSurface &>());
+        .def(py::init<CGALSurface &>())
+
+        .def("create_mesh", &CGALMeshCreator::create_mesh)
+        .def("refine_mesh", &CGALMeshCreator::refine_mesh)
 
     /*     // TODO: What to do about theese two? Need more classes? */
     /*     /1* .def(py::init<std::vector<CGALSurface>, CGAL::Bbox_3, abstract_map>()) *1/ */
@@ -77,5 +80,5 @@ PYBIND11_MODULE(brainmesh, m) {
     /*     .def("set_parameter", &CGALMeshCreator::set_parameter) */
     /*     .def("create_mesh", &CGALMeshCreator::create_mesh) */
     /*     .def("default_parameters", &CGALMeshCreator::default_parameters) */
-    /*     .def("save_mesh", &CGALMeshCreator::save_mesh); */
+        .def("save_mesh", &CGALMeshCreator::save_mesh);
 }
