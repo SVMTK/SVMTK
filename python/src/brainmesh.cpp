@@ -3,7 +3,7 @@
 
 #include "CGALSurface.h"
 #include "CGALMeshCreator.h"
-/* #include "reconstruct_surface.h" */
+#include "reconstruct_surface.h"
 
 
 namespace py = pybind11;
@@ -11,7 +11,7 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(brainmesh, m) {
 
-    /* m.def("reconstruct_surface", &reconstruct_surface); */
+    m.def("reconstruct_surface", &reconstruct_surface);
             /* , */
         /* py::arg("sm_angle") = 20.0, */
         /* py::arg("sm_radius") = 100.0, */
