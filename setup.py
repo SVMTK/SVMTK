@@ -66,7 +66,10 @@ setup(
     ext_modules=[CMakeExtension("brainmesh")],
     cmdclass=dict(build_ext=CMakeBuild),
     packages=["source"],
-    # package_dir={"": "source"},
+    install_requires=[
+        "numpy",
+        "meshio"
+    ],
     entry_points={
         "console_scripts": [
             "brainmesh-convert = source.convert:main",
