@@ -10,9 +10,10 @@ RUN apt-get update && apt-get install -y \
     libgmp3-dev \
     libmpfr-dev \
     xz-utils \
-    zlib1g-dev
+    zlib1g-dev \
+    cgal-dev
 
 WORKDIR foo
 
-RUN curl -sL https://github.com/CGAL/cgal/releases/download/releases/CGAL-4.11/CGAL-4.11.tar.xz | tar xpvfJ -
-RUN cd CGAL-4.11 && cmake -DWITH_Eigen3:BOOL=ON . && make && cat CMakeCache.txt
+# RUN curl -sL https://github.com/CGAL/cgal/releases/download/releases/CGAL-4.11/CGAL-4.11.tar.xz | tar xpvfJ -
+# RUN cd CGAL-4.13 && cmake -DWITH_Eigen3:BOOL=ON . && make && cat CMakeCache.txt
