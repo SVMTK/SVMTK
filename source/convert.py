@@ -51,7 +51,7 @@ def brainmeshConvert(input_name: str, output_name: str) -> None:
     inpath = Path(input_name)
     outpath = Path(output_name)
 
-    msg = "Cannot find file: {input_name}".format(input_name=inut_name)
+    msg = "Cannot find file: {input_name}".format(input_name=input_name)
     assert inpath.exists(), msg
 
     if inpath.suffix in {".asc", ".srf"}:
