@@ -68,7 +68,8 @@ setup(
     packages=["source"],
     install_requires=[
         "numpy",
-        "meshio"
+        "meshio",
+        "lxml"      # for meshio
     ],
     entry_points={
         "console_scripts": [

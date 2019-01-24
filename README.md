@@ -1,9 +1,10 @@
 # BrainMesh
 
 ## Requirements
-CGAL-4.13 with EIGEN >= 3.2
-Python3.6
-python3-dev
+
+ - CGAL-4.13 with EIGEN >= 3.2
+ - Python3.6
+ - python3-dev
 
 ## Pybind11
 
