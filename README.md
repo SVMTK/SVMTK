@@ -8,13 +8,9 @@
 
 ## Pybind11
 
-If you did not clone this project using `git clone --recursive`, pull pybind11 by
+If you did not clone this project using "git clone --recursive", pull pybind11 by
 `git submodule update --recursive`
 
 ## Installation
 
-run `python setup.py install`
-
-## Examples
-
-Examples of surface manipulations are found in `examples/`.
+run "python setup.py install"

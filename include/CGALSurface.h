@@ -11,7 +11,6 @@
 #include <vector>
 
 #include <CGAL/Surface_mesh.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
 #include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
 #include <CGAL/Polygon_mesh_processing/stitch_borders.h>
@@ -38,32 +37,22 @@
 // Corefine and compute difference
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
 
-// Poisson reconstruction
-#include <CGAL/Point_with_normal_3.h>
-#include <CGAL/poisson_surface_reconstruction.h>
+#include <CGAL/poisson_surface_reconstruction.h>        // Why do I need this one here
 
 
-// Poisson reconstruction definitions- NB! Another Kernel
-typedef CGAL::Exact_predicates_inexact_constructions_kernel ReconstructKernel;
-typedef CGAL::Polyhedron_3<ReconstructKernel> RPolyhedron;
-typedef ReconstructKernel::Point_3 RPoint;
-typedef ReconstructKernel::Vector_3 RVector;
-typedef std::pair<RPoint, RVector> RPwn;
-
-typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel; // Change to exact -> copy face_ graph to inexact ??
-typedef Kernel::Point_3 Point_3;
-typedef CGAL::Surface_mesh<Point_3> Mesh;
-typedef Kernel::Vector_3 Vector_3;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
+typedef Kernel::Point_3 Point;
+typedef Kernel::Vector_3 Vector;
+typedef CGAL::Surface_mesh<Point> Mesh;
 typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
+
 typedef boost::graph_traits<Mesh>::face_descriptor face_descriptor;
 typedef boost::graph_traits<Mesh>::vertex_descriptor vertex_descriptor;
+
 typedef CGAL::Side_of_triangle_mesh<Mesh, Kernel> inside; //  TODO: Cnange name, unintuitive
 
 
 class CGALSurface {
-    // What TODO: were these two for?
-    /*     typedef CGAL::Surface_mesh_default_triangulation_3 Tr; */
-    /*     typedef Tr::Geom_traits GT; */
 
     private:
         Mesh mesh;
@@ -106,7 +95,7 @@ class CGALSurface {
 
         bool triangulate_faces();
 
-        void stitch_borders(); 
+        void stitch_borders();
 
     /*     void insert_surface(CGALSurface& surface); */    // TODO
 
@@ -140,22 +129,16 @@ class CGALSurface {
 
         void fair(std::vector<vertex_descriptor> &);
 
-        // Experimental reconstruction
-        void reconstruct_surface(
-            const double sm_angle = 20.0,
-            const double sm_radius = 30.0,
-            const double sm_distance = 0.375);
-
         int num_faces() const;
 
         int num_edges() const;
 
         int num_vertices() const;
 
-        void split_edges(double target_edge_length);
+        void split_edges(const double target_edge_length);
 
         // TODO: What does this do?
-        void clear(){ mesh.clear();}
+        void clear() { mesh.clear(); }
 
         // TODO: Add this for tomorrow
         /* void fix_close_junctures(double c); */
@@ -201,7 +184,7 @@ Mesh& CGALSurface::get_mesh() {
 
 int CGALSurface::fill_holes() {
     unsigned int nb_holes = 0;
-    for (auto h: halfedges(mesh)) {
+    for (const auto h: halfedges(mesh)) {
         if(is_border(h, mesh)) {
             std::vector<face_descriptor> patch_facets;
             std::vector<vertex_descriptor> patch_vertices;
@@ -223,7 +206,7 @@ int CGALSurface::fill_holes() {
 
 bool CGALSurface::triangulate_faces() {
     CGAL::Polygon_mesh_processing::triangulate_faces(mesh);
-    for (auto fit: faces(mesh)) {
+    for (const auto fit: faces(mesh)) {
         if (next(next(halfedge(fit,  mesh), mesh), mesh) != prev(halfedge(fit, mesh), mesh)) {
             std::cerr << "Error: non-triangular face left in mesh." << std::endl;
         }
@@ -274,13 +257,13 @@ void CGALSurface::adjusting_boundary_region(
         InputIterator begin,
         InputIterator end,
         const double c) {
-    std::vector<std::pair<vertex_descriptor, Point_3> > smoothed; //rename
+    std::vector<std::pair<vertex_descriptor, Point> > smoothed; //rename
     for ( ; begin != end; ++begin) {
-        Vector_3 delta = CGAL::Polygon_mesh_processing::compute_vertex_normal(*begin,mesh);
-        Point_3 p = mesh.point(*begin) + c*delta;
+        Vector delta = CGAL::Polygon_mesh_processing::compute_vertex_normal(*begin, mesh);
+        Point p = mesh.point(*begin) + c*delta;
         smoothed.push_back(std::make_pair(*begin, p));
     }
-    for (auto &s: smoothed) {
+    for (const auto s: smoothed) {
         mesh.point(s.first) = s.second;
     }
 }
@@ -288,23 +271,24 @@ void CGALSurface::adjusting_boundary_region(
 
 template<typename InputIterator>
 void CGALSurface::smooth_laplacian_region(InputIterator begin, InputIterator end, const int c) {
-    std::vector<std::pair<vertex_descriptor, Point_3> > smoothed;
+    std::vector<std::pair<vertex_descriptor, Point> > smoothed;
     for ( ; begin != end; ++begin) {
-        Point_3 current = mesh.point(*begin);
-        Vector_3 delta = CGAL::NULL_VECTOR;
+        Point current = mesh.point(*begin);
+        Vector delta = CGAL::NULL_VECTOR;
         CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(*begin), mesh), done(vbegin);
         do {
-            delta += Vector_3(mesh.point(*vbegin) - current);
+            delta += Vector(mesh.point(*vbegin) - current);
             *vbegin++;
         }
         while(vbegin != done);
-        Point_3 p = current + c*delta/mesh.degree(*begin);
+        Point p = current + c*delta/mesh.degree(*begin);
         smoothed.push_back(std::make_pair(*begin, p));
     }
-    for (auto &s: smoothed) {
+    for (const auto s: smoothed) {
         mesh.point(s.first) = s.second;
     }
 }
+
 
 bool CGALSurface::self_intersections() {
     return CGAL::Polygon_mesh_processing::does_self_intersect(mesh,
@@ -334,7 +318,6 @@ int CGALSurface::collapse_edges(const double stop_ratio) {
         stop,
         CGAL::parameters::get_cost(SMS::Edge_length_cost <Mesh>())
             .get_placement(SMS::Midpoint_placement<Mesh>()));
-            /* .visitor(vis)); */
     return r;
 }
 
@@ -394,36 +377,6 @@ void CGALSurface::surface_difference(CGALSurface &other) {
 }
 
 
-void CGALSurface::reconstruct_surface(
-        const double sm_angle,
-        const double sm_radius,
-        const double sm_distance) {
-    RPolyhedron input_polyhedron;
-    this->get_polyhedron(input_polyhedron);
-    std::deque<RPwn> points;
-
-    // TODO: Can I do some sort of casting to avoid copying the whole mesh above?
-    for (auto &vd: vertices(input_polyhedron)) {
-        const RPoint p = vd->point();
-        const RVector n = CGAL::Polygon_mesh_processing::compute_vertex_normal(vd, input_polyhedron);
-        points.push_back(std::make_pair(p, n));
-    }
-
-    RPolyhedron output_mesh;
-
-    double average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(
-            points, 6, CGAL::parameters::point_map(CGAL::First_of_pair_property_map<RPwn>()));
-
-    CGAL::poisson_surface_reconstruction_delaunay(
-            points.begin(), points.end(),
-            CGAL::First_of_pair_property_map<RPwn>(),
-            CGAL::Second_of_pair_property_map<RPwn>(),
-            output_mesh, average_spacing);
-
-    CGAL::copy_face_graph(output_mesh, this->mesh);
-}
-
-
 int CGALSurface::num_faces() const {
     return mesh.number_of_faces();
 }
@@ -438,7 +391,7 @@ int CGALSurface::num_vertices() const {
     return mesh.number_of_vertices();
 }
 
-void CGALSurface::split_edges(double target_edge_length) {
+void CGALSurface::split_edges(const double target_edge_length) {
      CGAL::Polygon_mesh_processing::split_long_edges(edges(mesh), target_edge_length, mesh);
 }
 
