@@ -9,16 +9,20 @@
 #include <CGAL/Timer.h>
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
 #include <CGAL/make_surface_mesh.h>
+// #include <CGAL/poisson_surface_reconstruction.h>
 #include <CGAL/Poisson_reconstruction_function.h>
-/* #include <CGAL/Poisson_implicit_surface_3.h> */
 #include <CGAL/Implicit_surface_3.h>
 
-#include <CGAL/IO/output_surface_facets_to_polyhedron.h>
+
 #include <CGAL/compute_average_spacing.h>
+
+// File IO
+#include <CGAL/IO/facets_in_complex_2_to_triangle_mesh.h>
 
 // Local
 #include "CGALSurface.h"
 
+// stdlib
 #include <deque>
 #include <cstdlib>
 #include <fstream>
@@ -29,27 +33,27 @@
 // ----------------------------------------------------------------------------
 
 // kernel -- Moved to CGALSurface
-typedef CGAL::Exact_predicates_inexact_constructions_kernel ReconstructKernel;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 
 // Simple geometric types
-typedef ReconstructKernel::FT FT;
-typedef ReconstructKernel::Point_3 Point;
-typedef ReconstructKernel::Vector_3 Vector;
-typedef CGAL::Point_with_normal_3<ReconstructKernel> Point_with_normal;
-typedef ReconstructKernel::Sphere_3 Sphere;
+typedef Kernel::FT FT;
+typedef Kernel::Point_3 Point;
+typedef Kernel::Vector_3 Vector;
+typedef Kernel::Sphere_3 Sphere;
+typedef CGAL::Point_with_normal_3<Kernel> Point_with_normal;
 typedef std::deque<Point_with_normal> PointList;
 
 // polyhedron -- Moved to CGALSurface
-typedef CGAL::Polyhedron_3<ReconstructKernel> RPolyhedron;
+typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
 
 // Poisson implicit function
-typedef CGAL::Poisson_reconstruction_function<ReconstructKernel> Poisson_reconstruction_function;
+typedef CGAL::Poisson_reconstruction_function<Kernel> Poisson_reconstruction_function;
 
 // Surface mesher
 typedef CGAL::Surface_mesh_default_triangulation_3 STr;
 typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<STr> C2t3;
-/* typedef CGAL::Poisson_implicit_surface_3<ReconstructKernel, Poisson_reconstruction_function> Surface_3; */
-typedef CGAL::Implicit_surface_3<ReconstructKernel, Poisson_reconstruction_function> Surface_3;
+typedef CGAL::Implicit_surface_3<Kernel, Poisson_reconstruction_function> Surface;
+
 
 struct Counter {
     std::size_t i, N;
@@ -71,13 +75,8 @@ struct InsertVisitor {
 };
 
 
-// ----------------------------------------------------------------------------
-// main()
-// ----------------------------------------------------------------------------
-
-
 CGALSurface* poisson_reconstruction(
-        RPolyhedron &input_mesh,
+        Polyhedron &input_mesh,
         const double sm_angle = 20.0,
         const double sm_radius = 100.0,
         const double sm_distance = 0.25,
@@ -100,7 +99,7 @@ CGALSurface* poisson_reconstruction(
 
     CGAL::Timer task_timer; task_timer.start();
     PointList points;
-    for (boost::graph_traits<RPolyhedron>::vertex_descriptor vd: vertices(input_mesh)) {
+    for (const auto vd: vertices(input_mesh)) {
         const Point& p = vd->point();
         Vector n = CGAL::Polygon_mesh_processing::compute_vertex_normal(vd, input_mesh);
         points.push_back(Point_with_normal(p, n));
@@ -135,17 +134,21 @@ CGALSurface* poisson_reconstruction(
     // Note: this method requires an iterator over points
     // + property maps to access each point's position and normal.
     // The position property map can be omitted here as we use iterators over Point_3 elements.
+    size_t cisitor_counter = 0;
     Poisson_reconstruction_function function(
-            points.begin(), points.end(),
+            points.begin(),
+            points.end(),
             CGAL::make_identity_property_map(PointList::value_type()),
             CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
             visitor);
 
     CGAL::Eigen_solver_traits<Eigen::ConjugateGradient<CGAL::Eigen_sparse_symmetric_matrix<double>::EigenType> > solver;
     bool implicit_success = function.compute_implicit_function(
-            solver, visitor,
+            solver,
+            visitor,
             approximation_ratio,
             average_spacing_ratio);
+
     if (!implicit_success) {
         std::cerr << "Error: cannot compute implicit function" << std::endl;
     }
@@ -161,8 +164,7 @@ CGALSurface* poisson_reconstruction(
     std::cout << "Surface meshing...\n";
 
     // Computes average spacing
-    FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(
-            points.begin(), points.end(), 6 /* knn = 1 ring */);
+    FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points, 6 /* knn = 1 ring */);
 
     // Gets one point inside the implicit surface
     Point inner_point = function.get_inner_point();
@@ -179,7 +181,7 @@ CGALSurface* poisson_reconstruction(
     // conservative bounding sphere centered at inner point.
     FT sm_sphere_radius = 5.0*radius;
     FT sm_dichotomy_error = sm_distance*average_spacing/1000.0; // Dichotomy error must be << sm_distance
-    Surface_3 surface(function,
+    Surface surface(function,
             Sphere(inner_point, sm_sphere_radius*sm_sphere_radius),
             sm_dichotomy_error/sm_sphere_radius);
 
@@ -207,21 +209,24 @@ CGALSurface* poisson_reconstruction(
     }
 
     // Converts to polyhedron
-    RPolyhedron output_mesh;
-    CGAL::output_surface_facets_to_polyhedron(c2t3, output_mesh);
+    Polyhedron output_mesh;
+    /* CGAL::output_surface_facets_to_polyhedron(c2t3, output_mesh); */
+    /* CGAL::facets_in_complex_2_to_trinagle_mesh(c2t3, output_mesh); */
+    CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, output_mesh);
+    return new CGALSurface(output_mesh);
 
-    // Change kernel back
-    Polyhedron tmp_mesh;
-    CGAL::copy_face_graph(output_mesh, tmp_mesh);
+    /* // Change kernel back */
+    /* Polyhedron tmp_mesh; */
+    /* CGAL::copy_face_graph(output_mesh, tmp_mesh); */
 
-    // Prints total reconstruction duration
-    std::cout << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";
-    return new CGALSurface(tmp_mesh);
+    /* // Prints total reconstruction duration */
+    /* std::cout << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n"; */
+    /* return new CGALSurface(tmp_mesh); */
 }
 
 
 CGALSurface reconstruct_surface(CGALSurface &surface) {
-    RPolyhedron polyhedron;
+    Polyhedron polyhedron;
     surface.get_polyhedron(polyhedron);
     return *poisson_reconstruction(polyhedron);
 }
