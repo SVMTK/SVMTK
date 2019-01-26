@@ -82,11 +82,6 @@ bool load_surface(std::string filename, Mesh& mesh)
     std::vector< std::vector<std::size_t> > polygons;
 
     if ( extension=="off") {
-
-       //if (input >> mesh) // NO ERROR, gives error { EROR
-       //     return true;
-       //}
-
        std::cout<< "reading off" << std::endl;
        if (!CGAL::read_OFF(input, points, polygons)) {
            std::cerr << "Error parsing the OFF file " << std::endl;
@@ -99,14 +94,20 @@ bool load_surface(std::string filename, Mesh& mesh)
            std::cerr << "Error parsing the STL file " << std::endl;
            return false;
        }
+
+
+
+
+
+
     }
     else {
          std::cerr << "Error unkown file" << std::endl;
          return false;
     }
-    std::cout<< "Step 1" << std::endl;
+
+    // ?? 
     CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons);
-    std::cout<< "Step 2" << std::endl;
     CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons,mesh);
 
     if (CGAL::is_closed(mesh) && (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh))) {

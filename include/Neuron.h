@@ -7,7 +7,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-
+#include <string>
 struct NData // move into class ? 
 {
     double x,y,z,radius;
@@ -56,11 +56,9 @@ class Neuron : public CGALSurface
 
        ~Neuron() {}
 
-       Neuron(char* filename);
+       Neuron(std::string filename);
 
-       //void add_data(int index, double x double y, double z, double r, int next); // { segments.push_back(NData(index,x,y,z,r,next)) ;} // slow read in NData
-
-       Polylines get_polylines();
+       Polylines get_features();
        
        void surface_segment(double xb,double yb,double zb, double xt,double yt,double zt,double rb,double rt); // struct input ?
          

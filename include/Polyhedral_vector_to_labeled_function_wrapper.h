@@ -32,7 +32,12 @@ namespace CGAL {
                 // Types
                 typedef int return_type;  
 
-                typedef std::vector<Function_*>   Function_vector;
+                typedef std::vector<Function_*>   Function_vector; // Polyhedron_mesh_domain_with features -> stores polyhedron
+                // TODO
+                // Polyhedron_mesh_domain_with features  operator() 
+                // similar to Hybrid mesh domain
+                // SubID generator 
+               
 
                 typedef typename BGT::Point_3       Point_3;
            
@@ -73,20 +78,7 @@ namespace CGAL {
 
                     return subdmap->index(bits);
                 }
-
-                void detect_features(FT angle_in_degree = FT(60))  /// NO function
-                {
-                    int nb_func = function_vector_.size(); 
-
-                    for ( int i = 0 ; i < nb_func ; ++i ) 
-                    {    
-                       function_vector_[i]->detect_features(angle_in_degree) ;
-                    } 
-         
-                }   
-               
              
-
 
 
                 Bbox_3 bbox() const

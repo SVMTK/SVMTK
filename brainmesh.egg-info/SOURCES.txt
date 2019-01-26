@@ -1,3 +1,4 @@
+README.md
 setup.py
 brainmesh.egg-info/PKG-INFO
 brainmesh.egg-info/SOURCES.txt

@@ -88,6 +88,8 @@ class CGALSurface {
         /*          double radius_bound=0.1 , */
         /*          double distance_bound=0.1   ); */
 
+        void load(const std::string f);
+
 
         template<typename Polyhedron_3>
         void get_polyhedron(Polyhedron_3 &polyhedron_3);

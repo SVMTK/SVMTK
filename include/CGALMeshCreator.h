@@ -58,19 +58,18 @@ class CGALSurface;
 
 class CGALMeshCreator {
     public :
+
+        //---------------------------------------------------------------
         typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
         typedef K::Point_3 Point_3;
-        typedef CGAL::Mesh_polyhedron_3<K>::type Polyhedron; // ???
-
-        // temporary -- Until I can get Lars code to work
-        /* typedef CGAL::Polyhedral_mesh_domain_with_features_3<K> Mesh_domain; */
-        // End temporary
-
+        typedef CGAL::Mesh_polyhedron_3<K>::type Polyhedron; 
 
         typedef CGAL::Polyhedral_mesh_domain_with_features_3<K, Polyhedron> Polyhedral_mesh_domain_3; // ?? vs CGAL::Polyhedral_mesh_domain_with_features_3<K> Polyhedral_mesh_domain_3;
 
         // FIXME: There is a problem with the function wrapper
         typedef CGAL::Polyhedral_vector_to_labeled_function_wrapper<Polyhedral_mesh_domain_3, K  > Function_wrapper; //
+
+
         typedef Function_wrapper::Function_vector Function_vector; //
         typedef CGAL::Labeled_mesh_domain_3< K> Labeled_Mesh_Domain;
         typedef CGAL::Mesh_domain_with_polyline_features_3<Labeled_Mesh_Domain> Mesh_domain; // labeled mesh_domain function wrapper 
@@ -96,90 +95,126 @@ class CGALMeshCreator {
 
         typedef std::map<std::string, double> Parameters;
 
-
+   
         CGALMeshCreator(CGALSurface& surface);
-        CGALMeshCreator(std::vector<CGALSurface> surfaces, CGAL::Bbox_3 bbox_3 , AbstractMap &map);
         CGALMeshCreator(std::vector<CGALSurface> surfaces, AbstractMap& map);
         CGALMeshCreator(std::vector<CGALSurface> surfaces);
-        CGALMeshCreator(CGALSurface& surface,  CGAL::Bbox_3 bbox_3 );
-
+    
+        // TODO: Implement volume ++ 
 
         ~CGALMeshCreator() {}
 
-            void lipschitz_size_field(int subdomain_id, int k,double min_size,double max_size);
+        void lipschitz_size_field(int subdomain_id, int k,double min_size,double max_size);
 
-        void set_parameters(Parameters new_parameters);
+        void set_parameters(Parameters new_parameters); // py::dict? 
 
         void set_parameter(std::string key, double value);
 
         void create_mesh();
 
-            void create_mesh( int initial_points);
+        void create_mesh( int initial_points); // DUMMY
 
         void default_parameters() {
             parameters["mesh_resolution"]=64.0;
-            parameters["perturb_optimize"] =0.0;
-            parameters["exude_optimize"] = 0.0;
-            parameters["lloyd_optimize"] =  0.0;
-            parameters["odt_optimize"]   =  0.0;
-            parameters["edge_size"]      =   0.25;
             parameters["facet_angle"]    = 25.0;
             parameters["facet_size"]     = 0.1;
             parameters["facet_distance"] =  0.1;
             parameters["cell_radius_edge_ratio"] = 3.0;
             parameters["cell_size"] = 0.1;
-            parameters["detect_sharp_features"] = 1.0;
-            parameters["feature_threshold"]= 70.;
         }
 
-        void save_mesh(std::string OutPath);
+        void save_mesh(std::string OutPath); // TODO: check save formats
 
-            void add_sharp_edges(Polyhedron& polyhedron) ;
+        void refine_mesh();
 
-            void refine_mesh();
+        Polylines& get_features() {return features; }  // OK 
 
-            Polylines& get_polylines() {return pedges; }
+        void add_feature(Polyline_3 polyline) { features.push_back(polyline);} // Check 
 
-            void add_polyline(Polyline_3 polyline) { pedges.push_back(polyline);}   
+        void set_features(Polylines& polylines){ set_features( polylines.begin() , polylines.end() );} // internal 
 
-            void reset_polyline(){pedges.clear();}
+        //void set_features(CGALSurface& surf){ set_features( surf.get_features().begin() , surf.get_features().end() );} // get
 
-            void set_polylines(){domain_ptr.get()->add_features(get_polylines().begin(), get_polylines().end());} 
+        Polylines& get_borders() {return borders; }
 
-            template< typename InputIterator> // Polylines::iterator
-            void set_polylines(InputIterator begin, InputIterator end){domain_ptr->add_features(begin, end);}
+        void set_borders(){domain_ptr.get()->add_features(get_borders().begin(), get_borders() .end());} // -> CGALSURFACE is already created 
 
-            template< typename InputIterator>
-            void insert_edges(InputIterator begin, InputIterator end); 
+        void add_borders(Polyline_3 polyline) { borders.push_back(polyline);} 
+      
+        void add_sharp_border_edges(Polyhedron& polyhedron);
 
-            template < typename InputIterator>
-            void insert_edge(InputIterator begin, InputIterator end);
+        void add_sharp_border_edges(CGALSurface& surface); // for simple pybinding
+ 
+        void reset_borders(){borders.clear();} // Good to have if one wants to add after 
 
-            /* // Built due to private mesh, better option ? */ 
-            /* void lloyd(double time_limit= 0, int max_iteration_number = 0, double convergence = 0.02,double freeze_bound = 0.01, bool do_freeze = true) */
-            /* {CGAL::lloyd_optimize_mesh_3(c3t3, *domain_ptr.get(), time_limit=time_limit, max_iteration_number=max_iteration_number,convergence=convergence, freeze_bound  = freeze_bound, do_freeze = do_freeze); } */ 
+        template< typename InputIterator> // TODO: ANother input=?
+        void set_features(InputIterator begin, InputIterator end){domain_ptr->add_features(begin, end);} 
 
-            /* void excude( double time_limit = 0, double sliver_bound = 0 ){ CGAL::exude_mesh_3(c3t3, sliver_bound=sliver_bound, time_limit=time_limit);} */
+        template< typename InputIterator>
+        void insert_edge(InputIterator begin, InputIterator end); // remove? 
 
-            /* void perturb( double time_limit=0, double sliver_bound=0){CGAL::perturb_mesh_3 ( c3t3, *domain_ptr.get(), time_limit=time_limit, sliver_bound=sliver_bound) ;} */
+ 
+        // TODO: readable format     
+        void lloyd(double time_limit= 0, int max_iteration_number = 0, double convergence = 0.02,double freeze_bound = 0.01, bool do_freeze = true);
+        void odt(double time_limit= 0, int max_iteration_number = 0, double convergence = 0.02,double freeze_bound = 0.01, bool do_freeze = true);
 
-            /* void odt(double time_limit= 0, int max_iteration_number = 0, double convergence = 0.02,double freeze_bound = 0.01, bool do_freeze = true) */ 
-            /* {CGAL::odt_optimize_mesh_3(c3t3, *domain_ptr.get(), time_limit=time_limit, max_iteration_number=max_iteration_number,convergence=convergence, freeze_bound  = freeze_bound, do_freeze = do_freeze); } */ 
-            //
 
-            void label_boundary_cells(int btag, int ntag); // Work around 
+        void excude( double time_limit = 0, double sliver_bound = 0 ){ CGAL::exude_mesh_3(c3t3, sliver_bound=sliver_bound, time_limit=time_limit);} 
 
-            void remove_label_cells(int tag);    // tags 
+        void perturb( double time_limit=0, double sliver_bound=0){CGAL::perturb_mesh_3 ( c3t3, *domain_ptr.get(), time_limit=time_limit, sliver_bound=sliver_bound) ;} 
 
-            //void dolfin_mesh(); require linking to dolfin 
+        void label_boundary_cells(int btag, int ntag); // Work around 
+
+        void remove_label_cells(int tag);    // tags 
 
     private :
         std::unique_ptr<Mesh_domain> domain_ptr;
         std::unique_ptr<Lip_sizing>  lip_sizing_ptr;
-        Polylines  pedges; 
+
+        // TODO: consider as pointers
+        Polylines borders; 
+        Polylines features;
         Parameters parameters;
         C3t3 c3t3;
 };
+
+template<typename C3T3>
+void remove_isolated_vertices(C3T3& c3t3)
+{ 
+
+  typedef typename C3T3::Triangulation Tr;
+  typedef typename C3T3::Cells_in_complex_iterator Cell_iterator;
+
+  typedef typename Tr::Finite_vertices_iterator Finite_vertices_iterator;
+  typedef typename Tr::Vertex_handle Vertex_handle;
+
+  std::map<Vertex_handle, bool> vertex_map;
+  for( Finite_vertices_iterator vit = c3t3.triangulation().finite_vertices_begin();vit != c3t3.triangulation().finite_vertices_end();++vit)
+  { 
+      vertex_map[vit] = false ;  
+  }
+ 
+  for(Cell_iterator cit = c3t3.cells_in_complex_begin();cit != c3t3.cells_in_complex_end(); ++cit)
+  {
+    for (std::size_t i = 0; i < 4; i++)
+    {
+        vertex_map[cit->vertex(i)] = true;
+    }
+  }
+
+  int before = c3t3.triangulation().number_of_vertices() ;
+  
+  for (typename std::map<Vertex_handle, bool>::const_iterator it = vertex_map.begin();it != vertex_map.end(); ++it) // check post or pre increment
+  {
+    if (!it->second) 
+    {
+       c3t3.triangulation().remove(it->first);
+    }
+  }
+  int after = c3t3.triangulation().number_of_vertices() ; 
+  std::cout<<"Number of vertices removed: "  << before - after  << std::endl;
+
+}
 
 
 

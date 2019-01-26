@@ -1,10 +1,10 @@
 #include "Neuron.h"
 
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
-Neuron::Neuron(char* filename)
+Neuron::Neuron(std::string filename)
 {
     std::ifstream in(filename); //don't forget to check `if (in.is_open())` -> FIX
-    std::vector<NData> temp{std::istream_iterator<NData>(in), std::istream_iterator<NData>()}; // cin >> NData
+    std::vector<NData> temp{std::istream_iterator<NData>(in), std::istream_iterator<NData>()}; 
 
     segments = temp;
 }
@@ -31,15 +31,16 @@ void Neuron::surface_mesh()
   }
 } 
 
-Neuron::Polylines Neuron::get_polylines()
+Neuron::Polylines Neuron::get_features()
 {
-  // unpack segmetns to polyline
+
   Polylines polylines;
 
   std::vector<NData>::iterator nit; 
-  for(std::vector<NData>::iterator sit= std::next(segments.begin());  sit!= segments.end(); ++sit) // typedef iterator // skip first ?
+  for(std::vector<NData>::iterator sit= std::next(segments.begin());  sit!= segments.end(); ++sit) 
   {
     Polyline_3 polyline;
+
     nit =  segments.begin() + sit->next; 
     
     polyline.push_back(Point_3(nit->x,nit->y,nit->z) );
@@ -68,10 +69,10 @@ void Neuron::surface_segment(double xb,double yb,double zb, double xt,double yt,
   }
   else
   {
-    //mesh+=body.get_mesh(); 
-    // mesh+=top.get_mesh();
-    CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh, body.get_mesh(),mesh);
-    CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh, top.get_mesh(),mesh);
+    mesh+=body.get_mesh(); 
+    mesh+=top.get_mesh();
+    //CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh, body.get_mesh(),mesh);
+   // CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh, top.get_mesh(),mesh);
   }
 
 }

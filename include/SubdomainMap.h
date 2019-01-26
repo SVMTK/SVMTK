@@ -16,14 +16,13 @@ class AbstractMap
    public:
         typedef int return_type;
         typedef boost::dynamic_bitset<> Bmask;
+
         virtual return_type index(const Bmask bits) = 0;
-        
-       // AbstractMap() {}
         virtual ~AbstractMap() {}
 };
 
 
-class DefaultMap : public AbstractMap
+class DefaultMap : virtual public AbstractMap
 {
    public:
         typedef int return_type;
@@ -38,7 +37,7 @@ class DefaultMap : public AbstractMap
         }
 };
 
-class SubdomainMap : public AbstractMap
+class SubdomainMap :virtual public AbstractMap
 {
    private:
         std::map<boost::dynamic_bitset<>,int> subdmap;
@@ -52,6 +51,7 @@ class SubdomainMap : public AbstractMap
 
         void add(std::string string, int subdomain)
         {
+           std::reverse( string.begin(), string.end() ) ; // Bmask initiate reverse 
            subdmap[Bmask(string)]=subdomain;
         } 
         return_type index(const Bmask bits) 
