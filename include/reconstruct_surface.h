@@ -135,7 +135,7 @@ void poisson_reconstruction(Mesh &mesh,
     InsertVisitor visitor(counter) ;
 
     //***************************************
-    // Computes implicit function
+    // Computes implicit function  error
     //***************************************
 
     std::cout << "Computes Poisson implicit function...\n";
@@ -171,7 +171,7 @@ void poisson_reconstruction(Mesh &mesh,
 
     // Computes average spacing
     FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(
-            points , 6 /* knn = 1 ring */);
+            points, 6 /* knn = 1 ring */);
 
     // Gets one point inside the implicit surface
     Point inner_point = function.get_inner_point();
@@ -184,6 +184,8 @@ void poisson_reconstruction(Mesh &mesh,
     Sphere bsphere = function.bounding_sphere();
     FT radius = std::sqrt(bsphere.squared_radius());
 
+
+    // CALL SURFACE MESHER
     // Defines the implicit surface: requires defining a
     // conservative bounding sphere centered at inner point.
     FT sm_sphere_radius = 5.0*radius;

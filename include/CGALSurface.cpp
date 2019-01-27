@@ -247,6 +247,25 @@ CGALSurface::vertex_vector CGALSurface::points_inside(CGALSurface& other)
   return result;
 }
 
+CGALSurface::vertex_vector CGALSurface::points_inside(CGALSurface& other,CGALSurface::vertex_vector &points)
+{
+  vertex_vector result;
+  CGALSurface::Inside inside_poly2(other.get_mesh());
+
+  for ( vertex_descriptor v_it : points )
+  {
+      CGAL::Bounded_side res = inside_poly2(mesh.point(v_it));
+      if (res == CGAL::ON_BOUNDED_SIDE or res == CGAL::ON_BOUNDARY){result.push_back(v_it);}
+  }
+  points.clear();
+  return result;
+}
+
+
+
+
+
+
 CGALSurface::vertex_vector CGALSurface::points_outside(CGALSurface& other)
 {
   vertex_vector result;
@@ -275,7 +294,7 @@ void CGALSurface::adjusting_boundary_region(InputIterator begin , InputIterator 
       Point_3 p = mesh.point(*begin) + c*delta;
       smoothed.push_back(std::make_pair(*begin, p));
   }
-  for (const std::pair<vertex_descriptor, Point_3> s : smoothed)
+  for (std::pair<vertex_descriptor, Point_3> s : smoothed)
   {
       mesh.point(s.first) = s.second;
   }
@@ -300,7 +319,7 @@ void CGALSurface::smooth_laplacian_region(InputIterator begin , InputIterator en
       Point_3 p = current + c*delta/mesh.degree(*begin);
       smoothed.push_back(std::make_pair(*begin, p));
   }
-  for (const std::pair<vertex_descriptor, Point_3> s : smoothed)
+  for (std::pair<vertex_descriptor, Point_3> s : smoothed)
   {
       mesh.point(s.first) = s.second;
   }
@@ -520,7 +539,20 @@ void CGALSurface::insert_points(std::vector<Point_3>& points)  // template itera
      for( std::vector<Point_3>::iterator it=points.begin(); it!= points.end(); ++it){mesh.add_vertex(*it);}
 }
 
+void CGALSurface::reconstruct( double sm_angle,
+                               double sm_radius,
+                               double sm_distance,
+                               double approximation_ratio,
+                               double average_spacing_ratio )
+{ 
 
+poisson_reconstruction(mesh,sm_angle,
+                            sm_radius,
+                            sm_distance,
+                            approximation_ratio,
+                            average_spacing_ratio);
+
+}
 
 
 void CGALSurface::fix_close_junctures(double c)
@@ -562,7 +594,6 @@ void CGALSurface::fix_close_junctures(double c)
         
         closest = mesh.point((search.begin()+1)->first); //closest point is the query point, therefore chose second point 
         
-
         Point_3 current = mesh.point(v_it);
         distance = CGAL::squared_distance(current, closest );
         CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(v_it),mesh), done(vbegin);
@@ -592,35 +623,6 @@ void CGALSurface::fix_close_junctures(double c)
 
 
 
-
-
-
-void CGALSurface::reconstruct_surface(const double sm_angle,const double sm_radius,const double sm_distance) 
-{
-    Polyhedron input_polyhedron;
-    this->get_polyhedron(input_polyhedron);
-    std::deque<RPwn> points;
-
-    // TODO: Can I do some sort of casting to avoid copying the whole mesh above?
-    for (auto &vd: vertices(input_polyhedron)) {
-        const Point_3 p = vd->point();
-        const Vector_3 n = CGAL::Polygon_mesh_processing::compute_vertex_normal(vd, input_polyhedron);
-        points.push_back(std::make_pair(p, n));
-    }
-
-    Polyhedron output_mesh;
-
-    double average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(
-            points, 6, CGAL::parameters::point_map(CGAL::First_of_pair_property_map<RPwn>()));
-
-    CGAL::poisson_surface_reconstruction_delaunay(
-            points.begin(), points.end(),
-            CGAL::First_of_pair_property_map<RPwn>(),
-            CGAL::Second_of_pair_property_map<RPwn>(),
-            output_mesh, average_spacing);
-
-    CGAL::copy_face_graph(output_mesh, this->mesh);
-}
 
 
 

@@ -35,10 +35,13 @@ PYBIND11_MODULE(brainmesh, m) {
 
     py::class_<AbstractMap,PyAbstractMap> abstractmap(m,"AbstractMap");
 
-    py::class_<SubdomainMap>(m, "SubdomainMap")
+    py::class_<SubdomainMap,AbstractMap>(m, "SubdomainMap")
         .def(py::init<>())
-        .def("__repr__",  &SubdomainMap::print)
+        .def("print",  &SubdomainMap::print)
         .def("add", &SubdomainMap::add);
+
+
+
 
     py::class_<CGALSurface>(m, "BrainSurface")
         .def(py::init<std::string &>())
@@ -61,7 +64,7 @@ PYBIND11_MODULE(brainmesh, m) {
         .def("smooth_taubin", &CGALSurface::smooth_taubin)
 
         // Either use these two for operator overloading, or return the vertices
-        .def("points_inside", &CGALSurface::points_inside)
+        .def("points_inside",(CGALSurface::vertex_vector (CGALSurface::*)(CGALSurface&)) &CGALSurface::points_inside)
         .def("points_outside", &CGALSurface::points_outside)
         .def("make_cube", &CGALSurface::make_cube)
 	.def("make_cone", &CGALSurface::make_cone)
@@ -72,11 +75,13 @@ PYBIND11_MODULE(brainmesh, m) {
         .def("num_self_intersections", &CGALSurface::num_self_intersections) 
         .def("collapse_edges", &CGALSurface::collapse_edges)
         .def("save", &CGALSurface::save)
+        .def("split_edges", &CGALSurface::split_edges)
+
 
         .def("fair", &CGALSurface::fair)
         //.def("load", &CGALSurface::load)//
         .def("fix_close_junctures", &CGALSurface::fix_close_junctures)
-        .def("reconstruct_surface", &CGALSurface::reconstruct_surface)
+        .def("reconstruct", &CGALSurface::reconstruct)
 
         /* // Experimental reconstruction -- creates self-intersections */
         /* .def("reconstruct_surface", &CGALSurface::reconstruct_surface, */

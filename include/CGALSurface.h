@@ -149,6 +149,8 @@ class CGALSurface
 
         vertex_vector points_outside(CGALSurface& other);
 
+        vertex_vector  points_inside(CGALSurface& other,CGALSurface::vertex_vector &points);
+
         void reconstruct_surface(const double sm_angle,const double sm_radius,const double sm_distance) ;
 
         int num_faces() const {return mesh.number_of_faces();}
@@ -164,7 +166,11 @@ class CGALSurface
 
         Polylines get_features() { Polylines plines; return plines;} // should be virtual or something ->
         
-        void reconstruct(){ poisson_reconstruction(mesh);}
+        void reconstruct( double sm_angle = 20.0,
+                          double sm_radius = 100.0,
+                          double sm_distance = 0.25,
+                          double approximation_ratio = 0.02,
+                          double average_spacing_ratio = 5.0);
 
         template< typename Polyhedron_3>  // Template to address the different kernels in CGAL TODO: return Polyhedron?
         void get_polyhedron(Polyhedron_3 &polyhedron_3 ){CGAL::copy_face_graph(mesh,polyhedron_3);}
@@ -197,22 +203,21 @@ void surface_overlapp(CGALSurface& surf1 , CGALSurface& surf2 , double c,    int
     surf1points = surf1.points_inside(surf2);
     surf2points = surf2.points_inside(surf1);
 
+
     int iter =0;
 
     while (  !surf1points.empty() and  !surf2points.empty() )
     {
-            surf1.adjusting_boundary_region(surf1points.begin() ,surf1points.end(), c);
-            surf2.adjusting_boundary_region(surf2points.begin() ,surf2points.end(), c);
+
 
             surf1.fair(surf1points);
             surf2.fair(surf2points);
 
-            //surf1.smooth_laplacian_region(surf1points.begin(),surf1points.end(),c);
-            //surf2.smooth_laplacian_region(surf2points.begin(),surf2points.end(),c);
+            surf1points= surf1.points_inside(surf2 , surf1points);
+            surf2points = surf2.points_inside(surf1, surf2points);
 
-
-            surf1points= surf1.points_inside(surf2);
-            surf2points = surf2.points_inside(surf1);
+            surf1.adjusting_boundary_region(surf1points.begin() ,surf1points.end(), c);
+            surf2.adjusting_boundary_region(surf2points.begin() ,surf2points.end(), c);
 
             std::cout<< surf1points.size() + surf2points.size() << std::endl;
             iter++;
