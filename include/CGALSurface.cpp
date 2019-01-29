@@ -353,10 +353,7 @@ void CGALSurface::make_cube( double x0, double y0, double  z0,  double x1, doubl
 
 void CGALSurface::make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1, double radius,  int number_of_segments) // TODO :allow tilted cubes
 {
-      
         CGALSurface::make_cone( x0, y0,z0, x1,y1, z1, radius , radius,  number_of_segments ) ;
-
-
 }
 
 
@@ -579,28 +576,6 @@ void CGALSurface::fix_close_junctures(double c)
 
    }
 
- 
-
    std::cout<< results.size() << std::endl;
-   
    adjusting_boundary_region(results.begin(),results.end(),c);
-
-
-   
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

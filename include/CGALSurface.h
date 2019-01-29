@@ -39,17 +39,26 @@
 
 #include <CGAL/poisson_surface_reconstruction.h>        // Why do I need this one here
 
+// Fix close junctures
+#include <CGAL/Search_traits_adapter.h>
+#include <CGAL/Orthogonal_k_neighbor_search.h>
+
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 typedef Kernel::Point_3 Point;
 typedef Kernel::Vector_3 Vector;
 typedef CGAL::Surface_mesh<Point> Mesh;
 typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
+typedef Kernel::FT FT;
 
 typedef boost::graph_traits<Mesh>::face_descriptor face_descriptor;
 typedef boost::graph_traits<Mesh>::vertex_descriptor vertex_descriptor;
+typedef std::vector<vertex_descriptor> vertex_vector;
 
 typedef CGAL::Side_of_triangle_mesh<Mesh, Kernel> inside; //  TODO: Cnange name, unintuitive
+
+// Make cone
+typedef Mesh::Vertex_index Index;
 
 
 class CGALSurface {
@@ -140,15 +149,19 @@ class CGALSurface {
         // TODO: What does this do?
         void clear() { mesh.clear(); }
 
-        // TODO: Add this for tomorrow
-        /* void fix_close_junctures(double c); */
+        void fix_close_junctures(const double c);
 
-        /* void make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1, double radius,  int number_of_segments=360) ; */
+        void make_cylinder(const double x0, const double y0, const double z0, const double x1,
+                const double y1, const double z1, const double radius, const int number_of_segments=360);
 
-        /* void make_cone( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0 , double r1,  int number_of_segments=360) ; */
-        // TODO
-        /* void make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1); */
-        /* void make_sphere( double x0, double y0, double  z0, double r0); */
+        void make_cone(const double x0, const double y0, const double z0, const double x1, const double y1,
+                const double z1, const double r0, const double r1, const int number_of_segments=360);
+
+        void make_cube(const double x0, const double y0, const double z0, const double x1, const double y1,
+                const double z1);
+
+        /* void make_sphere(const double x0, const double y0, const double z0, const double r0); */
+
         /* void insert_mesh(CGALSurface& surf){mesh+=surf.get_mesh();} */
         /* void insert_points(std::vector<Point_3>& points) ; */
 
@@ -393,6 +406,167 @@ int CGALSurface::num_vertices() const {
 
 void CGALSurface::split_edges(const double target_edge_length) {
      CGAL::Polygon_mesh_processing::split_long_edges(edges(mesh), target_edge_length, mesh);
+}
+
+void CGALSurface::make_cone(const double x0, const double y0, const double z0, const double x1,
+        const double y1, const double z1, const double r0, const double r1, const int number_of_segments) {
+        // TODO :allow tilted cubes
+        //TODO: Handle case for r1=0 or r0=0
+        Mesh m;
+
+        Index v0 = m.add_vertex(Point(x0, y0, z0));
+        Index v1 = m.add_vertex(Point(x1, y1, z1));
+
+        Index vb;
+        Index vt;
+        //normalizing vectors ...
+
+        double n0 = x1 - x0;
+        double n1 = y1 - y0;
+        double n2 = z1 - z0;
+
+        double l1 = std::sqrt(n0*n0 + n1*n1 + n2*n2);
+
+        Vector normal(n0/l1, n1/l1, n2/l1);
+
+        double l2 = std::sqrt((n1 - n2)*(n1-n2) + (n2 - n0)*(n2 - n0) + (n0 - n1)*(n0 - n1));
+
+        Vector t1((n1 - n2)/l2, (n2 - n0)/l2, (n0 - n1)/l2);
+
+        Vector t2 = CGAL::cross_product(normal, t1); // normalized ?? 
+
+        double c = 360/number_of_segments;
+
+        std::cout << normal << " " << t1 << " " << t2 << std::endl;
+        for(int i = 0; i < number_of_segments; ++i) {
+           Point pb = Point(x0, y0, z0) + t1*r0*std::cos(c*i*CGAL_PI/180) + t2*r0*std::sin(c*i*CGAL_PI/180);
+           Point pt = Point(x1, y1, z1) + t1*r1*std::cos(c*i*CGAL_PI/180) + t2*r1*std::sin(c*i*CGAL_PI/180);
+
+           vb = m.add_vertex(pb);
+           vt = m.add_vertex(pt);
+
+           if (i != 0) {
+               m.add_face(v0, vb,Index(vb - 2));
+               m.add_face(v1, Index(vt - 2), vt);
+
+               m.add_face(Index(vt - 2), Index(vb - 2), vt);
+               m.add_face(vb, vt, Index(vb - 2));
+           }
+        }
+        m.add_face(Index(0), Index(2), vb);
+        m.add_face(Index(1), vt, Index(3));
+
+        m.add_face(vt, vb, Index(3));
+        m.add_face(Index(2), Index(3), vb);
+        this->mesh = m;
+}
+
+void CGALSurface::make_cylinder(const double x0, const double y0, const double z0, const double x1,
+        const double y1, const double z1, const double radius, const int number_of_segments) {
+    // TODO :allow tilted cubes
+    CGALSurface::make_cone(x0, y0, z0, x1, y1, z1, radius, radius, number_of_segments);
+}
+
+void CGALSurface::make_cube(const double x0, const double y0, const double z0, const double x1,
+        const double y1, const double z1) {
+    // TODO :allow tilted cubes {
+    assert(x0 != x1);
+    assert(y0 != y1);
+    assert(z0 != z1);
+
+    Mesh m;
+    vertex_descriptor v0 = m.add_vertex(Point(x0, y0, z0));
+    vertex_descriptor v1 = m.add_vertex(Point(x0, y0, z1));
+    vertex_descriptor v2 = m.add_vertex(Point(x1, y0, z0));
+
+    vertex_descriptor v3 = m.add_vertex(Point(x1, y0, z1));
+    vertex_descriptor v4 = m.add_vertex(Point(x1, y1, z0));
+    vertex_descriptor v5 = m.add_vertex(Point(x1, y1, z1));
+
+    vertex_descriptor v6 = m.add_vertex(Point(x0, y1, z0));
+    vertex_descriptor v7 = m.add_vertex(Point(x0, y1, z1));
+
+    // Side 1
+    m.add_face(v0, v2, v1);
+    m.add_face(v3, v1, v2);
+
+    // Side 2
+    m.add_face(v3 ,v2, v5);
+    m.add_face(v4 ,v5,v2);
+
+    // Side 3 
+    m.add_face(v4, v6, v5);
+    m.add_face(v7, v5, v6);
+
+    // Side 4
+    m.add_face(v0, v1, v6);
+    m.add_face(v7, v6, v1);
+
+    // Side 5 
+    m.add_face(v3, v5, v1);
+    m.add_face(v7, v1, v5);
+
+    // Side 6 
+    m.add_face(v0, v6, v2);
+    m.add_face(v4, v2, v6);
+
+    this->mesh = m;
+}
+
+void CGALSurface::fix_close_junctures(const double c) {
+    // TODO :  Clean up typedefs
+    int count = 0;
+    std::cout<< "Step :" << ++count << std::endl;
+
+    typedef boost::property_map<Mesh,CGAL::vertex_point_t>::type                           Vertex_point_pmap;
+    typedef CGAL::Search_traits_3<Kernel>                                                  Traits_base;
+    typedef CGAL::Search_traits_adapter<vertex_descriptor, Vertex_point_pmap, Traits_base> Traits;
+    typedef CGAL::Orthogonal_k_neighbor_search<Traits>                                     K_neighbor_search;
+    typedef K_neighbor_search::Tree                                                        Tree;
+    typedef Tree::Splitter                                                                 Splitter;
+    typedef K_neighbor_search::Distance                                                    Distance;
+
+    vertex_vector results;
+    Vertex_point_pmap vppmap = get(CGAL::vertex_point, mesh);
+    std::cout<< "Step :" << ++count << std::endl;
+    Tree tree(vertices(mesh).begin(), vertices(mesh).end(), Splitter(), Traits(vppmap));
+    std::cout<< "Step :" << ++count << std::endl;
+    Distance tr_dist(vppmap);
+
+    // For each point in surface mesh -> find closest point if it is not a neighbor vertex -> add to vector
+    FT distance;
+    FT edgeL;
+    Point closest;
+    bool flag;
+    for (vertex_descriptor v_it : mesh.vertices()) {
+        flag = true;
+
+        /* DISTANCE CAN BE INCLUDED HEREmesh.point(v_it) */
+        K_neighbor_search search(tree, mesh.point(v_it), 2, 0, true, tr_dist);
+
+        //?? closest point is the query point, therefore chose second point 
+        closest = mesh.point((search.begin() + 1)->first);
+
+        Point current = mesh.point(v_it);
+        distance = CGAL::squared_distance(current, closest);
+        CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(v_it), mesh), done(vbegin);
+        //ditr_dist.inverse_of_transformed_distance(search.begin()->second);
+        do {
+           edgeL = CGAL::squared_distance(current, mesh.point(*vbegin));
+           std::cout<< distance << " " << edgeL << std::endl;
+           if (distance >= edgeL) {
+               flag = false;
+               break;
+           }
+           *vbegin++;
+        } while (vbegin != done);
+
+        if (flag) {
+            results.push_back(v_it);
+        }
+    }
+    std::cout<< results.size() << std::endl;
+    adjusting_boundary_region(results.begin(), results.end(), c);
 }
 
 #endif

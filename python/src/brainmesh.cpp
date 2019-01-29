@@ -51,6 +51,12 @@ PYBIND11_MODULE(brainmesh, m) {
 
         .def("fair", &CGALSurface::fair)
 
+        .def("make_cone", &CGALSurface::make_cone)
+        .def("make_cylinder", &CGALSurface::make_cylinder)
+        .def("make_cube", &CGALSurface::make_cube)
+
+        .def("fix_close_junctures", &CGALSurface::fix_close_junctures)
+
         // TODO
         /* .def("insert_surface", &CGALSurface::insert_surface) */  // TODO cpp side
         /* .def("getMesh", &CGALSurface::get_mesh) */       // No need to expose
