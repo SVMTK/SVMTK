@@ -404,68 +404,68 @@ int CGALSurface::num_vertices() const {
     return mesh.number_of_vertices();
 }
 
+
 void CGALSurface::split_edges(const double target_edge_length) {
      CGAL::Polygon_mesh_processing::split_long_edges(edges(mesh), target_edge_length, mesh);
 }
 
+
 void CGALSurface::make_cone(const double x0, const double y0, const double z0, const double x1,
         const double y1, const double z1, const double r0, const double r1, const int number_of_segments) {
-        // TODO :allow tilted cubes
-        //TODO: Handle case for r1=0 or r0=0
-        Mesh m;
+    // TODO :allow tilted cubes
+    //TODO: Handle case for r1=0 or r0=0
+    Mesh m;
 
-        Index v0 = m.add_vertex(Point(x0, y0, z0));
-        Index v1 = m.add_vertex(Point(x1, y1, z1));
+    Index v0 = m.add_vertex(Point(x0, y0, z0));
+    Index v1 = m.add_vertex(Point(x1, y1, z1));
 
-        Index vb;
-        Index vt;
-        //normalizing vectors ...
+    Index vb;
+    Index vt;
 
-        double n0 = x1 - x0;
-        double n1 = y1 - y0;
-        double n2 = z1 - z0;
+    //normalizing vectors ...
+    double n0 = x1 - x0;
+    double n1 = y1 - y0;
+    double n2 = z1 - z0;
 
-        double l1 = std::sqrt(n0*n0 + n1*n1 + n2*n2);
+    double l1 = std::sqrt(n0*n0 + n1*n1 + n2*n2);
+    Vector normal(n0/l1, n1/l1, n2/l1);
+    double l2 = std::sqrt((n1 - n2)*(n1-n2) + (n2 - n0)*(n2 - n0) + (n0 - n1)*(n0 - n1));
+    Vector t1((n1 - n2)/l2, (n2 - n0)/l2, (n0 - n1)/l2);
+    Vector t2 = CGAL::cross_product(normal, t1); // normalized ?? 
 
-        Vector normal(n0/l1, n1/l1, n2/l1);
+    double c = 360/number_of_segments;
 
-        double l2 = std::sqrt((n1 - n2)*(n1-n2) + (n2 - n0)*(n2 - n0) + (n0 - n1)*(n0 - n1));
+    std::cout << normal << " " << t1 << " " << t2 << std::endl;
+    for(int i = 0; i < number_of_segments; ++i) {
+       Point pb = Point(x0, y0, z0) + t1*r0*std::cos(c*i*CGAL_PI/180) + t2*r0*std::sin(c*i*CGAL_PI/180);
+       Point pt = Point(x1, y1, z1) + t1*r1*std::cos(c*i*CGAL_PI/180) + t2*r1*std::sin(c*i*CGAL_PI/180);
 
-        Vector t1((n1 - n2)/l2, (n2 - n0)/l2, (n0 - n1)/l2);
+       vb = m.add_vertex(pb);
+       vt = m.add_vertex(pt);
 
-        Vector t2 = CGAL::cross_product(normal, t1); // normalized ?? 
+       if (i != 0) {
+           m.add_face(v0, vb,Index(vb - 2));
+           m.add_face(v1, Index(vt - 2), vt);
 
-        double c = 360/number_of_segments;
+           m.add_face(Index(vt - 2), Index(vb - 2), vt);
+           m.add_face(vb, vt, Index(vb - 2));
+       }
+    }
+    m.add_face(Index(0), Index(2), vb);
+    m.add_face(Index(1), vt, Index(3));
 
-        std::cout << normal << " " << t1 << " " << t2 << std::endl;
-        for(int i = 0; i < number_of_segments; ++i) {
-           Point pb = Point(x0, y0, z0) + t1*r0*std::cos(c*i*CGAL_PI/180) + t2*r0*std::sin(c*i*CGAL_PI/180);
-           Point pt = Point(x1, y1, z1) + t1*r1*std::cos(c*i*CGAL_PI/180) + t2*r1*std::sin(c*i*CGAL_PI/180);
-
-           vb = m.add_vertex(pb);
-           vt = m.add_vertex(pt);
-
-           if (i != 0) {
-               m.add_face(v0, vb,Index(vb - 2));
-               m.add_face(v1, Index(vt - 2), vt);
-
-               m.add_face(Index(vt - 2), Index(vb - 2), vt);
-               m.add_face(vb, vt, Index(vb - 2));
-           }
-        }
-        m.add_face(Index(0), Index(2), vb);
-        m.add_face(Index(1), vt, Index(3));
-
-        m.add_face(vt, vb, Index(3));
-        m.add_face(Index(2), Index(3), vb);
-        this->mesh = m;
+    m.add_face(vt, vb, Index(3));
+    m.add_face(Index(2), Index(3), vb);
+    this->mesh = m;
 }
+
 
 void CGALSurface::make_cylinder(const double x0, const double y0, const double z0, const double x1,
         const double y1, const double z1, const double radius, const int number_of_segments) {
     // TODO :allow tilted cubes
     CGALSurface::make_cone(x0, y0, z0, x1, y1, z1, radius, radius, number_of_segments);
 }
+
 
 void CGALSurface::make_cube(const double x0, const double y0, const double z0, const double x1,
         const double y1, const double z1) {
@@ -494,7 +494,7 @@ void CGALSurface::make_cube(const double x0, const double y0, const double z0, c
     m.add_face(v3 ,v2, v5);
     m.add_face(v4 ,v5,v2);
 
-    // Side 3 
+    // Side 3
     m.add_face(v4, v6, v5);
     m.add_face(v7, v5, v6);
 
@@ -502,16 +502,17 @@ void CGALSurface::make_cube(const double x0, const double y0, const double z0, c
     m.add_face(v0, v1, v6);
     m.add_face(v7, v6, v1);
 
-    // Side 5 
+    // Side 5
     m.add_face(v3, v5, v1);
     m.add_face(v7, v1, v5);
 
-    // Side 6 
+    // Side 6
     m.add_face(v0, v6, v2);
     m.add_face(v4, v2, v6);
 
     this->mesh = m;
 }
+
 
 void CGALSurface::fix_close_junctures(const double c) {
     // TODO :  Clean up typedefs
@@ -538,7 +539,7 @@ void CGALSurface::fix_close_junctures(const double c) {
     FT edgeL;
     Point closest;
     bool flag;
-    for (vertex_descriptor v_it : mesh.vertices()) {
+    for (const auto &v_it : mesh.vertices()) {
         flag = true;
 
         /* DISTANCE CAN BE INCLUDED HEREmesh.point(v_it) */
@@ -568,5 +569,6 @@ void CGALSurface::fix_close_junctures(const double c) {
     std::cout<< results.size() << std::endl;
     adjusting_boundary_region(results.begin(), results.end(), c);
 }
+
 
 #endif
