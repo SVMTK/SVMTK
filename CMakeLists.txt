@@ -10,7 +10,7 @@ find_package(Boost REQUIRED)
 include_directories(${BOOST_USE_FILES})
 
 # Eigen3.2 and its components
-find_package(Eigen3 3.2.0 REQUIRED)  # Requires 3.2.0 or greater
+find_package(Eigen3 3.2.0)  # Requires 3.2.0 or greater
 include(${EIGEN3_USE_FILE})
 if( NOT EIGEN3_INCLUDE_DIR )
     SET( EIGEN3_INCLUDE_DIR "$ENV{EIGEN3_INCLUDE_DIR}" )
