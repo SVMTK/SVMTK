@@ -10,8 +10,13 @@ find_package(Boost REQUIRED)
 include_directories(${BOOST_USE_FILES})
 
 # Eigen3.2 and its components
-find_package(Eigen3 3.2.0 REQUIRED)  # Requires 3.2.0 or greater
-include(${EIGEN3_USE_FILE})
+# find_package(Eigen3 3.2.0 REQUIRED)  # Requires 3.2.0 or greater
+# include(${EIGEN3_USE_FILE})
+SET( EIGEN3_INCLUDE_DIR "$ENV{EIGEN3_INCLUDE_DIR}" )
+IF( NOT EIGEN3_INCLUDE_DIR )
+    MESSAGE( FATAL_ERROR "Please point the environment variable EIGEN3_INCLUDE_DIR to the include directory of your Eigen3 installation.")
+ENDIF()
+INCLUDE_DIRECTORIES ( "${EIGEN3_INCLUDE_DIR}" )
 
 find_package(GMP REQUIRED)
 include_directories(${GOBJECT_INCLUDE_DIR})
