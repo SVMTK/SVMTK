@@ -1,20 +1,20 @@
-# BrainMesh 
+# BrainMesh
+
 ## Requirements
 
  - CGAL-4.13 with EIGEN >= 3.2
  - Python3.6
- - python3-dev
 
 ## Pybind11
 
-If you did not clone this project using "git clone --recursive", pull pybind11 by
+If you did not clone this project using `git clone --recursive`, pull pybind11 by
 `git submodule update --recursive`
 
 ## Installation
 
 It is highly recommended to use a virtual environment for python.
 
-run "python setup.py install"
+run `python setup.py install`
 
 Check the installation with any of the examples in `BrainMes/examples`
 
