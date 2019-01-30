@@ -20,7 +20,7 @@ Check the installation with any of the examples in `BrainMes/examples`
 
 ## Docker
 
-There is a Dockerfile in ```docker/`
+There is a Dockerfile in `docker/`
 
 ### Install CGAL with Eigen3
 
