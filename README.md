@@ -16,11 +16,14 @@ It is highly recommended to use a virtual environment for python.
 
 run `python setup.py install`
 
-Check the installation with any of the examples in `BrainMes/examples`
+Check the installation with any of the examples in `examples/`
 
 ## Docker
 
 There is a Dockerfile in `docker/`
+
+For more information on how to use docker, take a look at the docker tutorial:
+[https://docs.docker.com/get-started/]
 
 ### Install CGAL with Eigen3
 
