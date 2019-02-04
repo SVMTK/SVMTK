@@ -12,7 +12,9 @@ include_directories(${BOOST_USE_FILES})
 # Eigen3.2 and its components
 find_package(Eigen3 3.2.0)  # Requires 3.2.0 or greater     # REQUIRED
 include(${EIGEN3_USE_FILE})
-SET( EIGEN3_INCLUDE_DIR "$ENV{EIGEN3_INCLUDE_DIR}" )
+if( NOT EIGEN3_USE_FILE )
+    SET( EIGEN3_INCLUDE_DIR "$ENV{EIGEN3_INCLUDE_DIR}" )
+endif()
 if( NOT EIGEN3_INCLUDE_DIR )
     MESSAGE( FATAL_ERROR "Please point the environment variable EIGEN3_INCLUDE_DIR to the include directory of your Eigen3 installation.")
 endif()
