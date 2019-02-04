@@ -14,7 +14,7 @@ If you did not clone this project using `git clone --recursive`, pull pybind11 b
 
 It is highly recommended to use a virtual environment for python.
 
-run `python setup.py install`
+run `python3 setup.py install`
 
 Check the installation with any of the examples in `examples/`
 

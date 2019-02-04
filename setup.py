@@ -1,9 +1,10 @@
 # This setup is borrowed from https://github.com/pybind/cmake_example
 
 import os
-import re
 import sys
 import subprocess
+
+from pathlib import Path
 
 from setuptools import (
     setup,
@@ -22,8 +23,8 @@ MINOR = 1
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=""):
         Extension.__init__(self, name, sources=[])
-        self.sourcedir = os.path.abspath(sourcedir)
-
+        self.sourcedir = Path(sourcedir).resolve()
+        # self.sourcedir = os.path.abspath(sourcedir)
 
 class CMakeBuild(build_ext):
     def run(self):
@@ -38,7 +39,7 @@ class CMakeBuild(build_ext):
             self.build_extension(ext)
 
     def build_extension(self, ext):
-        extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
+        extdir = Path(self.get_ext_fullpath(ext.name)).parent.resolve()
         cmake_args = [
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}".format(extdir=extdir),
             "-DPYTHON_EXECUTABLE={}".format(sys.executable)
@@ -52,8 +53,9 @@ class CMakeBuild(build_ext):
             self.distribution.get_version()
         )
 
-        if not os.path.exists(self.build_temp):
-            os.makedirs(self.build_temp)
+        self.build_temp = Path(self.build_temp)
+        self.build_temp.mkdir(exist_ok=True)
+
         subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(["cmake", "--build", "."] + build_args, cwd=self.build_temp)
 
