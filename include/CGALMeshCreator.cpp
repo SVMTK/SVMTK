@@ -25,6 +25,7 @@ CGALMeshCreator::CGALMeshCreator( std::vector<CGALSurface> surfaces )
     for(std::vector<CGALSurface>::iterator sit= surfaces.begin() ;sit!= surfaces.end();sit++)
     {
        sit->get_polyhedron(polyhedron);
+       min_sphere.add_polyhedron(polyhedron);
        Polyhedral_mesh_domain_3 *polyhedral_domain = new Polyhedral_mesh_domain_3(polyhedron);
        v.push_back(polyhedral_domain);
     }
@@ -45,8 +46,10 @@ CGALMeshCreator::CGALMeshCreator( std::vector<CGALSurface> surfaces , AbstractMa
     for(std::vector<CGALSurface>::iterator sit= surfaces.begin() ;sit!= surfaces.end();sit++)
     {
        sit->get_polyhedron(polyhedron);
+       min_sphere.add_polyhedron(polyhedron);
        Polyhedral_mesh_domain_3 *polyhedral_domain = new Polyhedral_mesh_domain_3(polyhedron);
        v.push_back(polyhedral_domain);
+      
     }
 
 
@@ -68,6 +71,7 @@ CGALMeshCreator::CGALMeshCreator(CGALSurface &surface)
     Polyhedron polyhedron;
     surface.get_polyhedron(polyhedron);
 
+    min_sphere.add_polyhedron(polyhedron);
     // add_sharp_border_edges(polyhedron); standalone 
 
     Polyhedral_mesh_domain_3 *polyhedral_domain = new Polyhedral_mesh_domain_3(polyhedron);
@@ -121,7 +125,21 @@ void CGALMeshCreator::set_parameter(std::string key , double value )
 
 
 
+void CGALMeshCreator::default_creating_mesh()
+{
 
+    Mesh_criteria criteria(CGAL::parameters::facet_angle   =25.0, 
+                           CGAL::parameters::edge_size     =0.025,
+                           CGAL::parameters::facet_size    =0.05,
+                           CGAL::parameters::facet_distance=0.005,
+                           CGAL::parameters::cell_radius_edge_ratio=3,
+                           CGAL::parameters::cell_size=0.05);
+
+    c3t3 = CGAL::make_mesh_3<C3t3>(*domain_ptr.get(), criteria);
+
+    remove_isolated_vertices(c3t3);
+
+}
 void CGALMeshCreator::create_mesh()
 {
     std::cout << "begin_meshing" << std::endl;
@@ -129,7 +147,7 @@ void CGALMeshCreator::create_mesh()
 
     
     Mesh_criteria criteria(CGAL::parameters::facet_angle=parameters["facet_angle"],
-                          CGAL::parameters::facet_size =parameters["facet_size"],
+                           CGAL::parameters::facet_size =parameters["facet_size"],
                            CGAL::parameters::facet_distance=parameters["facet_distance"],
                            CGAL::parameters::cell_radius_edge_ratio=parameters["cell_radius_edge_ratio"],
                            CGAL::parameters::cell_size=parameters["cell_size"] );
@@ -138,25 +156,30 @@ void CGALMeshCreator::create_mesh()
 
     remove_isolated_vertices(c3t3);
 
-    
-
-
 }
-void CGALMeshCreator::create_mesh(int inital_points)
+
+void CGALMeshCreator::create_mesh(const double mesh_resolution )
 {
-    Mesh_criteria criteria(CGAL::parameters::facet_angle=parameters["facet_angle"],
-                           CGAL::parameters::facet_size =parameters["facet_size"],
-                           CGAL::parameters::facet_distance=parameters["facet_distance"],
-                           CGAL::parameters::cell_radius_edge_ratio=parameters["cell_radius_edge_ratio"],
-                           CGAL::parameters::cell_size=parameters["cell_size"] );
 
-    /* CGAL::internal::Mesh_3::init_c3t3(c3t3, *domain_ptr.get(), criteria, inital_points); */
+    // r=
+    double r = min_sphere.get_bounding_sphere_radius(); 
+    const double cell_size = r/mesh_resolution*2.0;
 
-    /* refine_mesh_3(c3t3, *domain_ptr.get(), criteria,CGAL::parameters::no_reset_c3t3()); */
+    Mesh_criteria criteria(CGAL::parameters::edge_size = cell_size,
+                                       CGAL::parameters::facet_angle = 30.0,
+                                       CGAL::parameters::facet_size = cell_size,
+                                       CGAL::parameters::facet_distance = cell_size/10.0, 
+                                       CGAL::parameters::cell_radius_edge_ratio = 3.0,
+                                       CGAL::parameters::cell_size = cell_size);
 
-    /* remove_isolated_vertices(c3t3); */
+    c3t3 = CGAL::make_mesh_3<C3t3>(*domain_ptr.get(), criteria);
+
+    remove_isolated_vertices(c3t3);
 
 }
+
+
+
 
 void CGALMeshCreator::save_mesh(std::string OutPath)
 {
@@ -243,12 +266,14 @@ void CGALMeshCreator::add_sharp_border_edges(CGALSurface& surface)
          polylinput.push_back(polyline);
       }    
   }   
-  polylines_to_protect(this->borders, polylinput.begin(),  polylinput.end() ); // borders 
+  polylines_to_protect(this->borders, polylinput.begin(),  polylinput.end() );
+
+
 }
 
 // 
 template < typename InputIterator>
-void CGALMeshCreator::insert_edge(InputIterator begin, InputIterator end) // Used in conjuction with refine mesh -> will insert points directly into mesh
+void CGALMeshCreator::insert_edge(InputIterator begin, InputIterator end) // Used in conjuction with refine mesh -> will insert points directly into mesh TODO: Remove
 {
   Tr& tr = c3t3.triangulation();
   Corner_index corner_index (1);
@@ -263,7 +288,6 @@ void CGALMeshCreator::insert_edge(InputIterator begin, InputIterator end) // Use
       vertex_map.push_back(&vh);
 
   }
-  std::cout << "Size: " <<  vertex_map.size() << '\n';
 
   for (typename std::vector<Vertex_handle>::const_iterator it = vertex_map.begin();it != vertex_map.end(); it++)
   {
@@ -277,7 +301,12 @@ void CGALMeshCreator::insert_edge(InputIterator begin, InputIterator end) // Use
 
 
 }
-
+void CGALMeshCreator::set_features()
+{ 
+  Polylines polylines;
+  polylines_to_protect(polylines, features.begin() , features.end()  );
+  set_features(polylines.begin(), polylines.end());
+}
 
 
 void CGALMeshCreator::lloyd(double time_limit, int max_iteration_number, double convergence,double freeze_bound, bool do_freeze )

@@ -17,7 +17,7 @@
 #include <CGAL/compute_average_spacing.h>
 
 // Local
-#include "CGALSurface.h"
+#include "CGALSurface.h" // why
 
 #include <deque>
 #include <cstdlib>

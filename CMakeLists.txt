@@ -24,29 +24,32 @@ add_subdirectory(external/pybind11)
 include_directories(${source_dir}/include)
 # set(PYBIND11_PYTHON_VERSION 3.7)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -frounding-math -lgmpxx -lgmp  -fPIC")
-set(CMAKE_CXX_IMPLICIT_LINK_LIBRARIES "")
-set(CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES "")
+set( CMAKE_CXX_FLAGS "-fPIC -shared ${CMAKE_CXX_FLAGS} -std=c++17 -frounding-math -lgmpxx -lgmp ")
+#set(CMAKE_CXX_IMPLICIT_LINK_LIBRARIES "")
+#set(CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES "")
 
-add_library(CGALMeshCreator include/CGALMeshCreator.cpp)
-set_target_properties(CGALMeshCreator PROPERTIES LINKER_LANGUAGE C)
+#add_library(CGALMeshCreator include/CGALMeshCreator.cpp)
+#set_target_properties(CGALMeshCreator PROPERTIES LINKER_LANGUAGE C)
 
-add_library(CGALSurface include/CGALSurface.cpp)
-set_target_properties(CGALSurface PROPERTIES LINKER_LANGUAGE C)
+#add_library(CGALSurface include/CGALSurface.cpp)
+#set_target_properties(CGALSurface PROPERTIES LINKER_LANGUAGE C)
 
-add_library(Neuron include/Neuron.cpp)
-set_target_properties(Neuron PROPERTIES LINKER_LANGUAGE C)
-
-
-set(BMLIB CGALMeshCreator CGALSurface Neuron)
+#add_library(Neuron include/Neuron.cpp)
+#set_target_properties(Neuron PROPERTIES LINKER_LANGUAGE C)
 
 
+#set(BMLIB CGALSurface Neuron)
+
+#cmake -DPYBIND11_PYTHON_VERSION=3.6
 
 
 include_directories(include)
 pybind11_add_module(brainmesh python/src/brainmesh.cpp)
-target_link_libraries(brainmesh PRIVATE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${GOBJECT_INCLUDE_DIR} ${OpenMesh} ${Eigen3} ${Boost} ${MPFR} ${BMLIB} )
-
+target_link_libraries(brainmesh PRIVATE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${GOBJECT_INCLUDE_DIR} ${OpenMesh} ${Eigen3} ${Boost} ${MPFR} )
+get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+foreach(dir ${dirs})
+  message(STATUS "dir='${dir}'")
+endforeach()
 #    target_link_libraries(${exe_name} ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} )
 
 #if (CGAL_AUTO_LINK_ENABLED)

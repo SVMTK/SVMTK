@@ -5,8 +5,29 @@
 
 
 // needed 
-
+#include <CGAL/Polygon_mesh_processing/clip.h>
+#include <CGAL/Polygon_mesh_slicer.h>
 // TODO: Clean up PMP  header files
+//---------------------------------------------------------
+//---------------------CLEAN UP-----------------------------------
+//---------------------------------------------------------
+#include <CGAL/Constrained_Delaunay_triangulation_2.h>
+#include <CGAL/Triangulation_conformer_2.h>
+#include <CGAL/IO/Triangulation_off_ostream_2.h>
+#include <CGAL/Polygon_2.h>
+#include <CGAL/Constrained_triangulation_plus_2.h>
+#include <CGAL/Polyline_simplification_2/simplify.h>
+#include <CGAL/Delaunay_mesher_2.h>
+#include <CGAL/Delaunay_mesh_face_base_2.h>
+#include <CGAL/Delaunay_mesh_size_criteria_2.h>
+#include <CGAL/Polyline_simplification_2/Squared_distance_cost.h>
+#include <CGAL/Gps_circle_segment_traits_2.h>
+#include <CGAL/Polygon_set_2.h>
+#include <CGAL/Boolean_set_operations_2.h>
+
+#include <CGAL/Optimal_transportation_reconstruction_2.h>
+//---------------------------------------------------------
+
 #include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
 #include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
 #include <CGAL/Polygon_mesh_processing/orient_polygon_soup.h>
@@ -19,14 +40,14 @@
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
 // #include <CGAL/Polygon_mesh_processing/repair_polygon_soup.h> in dev 
 
-
+//#include <CGAL/Polygon_mesh_slicer.h>
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Search_traits_adapter.h>
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 #include <CGAL/squared_distance_3.h> 
 
 #include <CGAL/Mesh_polyhedron_3.h>
-#include <CGAL/Mesh_3/Detect_features_in_polyhedra.h>
+//?#include <CGAL/Mesh_3/Detect_features_in_polyhedra.h> 
 #include <CGAL/Poisson_reconstruction_function.h>
 
 // CGAL IO 
@@ -97,8 +118,7 @@ bool load_surface(const std::string filename, Mesh& mesh) // new name load polyg
   }
 
   CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons);
-  // PMP::merge_duplicate_polygons_in_polygon_soup(points, polygons_copy,params::all_default());    // not implement yet 
-  //PMP::internal::simplify_polygons_in_polygon_soup<Kernel>(points, polygons);                     // not implement yet
+
 
   CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons,mesh);
 
@@ -118,7 +138,15 @@ bool load_surface(const std::string filename, Mesh& mesh) // new name load polyg
 //--------------------------------------------
 
 
+CGALSurface::CGALSurface(const std::string  filename1, const std::string  filename2)
+{ 
+    Mesh mesh1;
+    Mesh mesh2; 
+    load_surface(filename1,mesh1);
+    load_surface(filename2,mesh2);
+    CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh1, mesh2,mesh);
 
+}
 CGALSurface::CGALSurface(const std::string filename)
 {
     load_surface(filename,mesh);
@@ -165,7 +193,90 @@ int CGALSurface::collapse_edges(const double stop_ratio) {
     return r;
 }
 
+void CGALSurface::mesh_slice(double x1,double x2, double x3 ,double x4)
+{
 
+     // NOTE :: NOT WORKING
+     typedef Kernel::Point_2 Point_2;
+     typedef std::vector<Point_2> Polyline_2;
+     typedef std::vector<Polyline_2> Polylines_2;
+     typedef CGAL::Optimal_transportation_reconstruction_2<Kernel> Otr_2;
+
+     typedef CGAL::Exact_intersections_tag                                     Itag;
+     typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel,CGAL::Default, Itag> CDT;
+     // Intersection Polylines
+     //-------------------------------------------------------------
+     CGAL::Polygon_mesh_slicer<Mesh, Kernel> slicer(mesh); 
+     Polylines polylines_3D;
+     slicer(Kernel::Plane_3(x1, x2, x3, x4), std::back_inserter(polylines_3D));
+
+
+     //-------------------------------------------------------
+     // Triangulate polylines 3D
+     //-------------------------------------------------------
+
+
+     //#include <CGAL/Reconstruction_simplification_2.h>
+     //-------------------------------------------------------------
+     // Basis in slice 
+     //-------------------------------------------------------------
+     Vector_3 n(x1,x2,x3); 
+     
+     n=n/CGAL::sqrt(n.squared_length());
+
+     Vector_3 b1( 1,0,0);
+     
+     Vector_3 e1 = b1 - (b1*n)*n;    
+
+     e1=e1/CGAL::sqrt(e1.squared_length());
+    
+     Vector_3 e2 = CGAL::cross_product(n,e1);
+
+     //-------------------------------------------------------------
+     // Polylines in 2D
+     //-------------------------------------------------------------
+  
+     std::vector<Point_2> points;
+      
+     for ( auto  pol = polylines_3D.begin(); pol != polylines_3D.end(); ++pol ) 
+     {
+         std::cout<< pol->size() << std::endl;
+         for ( auto pit = pol->begin(); pit != pol->end(); ++pit)
+         {
+               
+               points.push_back(Point_2( pit->x()*e1.x() + pit->y()*e1.y() + pit->z()*e1.z() , pit->x()*e2.x() + pit->y()*e2.y() + pit->z()*e2.z() ));
+         }
+     }
+   
+     Otr_2 otr2(points);
+     otr2.run(100);
+     std::vector<Point_2> vertices;
+     std::vector<std::size_t> isolated_vertices;
+     std::vector<std::pair<std::size_t,std::size_t> > edges;
+     otr2.indexed_output(std::back_inserter(points),std::back_inserter(isolated_vertices), std::back_inserter(edges));
+
+
+     std::cout<< points.size() <<std::endl;
+     std::cout<< edges.size() <<std::endl;
+     CDT cdt;
+
+
+     cdt.insert(points.begin(),points.end());
+
+     for ( auto eit = edges.begin() ; eit!= edges.end() ; ++eit )
+     {
+           cdt.insert_constraint(points[eit->first], points[eit->second]);
+     }
+     //CGAL::make_conforming_Gabriel_2(cdt);
+     
+
+     std::ofstream out("out-new.off");
+     CGAL::export_triangulation_2_to_off(out,cdt);
+     //scdt.output
+
+
+     
+}
 
 
 
@@ -188,6 +299,26 @@ void CGALSurface::isotropic_remeshing(double target_edge_length, unsigned int nb
 
 }
 
+void CGALSurface::clip(double x1,double x2, double x3 ,double x4, bool clip)
+{
+   CGAL::Polygon_mesh_processing::clip(mesh,  Kernel::Plane_3(x1,x2,x3,x4), CGAL::Polygon_mesh_processing::parameters::clip_volume(clip));
+
+}
+
+void CGALSurface::triangulate_hole()
+{
+
+    
+    BOOST_FOREACH(halfedge_descriptor h, halfedges(mesh))
+    {
+        std::vector<face_descriptor>  patch_facets;
+        if(is_border(h,mesh))
+        {
+           CGAL::Polygon_mesh_processing::triangulate_hole(mesh, h,back_inserter(patch_facets));
+        }
+    }
+
+}
 int CGALSurface::fill_holes()
 {
     unsigned int nb_holes = 0;
@@ -281,51 +412,7 @@ CGALSurface::vertex_vector CGALSurface::points_outside(CGALSurface& other)
 
 
 
-template<typename InputIterator >
-void CGALSurface::adjusting_boundary_region(InputIterator begin , InputIterator  end, const double c)
-{
 
-  typedef typename CGAL::Vertex_around_target_circulator<Mesh> HV_const_circulator;
-  std::vector<std::pair<vertex_descriptor, Point_3> > smoothed; 
-
-  for ( ; begin != end; ++begin)
-  {
-      Vector_3 delta= CGAL::Polygon_mesh_processing::compute_vertex_normal(*begin,mesh);
-      Point_3 p = mesh.point(*begin) + c*delta;
-      smoothed.push_back(std::make_pair(*begin, p));
-  }
-  for (std::pair<vertex_descriptor, Point_3> s : smoothed)
-  {
-      mesh.point(s.first) = s.second;
-  }
-}
-template<typename InputIterator >
-void CGALSurface::smooth_laplacian_region(InputIterator begin , InputIterator end ,const double c)
-{
-  typedef typename CGAL::Vertex_around_target_circulator<Mesh> HV_const_circulator;
-  std::vector<std::pair<vertex_descriptor, Point_3> > smoothed;
-  for ( ; begin != end; ++begin)
-  {
-
-      Point_3 current = mesh.point(*begin);
-      Vector_3 delta=CGAL::NULL_VECTOR;
-      CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(*begin),mesh), done(vbegin);
-      do
-      {
-          delta += Vector_3(mesh.point(*vbegin) - current);
-          *vbegin++;
-      }while(vbegin!=done);
-
-      Point_3 p = current + c*delta/mesh.degree(*begin);
-      smoothed.push_back(std::make_pair(*begin, p));
-  }
-  for (std::pair<vertex_descriptor, Point_3> s : smoothed)
-  {
-      mesh.point(s.first) = s.second;
-  }
-
-
-}
 void CGALSurface::adjust_boundary(const double c)
 {
     Mesh::Vertex_range::iterator  vb = mesh.vertices().begin(), ve=mesh.vertices().end();
@@ -392,7 +479,6 @@ void CGALSurface::make_cylinder( double x0, double y0, double  z0,  double x1, d
       
         CGALSurface::make_cone( x0, y0,z0, x1,y1, z1, radius , radius,  number_of_segments ) ;
 
-
 }
 CGALSurface::CGALSurface(Polyhedron &polyhedron) {
     CGAL::copy_face_graph(polyhedron, mesh);
@@ -426,13 +512,12 @@ void CGALSurface::make_cone( double x0, double y0, double  z0,  double x1, doubl
 
         Vector_3 t2 = CGAL::cross_product(normal,t1); // normalized ?? 
 
-        double c  = 360/number_of_segments;
+        double c  = 360.0/(double)number_of_segments;
      
-        std::cout << normal << " " << t1 << " " << t2 << std::endl;
+
         for(int i = 0; i < number_of_segments; ++i) 
         {
-               
-
+              
            Point_3 pb= Point_3(x0,y0,z0)  + t1*r0*std::cos(c*i*CGAL_PI/180) + t2*r0*std::sin(c*i*CGAL_PI/180); 
 
            vb = m.add_vertex(pb);
@@ -463,6 +548,10 @@ void CGALSurface::make_cone( double x0, double y0, double  z0,  double x1, doubl
 
         this->mesh = m;
 }
+
+
+
+
 
 struct sphere_wrapper{
         
@@ -504,20 +593,8 @@ void CGALSurface::split_edges(double  target_edge_length)
 }
 
 
-template<typename Implicit_function>
-CGALSurface::CGALSurface(Implicit_function implicit_function,
-             double bounding_sphere_radius,
-             double angular_bound,
-             double radius_bound,
-             double distance_bound)
-{
-     surface_mesher(mesh,implicit_function,bounding_sphere_radius,angular_bound,radius_bound, distance_bound);
-}
 
-CGALSurface::CGALSurface()
-{
-   // constructor
-}
+
 void CGALSurface::save(const char* outpath)
 {
     std::ofstream out(outpath);
@@ -555,7 +632,7 @@ poisson_reconstruction(mesh,sm_angle,
 }
 
 
-void CGALSurface::fix_close_junctures(double c)
+void CGALSurface::fix_close_junctures(double c) // name seperate junction and add negtive value as default
 {
    // TODO :  Clean up typedefs, algorithm COULD be faster
    typedef boost::graph_traits<Mesh>::vertex_descriptor                     Point;

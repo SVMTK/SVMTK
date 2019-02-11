@@ -11,7 +11,7 @@
 #include <CGAL/IO/Complex_2_in_triangulation_3_file_writer.h>
 
 
-
+#include <functional>
 
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Side_of_triangle_mesh.h>
@@ -30,13 +30,15 @@
 template <typename FT, typename P>
 class FT_to_point_function_wrapper : public std::unary_function<P, FT>
 {
-  typedef FT (*Implicit_function)(FT, FT, FT);
+  //typedef FT (*Implicit_function)(FT, FT, FT);
+  typedef std::function<double(double,double,double)> Implicit_function;
   Implicit_function function;
 public:
   typedef P Point;
   FT_to_point_function_wrapper(Implicit_function f) : function(f) {}
   FT operator()(Point p) const { return function(p.x(), p.y(), p.z()); }
-
+  ~FT_to_point_function_wrapper(){};
+  FT_to_point_function_wrapper();
 };
 
 
