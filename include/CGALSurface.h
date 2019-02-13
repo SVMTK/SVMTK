@@ -37,7 +37,32 @@
 // Corefine and compute difference
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
 
+<<<<<<< HEAD
 #include <CGAL/poisson_surface_reconstruction.h>        // Why do I need this one here
+=======
+struct Sphere_wrapper {
+    // TODO : Sphere uses a implicit function, and can be extended to other implict fucntion with smooth boundaries.  
+    public:
+        static double radius ;
+        static double x0;
+        static double y0;
+        static double z0;
+
+        static double function(const double x, const double y, const double z) {
+            return (x - x0)*(x - x0) + (y - y0)*(y - y0) + (z - z0)*(z - z0) - radius*radius;
+        }
+};
+
+double Sphere_wrapper::radius = 0;
+double Sphere_wrapper::x0 = 0;
+double Sphere_wrapper::y0 = 0;
+double Sphere_wrapper::z0 = 0;
+
+
+/* template< typename CGALSurface>  // remove header */
+/* void surface_overlapp(CGALSurface& surf1, CGALSurface& surf2, const double c, const int max_iter=300) { */
+/*     typedef typename CGALSurface::vertex_vector vertex_vector; */
+>>>>>>> 9727749... fixed make sphere
 
 // Fix close junctures
 #include <CGAL/Search_traits_adapter.h>

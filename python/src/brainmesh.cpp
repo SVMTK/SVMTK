@@ -9,6 +9,24 @@
 namespace py = pybind11;
 
 
+class PyAbstractMap : public AbstractMap{
+    public:
+        using AbstractMap::AbstractMap; /* Inherit constructors */
+};
+
+
+typedef std::function<double(double,double,double)> Surface_implicit_function;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
+typedef Kernel::Point_3 Point_3;
+
+
+// We want to construct Polyline in Python then let polyline translate into cgal Point in c++
+
+Point_3 Wrapper_point_3(const double x, const double y, const double z) {
+    return Point_3(x, y, z);
+}
+
+
 PYBIND11_MODULE(brainmesh, m) {
 
     m.def("reconstruct_surface", &reconstruct_surface,
@@ -71,6 +89,20 @@ PYBIND11_MODULE(brainmesh, m) {
 
         .def("create_mesh", &CGALMeshCreator::create_mesh)
         .def("refine_mesh", &CGALMeshCreator::refine_mesh)
+        .def("create_mesh", (void (CGALMeshCreator::*)()) &CGALMeshCreator::create_mesh)
+        // .def("create_mesh", (void (CGALMeshCreator::*)(int)) &CGALMeshCreator::create_mesh)
+        .def("create_mesh", (void (CGALMeshCreator::*)(double)) &CGALMeshCreator::create_mesh)
+        .def("default_creating_mesh", &CGALMeshCreator::default_creating_mesh)
+
+        .def("lloyd", &CGALMeshCreator::lloyd)
+        .def("odt", &CGALMeshCreator::odt)
+        .def("excude", &CGALMeshCreator::excude)
+        .def("perturb", &CGALMeshCreator::perturb)
+
+        .def("add_sharp_border_edges", (void (CGALMeshCreator::*)(CGALSurface&)) &CGALMeshCreator::add_sharp_border_edges)
+
+        /* .def("refine_mesh", &CGALMeshCreator::refine_mesh) */
+        .def("reset_borders", &CGALMeshCreator::reset_borders)
 
     /*     // TODO: What to do about theese two? Need more classes? */
     /*     /1* .def(py::init<std::vector<CGALSurface>, CGAL::Bbox_3, abstract_map>()) *1/ */
