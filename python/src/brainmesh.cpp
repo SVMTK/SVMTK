@@ -24,7 +24,6 @@ typedef Kernel::Point_3 Point_3;
 
 // We want to construct Polyline in Python then let polyline translate into cgal Point in c++
 
-
 Point_3 Wrapper_point_3(const double x, const double y, const double z) {
     return Point_3(x, y, z);
 }
@@ -108,7 +107,7 @@ PYBIND11_MODULE(brainmesh, m) {
         .def("excude", &CGALMeshCreator::excude)
         .def("perturb", &CGALMeshCreator::perturb)
 
-        /* .def("add_sharp_border_edges", (void (CGALMeshCreator::*)(CGALSurface&)) &CGALMeshCreator::add_sharp_border_edges) */
+        .def("add_sharp_border_edges", (void (CGALMeshCreator::*)(CGALSurface&)) &CGALMeshCreator::add_sharp_border_edges)
 
         /* .def("refine_mesh", &CGALMeshCreator::refine_mesh) */
         .def("reset_borders", &CGALMeshCreator::reset_borders)

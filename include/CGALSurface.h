@@ -89,6 +89,7 @@
 
 
 struct Sphere_wrapper {
+    // TODO : Sphere uses a implicit function, and can be extended to other implict fucntion with smooth boundaries.  
     public:
         static double radius ;
         static double x0;
@@ -99,6 +100,11 @@ struct Sphere_wrapper {
             return (x - x0)*(x - x0) + (y - y0)*(y - y0) + (z - z0)*(z - z0) - radius*radius;
         }
 };
+
+double Sphere_wrapper::radius = 0;
+double Sphere_wrapper::x0 = 0;
+double Sphere_wrapper::y0 = 0;
+double Sphere_wrapper::z0 = 0;
 
 
 /* template< typename CGALSurface>  // remove header */
