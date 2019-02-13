@@ -67,14 +67,14 @@ class CGALMeshCreator {
         typedef K::Point_3 Point_3;
         typedef CGAL::Mesh_polyhedron_3<K>::type Polyhedron; 
 
-        typedef CGAL::Polyhedral_mesh_domain_with_features_3<K, Polyhedron> Polyhedral_mesh_domain_3; // ?? vs CGAL::Polyhedral_mesh_domain_with_features_3<K> Polyhedral_mesh_domain_3;
+        typedef CGAL::Polyhedral_mesh_domain_with_features_3<K, Polyhedron> Polyhedral_mesh_domain_3; // Use CGAL::Polyhedral_mesh_domain_with_features_3<K> Polyhedral_mesh_domain_3;
 
         // FIXME: There is a problem with the function wrapper
         typedef CGAL::Polyhedral_vector_to_labeled_function_wrapper<Polyhedral_mesh_domain_3, K  > Function_wrapper; //
 
 
         typedef Function_wrapper::Function_vector Function_vector; //
-        typedef CGAL::Labeled_mesh_domain_3< K> Labeled_Mesh_Domain;
+        typedef CGAL::Labeled_mesh_domain_3<K> Labeled_Mesh_Domain;
         typedef CGAL::Mesh_domain_with_polyline_features_3<Labeled_Mesh_Domain> Mesh_domain; // labeled mesh_domain function wrapper 
 
         typedef CGAL::Mesh_3::Lipschitz_sizing<K, Mesh_domain> Lip_sizing;
@@ -129,7 +129,7 @@ class CGALMeshCreator {
         CGALMeshCreator(std::vector<CGALSurface> surfaces, AbstractMap& map);
         CGALMeshCreator(std::vector<CGALSurface> surfaces);
     
-        // TODO: Implement volume ++ 
+
 
         ~CGALMeshCreator() {}
 
@@ -142,7 +142,7 @@ class CGALMeshCreator {
         void create_mesh();
         void create_mesh(const double mesh_resolution );
 
-
+        //TODO: static_cast to double
         void default_parameters() {
             parameters["mesh_resolution"]=64.0;
             parameters["facet_angle"]    = 25.0;
@@ -154,7 +154,7 @@ class CGALMeshCreator {
         }
 
         void default_creating_mesh();
-        void save_mesh(std::string OutPath); // TODO: check save formats
+        void save(std::string OutPath); // TODO: check save formats
 
         void refine_mesh();
 
@@ -253,29 +253,32 @@ void remove_isolated_vertices(C3T3& c3t3)
 CGALMeshCreator::CGALMeshCreator( std::vector<CGALSurface> surfaces )
 {
     Function_vector v;
-    Polyhedron polyhedron;
+
     for(std::vector<CGALSurface>::iterator sit= surfaces.begin() ;sit!= surfaces.end();sit++)
     {
-       sit->get_polyhedron(polyhedron);
-       min_sphere.add_polyhedron(polyhedron);
-       Polyhedral_mesh_domain_3 *polyhedral_domain = new Polyhedral_mesh_domain_3(polyhedron);
+       Polyhedron *polyhedron = new Polyhedron();
+       sit->get_polyhedron(*polyhedron);
+       min_sphere.add_polyhedron(*polyhedron);
+
+       Polyhedral_mesh_domain_3 *polyhedral_domain = new Polyhedral_mesh_domain_3(*polyhedron);
        v.push_back(polyhedral_domain);
     }
     Function_wrapper wrapper(v);
-
-    domain_ptr = std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper,wrapper.bbox()));
+    
+    domain_ptr = std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper,wrapper.bbox(),1e-6));
     default_parameters();
 }
 
 CGALMeshCreator::CGALMeshCreator( std::vector<CGALSurface> surfaces , AbstractMap& map )
 {
     Function_vector v;
-    Polyhedron polyhedron;
+
     for(std::vector<CGALSurface>::iterator sit= surfaces.begin() ;sit!= surfaces.end();sit++)
     {
-       sit->get_polyhedron(polyhedron);
-       min_sphere.add_polyhedron(polyhedron);
-       Polyhedral_mesh_domain_3 *polyhedral_domain = new Polyhedral_mesh_domain_3(polyhedron);
+       Polyhedron *polyhedron = new Polyhedron();
+       sit->get_polyhedron(*polyhedron);
+       min_sphere.add_polyhedron(*polyhedron);
+       Polyhedral_mesh_domain_3 *polyhedral_domain = new Polyhedral_mesh_domain_3(*polyhedron);
        v.push_back(polyhedral_domain);
       
     }
@@ -306,9 +309,8 @@ CGALMeshCreator::CGALMeshCreator(CGALSurface &surface)
 
 
     domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper,wrapper.bbox())); 
-
     default_parameters();
-    // compute default parameters -> FT CGAL::Polygon_mesh_processing::volume and  resolution gives cell_size 
+
 }
 
 //----------------------------------------------------
@@ -319,7 +321,7 @@ CGALMeshCreator::CGALMeshCreator(CGALSurface &surface)
 void CGALMeshCreator::lipschitz_size_field(int subdomain_id, int k,double min_size,double max_size)
 {
 
-    // lipschitz_size_field  
+
     // TODO : Implement
 
     if (lip_sizing_ptr)
@@ -405,7 +407,7 @@ void CGALMeshCreator::create_mesh(const double mesh_resolution )
 
 
 
-void CGALMeshCreator::save_mesh(std::string OutPath)
+void CGALMeshCreator::save(std::string OutPath)
 {
     std::ofstream  medit_file(OutPath);
     c3t3.output_to_medit(medit_file);
@@ -472,32 +474,16 @@ void CGALMeshCreator::add_sharp_border_edges(Polyhedron& polyhedron) // no need 
 
 void CGALMeshCreator::add_sharp_border_edges(CGALSurface& surface) 
 { 
-
+  // wrapping
   Polyhedron polyhedron;
   surface.get_polyhedron(polyhedron);
-  Polylines polylinput; 
-  typedef boost::property_map<Polyhedron, CGAL::edge_is_feature_t>::type EIF_map;
-  EIF_map eif = get(CGAL::edge_is_feature, polyhedron);
-
-  CGAL::Polygon_mesh_processing::detect_sharp_edges(polyhedron,80, eif);
-   for( Polyhedron::Edge_iterator he = polyhedron.edges_begin(); he != polyhedron.edges_end() ; ++he)
-   {
-      if(he->is_feature_edge() ) 
-      {
-         Polyline_3 polyline;
-         polyline.push_back(he->vertex()->point());
-         polyline.push_back(he->opposite()->vertex()->point());     
-         polylinput.push_back(polyline);
-      }    
-  }   
-  polylines_to_protect(this->borders, polylinput.begin(),  polylinput.end() );
-
+  add_sharp_border_edges(polyhedron);
 
 }
 
 // 
 template < typename InputIterator>
-void CGALMeshCreator::insert_edge(InputIterator begin, InputIterator end) // Used in conjuction with refine mesh -> will insert points directly into mesh TODO: Remove
+void CGALMeshCreator::insert_edge(InputIterator begin, InputIterator end) // TODO: Remove
 {
   Tr& tr = c3t3.triangulation();
   Corner_index corner_index (1);

@@ -137,7 +137,7 @@ PYBIND11_MODULE(brainmesh, m) {
         .def("set_features", (void(CGALMeshCreator::*)(CGALMeshCreator::Polylines&)) &CGALMeshCreator::set_features) 
         .def("set_features", (void(CGALMeshCreator::*)()) &CGALMeshCreator::set_features) 
         .def("add_feature", &CGALMeshCreator::add_feature) 
-        .def("save_mesh", &CGALMeshCreator::save_mesh); 
+        .def("save", &CGALMeshCreator::save); 
 
 
     //py::class_<Neuron,CGALSurface>(m,"Neuron")

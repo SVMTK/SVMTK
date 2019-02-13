@@ -25,7 +25,7 @@
 #include <assert.h>  
 #include <iterator>
 #include <vector>
-
+#include <CGAL/IO/STL_reader.h>
 
 
 
@@ -232,7 +232,7 @@ class CGALSurface
         template< typename Polyhedron_3>  // Template to address the different kernels in CGAL TODO: return Polyhedron?
         void get_polyhedron(Polyhedron_3 &polyhedron_3 ){CGAL::copy_face_graph(mesh,polyhedron_3);}
 
-        void save(const char* outpath);
+        void save(const std::string outpath);
 
         template<typename Implicit_function>  
         void implicit_surface(Implicit_function implicit_function,
@@ -349,11 +349,11 @@ void CGALSurface::smooth_laplacian_region(InputIterator begin , InputIterator en
 
 
 template< typename Mesh> // seperate because -> typedef mesh in CGALSurface
-bool load_surface(const std::string filename, Mesh& mesh) // new name load polygons if load fails
+bool load_surface(const std::string file, Mesh& mesh) // new name load polygons if load fails
 {
    
-  std::ifstream input(filename);
-  std::string file(filename);
+  std::ifstream input(file);
+
   std::string extension = file.substr(file.find_last_of(".")+1);//TODO: FIX boost linking problem
   if (!input)
   {
@@ -550,8 +550,8 @@ void CGALSurface::mesh_slice(double x1,double x2, double x3 ,double x4)
      //CGAL::make_conforming_Gabriel_2(cdt);
      
 
-     std::ofstream out("out-new.off");
-     CGAL::export_triangulation_2_to_off(out,cdt);
+     //  std::ofstream out("out-new.off");
+     //CGAL::export_triangulation_2_to_off(out,cdt);
      //scdt.output
 
 
@@ -875,11 +875,23 @@ void CGALSurface::split_edges(double  target_edge_length)
 
 
 
-void CGALSurface::save(const char* outpath)
-{
-    std::ofstream out(outpath);
-    out << mesh;
-    out.close();
+void CGALSurface::save(const std::string outpath)
+{    
+     std::string extension = outpath.substr(outpath.find_last_of(".")+1);
+     std::ofstream out(outpath);
+     if ( extension=="off")
+     {
+        out << mesh;
+        out.close();
+     } 
+     else if ( extension=="stl")
+     {
+        std::cout<<"Not Implemented" << std::endl;
+        //out << mesh;
+        out.close();
+     }
+
+
 }
 
 void CGALSurface::fair(CGALSurface::vertex_vector vector)
