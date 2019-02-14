@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
    sf.add("0001",1)
    sf.add("0011",2)  
-   #sf.add("0111",3) 
+   sf.add("0111",3) 
    sf.add("1111",4) 
    sf.print()
    maker = bm.BrainMesh(s,sf)

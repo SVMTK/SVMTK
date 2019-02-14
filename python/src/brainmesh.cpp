@@ -116,7 +116,7 @@ PYBIND11_MODULE(brainmesh, m) {
 
         .def("lloyd", &CGALMeshCreator::lloyd)
         .def("odt", &CGALMeshCreator::odt)
-        .def("excude", &CGALMeshCreator::excude)
+        .def("exude", &CGALMeshCreator::exude)
         .def("perturb", &CGALMeshCreator::perturb)
 
         .def("add_sharp_border_edges", (void (CGALMeshCreator::*)(CGALSurface&)) &CGALMeshCreator::add_sharp_border_edges)

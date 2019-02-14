@@ -192,7 +192,7 @@ class CGALMeshCreator {
         void odt(double time_limit= 0, int max_iteration_number = 0, double convergence = 0.02,double freeze_bound = 0.01, bool do_freeze = true);
 
 
-        void excude( double time_limit = 0, double sliver_bound = 0 ){ CGAL::exude_mesh_3(c3t3, sliver_bound=sliver_bound, time_limit=time_limit);} 
+        void exude( double time_limit = 0, double sliver_bound = 0 ){ CGAL::exude_mesh_3(c3t3, sliver_bound=sliver_bound, time_limit=time_limit);} 
 
         void perturb( double time_limit=0, double sliver_bound=0){CGAL::perturb_mesh_3 ( c3t3, *domain_ptr.get(), time_limit=time_limit, sliver_bound=sliver_bound) ;} 
 
@@ -410,7 +410,7 @@ void CGALMeshCreator::create_mesh(const double mesh_resolution )
 void CGALMeshCreator::save(std::string OutPath)
 {
     std::ofstream  medit_file(OutPath);
-    c3t3.output_to_medit(medit_file);
+    c3t3.output_to_medit(medit_file,false,true);
     medit_file.close();
 }
 

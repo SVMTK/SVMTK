@@ -491,6 +491,9 @@ void CGALSurface::mesh_slice(double x1,double x2, double x3 ,double x4)
      slicer(Kernel::Plane_3(x1, x2, x3, x4), std::back_inserter(polylines_3D));
 
 
+    //  Mesh p = Kernel::Plane_3(x1, x2, x3, x4);
+     
+    // surface_intersection(p);
      //-------------------------------------------------------
      // Triangulate polylines 3D
      //-------------------------------------------------------
