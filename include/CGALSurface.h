@@ -244,7 +244,7 @@ class CGALSurface
 
 
         //void surface_extension(double x0 , double y0 , double z0); provide point -> closest point on surface computes surface normal and creates cylinder with point as midpoint
-
+        void write_STL(const std::string filename);
 
 
    //private :
@@ -253,6 +253,40 @@ class CGALSurface
 
 
 };
+
+
+void CGALSurface::write_STL(const std::string filename)
+{
+
+    std::ofstream file(filename);
+    file.precision(6);
+    Vector_3 n;
+
+    file << "solid "<< filename << std::endl;
+
+
+
+    for (auto f : mesh.faces() )
+    {
+
+       n = CGAL::Polygon_mesh_processing::compute_face_normal(f,mesh);
+
+
+       file << "facet normal " << n.x() << " " << n.y()   << " " << n.z() <<std::endl;
+       file << "outer loop"<< std::endl;
+       CGAL::Vertex_around_face_iterator<Mesh> vbegin, vend;
+       for(boost::tie(vbegin, vend) = vertices_around_face(mesh.halfedge(f), mesh); vbegin != vend; ++vbegin)
+       {
+          file << "\t" << "vertex " << mesh.point(*vbegin).x() <<" "<< mesh.point(*vbegin).y() <<" "<< mesh.point(*vbegin).z()  << std::endl;  
+            
+       }
+       file <<"endloop" << std::endl;
+       file <<"endfacet"<< std::endl;
+    }
+    file << "endsolid"  << std::endl;
+
+}
+
 
 
 template< typename CGALSurface>  // remove header
@@ -889,9 +923,7 @@ void CGALSurface::save(const std::string outpath)
      } 
      else if ( extension=="stl")
      {
-        std::cout<<"Not Implemented" << std::endl;
-        //out << mesh;
-        out.close();
+       write_STL(outpath);
      }
 
 
