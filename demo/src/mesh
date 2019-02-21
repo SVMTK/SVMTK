@@ -1,0 +1,27 @@
+#!/usr/bin/python
+
+if __name__ =='__main__':
+        import brainmesh as bm
+        import argparse
+        import os
+        hemi , surface = os.path.basename(__file__).split(".")[0:2]
+        parser = argparse.ArgumentParser(description='Creates a volume mesh of {}-{}.stl.'.format(hemi,surface) )
+
+        parser.add_argument("--res"   ,type=float, default=32.0    ,help = "The resoltuion of the mesh. Defined as cell_size = bounding_radius/resolution")
+        parser.add_argument("--proc"  ,action='store_true',help = "If included, the script will use the {}-{}-proc.stl as input.".format(hemi,surface))
+        Z = parser.parse_args()
+ 
+        if Z.proc:
+           surf  = bm.BrainSurface("../mesh/"+hemi+"-"+surface+"-proc.stl")
+        else :
+           surf  = bm.BrainSurface("../mesh/"+hemi+"-"+surface+".stl")
+
+        domain = bm.BrainMesh(surf)
+        domain.create_mesh(Z.res)
+
+        if Z.proc:
+           domain.save("../mesh/"+hemi+"-"+surface+"-proc.mesh")
+        else :
+           domain.save("../mesh/"+hemi+"-"+surface+".mesh")
+
+
