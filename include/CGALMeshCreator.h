@@ -200,6 +200,8 @@ class CGALMeshCreator {
 
         void remove_label_cells(int tag);    // tags 
 
+
+
     private :
         std::unique_ptr<Mesh_domain> domain_ptr;
         std::unique_ptr<Lip_sizing>  lip_sizing_ptr;
@@ -410,8 +412,10 @@ void CGALMeshCreator::create_mesh(const double mesh_resolution )
 void CGALMeshCreator::save(std::string OutPath)
 {
     std::ofstream  medit_file(OutPath);
-    c3t3.output_to_medit(medit_file,false,true);
+    c3t3.output_to_medit(medit_file);
     medit_file.close();
+
+
 }
 
 
