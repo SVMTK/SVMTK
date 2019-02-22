@@ -33,14 +33,27 @@ void remove_isolated_vertices(C3T3& c3t3)
 
   int before = c3t3.triangulation().number_of_vertices() ;
   
+  int count = 0;
+
+
   for (typename std::map<Vertex_handle, bool>::const_iterator it = vertex_map.begin();it != vertex_map.end(); ++it) // check post or pre increment
   {
+    
     if (!it->second) 
     {
        c3t3.triangulation().remove(it->first);
     }
+    else 
+    {
+       std::cout<< count++ <<  c3t3.triangulation().index(it->first) << std::endl;
+
+    }
+
   }
   int after = c3t3.triangulation().number_of_vertices() ; 
   std::cout<<"Number of vertices removed: "  << before - after  << std::endl;
+
+
+  // re label
 
 }

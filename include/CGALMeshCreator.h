@@ -93,6 +93,7 @@ class CGALMeshCreator {
         typedef std::vector<Point_3>  Polyline_3;
         typedef std::vector<Polyline_3> Polylines;
 
+
         typedef C3t3::Subdomain_index Subdomain_index;
         typedef C3t3::Cells_in_complex_iterator Cell_iterator;
 
@@ -219,11 +220,12 @@ void remove_isolated_vertices(C3T3& c3t3)
 
   typedef typename C3T3::Triangulation Tr;
   typedef typename C3T3::Cells_in_complex_iterator Cell_iterator;
-
+  typedef typename C3T3::Index Index;
   typedef typename Tr::Finite_vertices_iterator Finite_vertices_iterator;
   typedef typename Tr::Vertex_handle Vertex_handle;
 
   std::map<Vertex_handle, bool> vertex_map;
+  std::cout << vertex_map.size() << std::endl;
   for( Finite_vertices_iterator vit = c3t3.triangulation().finite_vertices_begin();vit != c3t3.triangulation().finite_vertices_end();++vit)
   { 
       vertex_map[vit] = false ;  
@@ -238,12 +240,19 @@ void remove_isolated_vertices(C3T3& c3t3)
   }
 
   int before = c3t3.triangulation().number_of_vertices() ;
-  
+  int count=0;
   for (typename std::map<Vertex_handle, bool>::const_iterator it = vertex_map.begin();it != vertex_map.end(); ++it) // check post or pre increment
   {
     if (!it->second) 
     {
        c3t3.triangulation().remove(it->first);
+    }
+    else 
+    {
+       
+       Index index(++count);
+       c3t3.set_index(it->first,index);
+
     }
   }
   int after = c3t3.triangulation().number_of_vertices() ; 
@@ -412,7 +421,7 @@ void CGALMeshCreator::create_mesh(const double mesh_resolution )
 void CGALMeshCreator::save(std::string OutPath)
 {
     std::ofstream  medit_file(OutPath);
-    c3t3.output_to_medit(medit_file);
+    c3t3.output_to_medit(medit_file,true);
     medit_file.close();
 
 
