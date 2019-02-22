@@ -1,3 +1,0 @@
-[console_scripts]
-brainmesh-convert = source.convert:main
-
