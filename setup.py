@@ -59,7 +59,7 @@ class CMakeBuild(build_ext):
 
 
 setup(
-    name="brainmesh",
+    name="SVMTK",
     version="{0}.{1}".format(MAJOR, MINOR),
     description="A collection of tools for volume and surface meshing",
     long_description="",

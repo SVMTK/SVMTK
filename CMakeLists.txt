@@ -44,12 +44,10 @@ set( CMAKE_CXX_FLAGS "-fPIC -shared ${CMAKE_CXX_FLAGS} -std=c++17 -frounding-mat
 
 
 include_directories(include)
-pybind11_add_module(brainmesh python/src/brainmesh.cpp)
-target_link_libraries(brainmesh PRIVATE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${GOBJECT_INCLUDE_DIR} ${OpenMesh} ${Eigen3} ${Boost} ${MPFR} )
+pybind11_add_module(SVMTK python/src/SVMTK.cpp)
+target_link_libraries(SVMTK PRIVATE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${GOBJECT_INCLUDE_DIR} ${OpenMesh} ${Eigen3} ${Boost} ${MPFR} )
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-foreach(dir ${dirs})
-  message(STATUS "dir='${dir}'")
-endforeach()
+
 #    target_link_libraries(${exe_name} ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} )
 
 #if (CGAL_AUTO_LINK_ENABLED)

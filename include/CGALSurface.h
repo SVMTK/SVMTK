@@ -711,9 +711,6 @@ CGALSurface::vertex_vector CGALSurface::points_inside(CGALSurface& other,CGALSur
 
 
 
-
-
-
 CGALSurface::vertex_vector CGALSurface::points_outside(CGALSurface& other)
 {
   vertex_vector result;
