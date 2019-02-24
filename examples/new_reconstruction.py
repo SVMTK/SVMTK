@@ -1,8 +1,8 @@
-import brainmesh as bm
+import SVMTK as svm
 
-eight = bm.BrainSurface("data/pig.off")
+eight = svm.Surface("data/pig.off")
 print(eight.self_intersections())
-new_eight = bm.reconstruct_surface(eight)
+new_eight = svm.reconstruct_surface(eight)
 print(new_eight.self_intersections())
 
 new_eight.save("foo.off")

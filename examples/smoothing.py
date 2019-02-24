@@ -1,16 +1,16 @@
 """smooth a surface."""
 
-import brainmesh as bm
+import SVMTK as svm
 from pathlib import Path
 
 outdir = Path("results")
 outdir.mkdir(exist_ok=True)
 
-pig = bm.BrainSurface("data/pig.off")
+pig = svm.Surface("data/pig.off")
 
 for i in range(5):
-    pig.smooth_laplacian(0.8)
-    pig.smooth_laplacian(-0.805)        # Taubin smoothing
+    pig.smooth_laplacian(0.8,1)
+    pig.smooth_laplacian(-0.805,1)        # Taubin smoothing
 
 pig.smooth_taubin(5)
 

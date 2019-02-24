@@ -1,12 +1,12 @@
 """Stitch borders of a quad."""
 
-import brainmesh as bm
+import SVMTK as svm
 from pathlib import Path
 
 outdir = Path("results")
 outdir.mkdir(exist_ok=True)
 
-quad = bm.BrainSurface("data/full_border_quads.off")
+quad = svm.Surface("data/full_border_quads.off")
 print("Before stitching")
 print(f"number of faces: {quad.num_faces()}")
 print(f"number of edges: {quad.num_edges()}")

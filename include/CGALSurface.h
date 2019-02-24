@@ -49,7 +49,12 @@
 #include <CGAL/Gps_circle_segment_traits_2.h>
 #include <CGAL/Polygon_set_2.h>
 #include <CGAL/Boolean_set_operations_2.h>
-#include <CGAL/Optimal_transportation_reconstruction_2.h>
+
+
+#include <CGAL/Constrained_Delaunay_triangulation_2.h>
+
+#include <CGAL/Polyline_simplification_2/simplify.h>
+
 //---------------------------------------------------------
 // CGAL- Polygon_mesh_processing
 #include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
@@ -102,6 +107,101 @@
 #include <CGAL/Side_of_triangle_mesh.h> 
 
 
+
+//--------------------------------------------
+//      UTILITY
+//--------------------------------------------
+template< typename Mesh> // seperate because -> typedef mesh in CGALSurface
+bool load_surface(const std::string file, Mesh& mesh) // new name load polygons if load fails
+{
+   
+  std::ifstream input(file);
+
+  std::string extension = file.substr(file.find_last_of(".")+1);//TODO: FIX boost linking problem
+  if (!input)
+  {
+    std::cerr << "Cannot open file " << std::endl;
+    return false;
+  }
+
+  typedef typename Mesh::Point Point_3;
+  
+  
+  std::vector<Point_3> points;
+  std::vector< std::vector<std::size_t> > polygons;
+
+  if ( extension=="off")
+  {
+     std::cout<< "reading off" << std::endl;
+     if (!CGAL::read_OFF(input, points, polygons))
+     {
+         std::cerr << "Error parsing the OFF file " << std::endl;
+         return false;
+     }
+     std::cout<< "finished" << std::endl;
+  }
+  else if ( extension=="stl")
+  {
+     if (!read_polygons_STL(input, points, polygons)) 
+     {
+         std::cerr << "Error parsing the STL file " << std::endl;
+         return false;
+     }
+  }
+  else
+  {
+     std::cerr << "Error unkown file" << std::endl;
+     return false;
+  }
+
+  CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons);
+
+
+  CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons,mesh);
+
+  if (CGAL::is_closed(mesh) && (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)))
+  {
+   std::cout<< "reverse_face_orientation"<< std::endl;
+
+    CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
+  }
+  return true;
+}
+
+
+
+template< typename CGALSurface>  // FIXME
+void surface_overlapp(CGALSurface& surf1 , CGALSurface& surf2 , double c,    int max_iter  = 300)
+{
+    typedef typename CGALSurface::vertex_vector vertex_vector;
+
+    vertex_vector surf1points;
+    vertex_vector surf2points;
+
+    surf1points = surf1.points_inside(surf2);
+    surf2points = surf2.points_inside(surf1);
+
+    int iter =0;
+
+    while (  !surf1points.empty() and  !surf2points.empty() )
+    {
+            surf1.fair(surf1points);
+            surf2.fair(surf2points);
+
+            surf1points= surf1.points_inside(surf2 , surf1points);
+            surf2points = surf2.points_inside(surf1, surf2points);
+
+            surf1.adjusting_boundary_region(surf1points.begin() ,surf1points.end(), c);
+            surf2.adjusting_boundary_region(surf2points.begin() ,surf2points.end(), c);
+
+            //std::cout<< surf1points.size() + surf2points.size() << std::endl;
+            iter++;
+            if( iter >max_iter)
+                 break;
+              
+    }
+
+}
 
 
 
@@ -182,7 +282,7 @@ class CGALSurface
     
         void adjust_boundary(const double c);
 
-        void smooth_laplacian(const double c);
+        void smooth_laplacian(const double c, int iter);
 
         void fix_close_junctures(double c);
 
@@ -264,8 +364,6 @@ void CGALSurface::write_STL(const std::string filename)
 
     file << "solid "<< filename << std::endl;
 
-
-
     for (auto f : mesh.faces() )
     {
 
@@ -289,39 +387,6 @@ void CGALSurface::write_STL(const std::string filename)
 
 
 
-template< typename CGALSurface>  // remove header
-void surface_overlapp(CGALSurface& surf1 , CGALSurface& surf2 , double c,    int max_iter  = 300)
-{
-    typedef typename CGALSurface::vertex_vector vertex_vector;
-
-    vertex_vector surf1points;
-    vertex_vector surf2points;
-
-    surf1points = surf1.points_inside(surf2);
-    surf2points = surf2.points_inside(surf1);
-
-
-    int iter =0;
-
-    while (  !surf1points.empty() and  !surf2points.empty() )
-    {
-            surf1.fair(surf1points);
-            surf2.fair(surf2points);
-
-            surf1points= surf1.points_inside(surf2 , surf1points);
-            surf2points = surf2.points_inside(surf1, surf2points);
-
-            surf1.adjusting_boundary_region(surf1points.begin() ,surf1points.end(), c);
-            surf2.adjusting_boundary_region(surf2points.begin() ,surf2points.end(), c);
-
-            //std::cout<< surf1points.size() + surf2points.size() << std::endl;
-            iter++;
-            if( iter >max_iter)
-                 break;
-              
-    }
-
-}
 
 template<typename Implicit_function>
 void CGALSurface::implicit_surface(Implicit_function implicit_function,
@@ -337,7 +402,6 @@ void CGALSurface::implicit_surface(Implicit_function implicit_function,
 template<typename InputIterator >
 void CGALSurface::adjusting_boundary_region(InputIterator begin , InputIterator  end, const double c)
 {
-
   typedef typename CGAL::Vertex_around_target_circulator<Mesh> HV_const_circulator;
   std::vector<std::pair<vertex_descriptor, Point_3> > smoothed; 
 
@@ -369,81 +433,15 @@ void CGALSurface::smooth_laplacian_region(InputIterator begin , InputIterator en
           *vbegin++;
       }while(vbegin!=done);
 
-      Point_3 p = current + c*delta/mesh.degree(*begin);
+      Point_3 p = current + c*delta/mesh.degree(*begin);  // WHY C
       smoothed.push_back(std::make_pair(*begin, p));
   }
   for (std::pair<vertex_descriptor, Point_3> s : smoothed)
   {
       mesh.point(s.first) = s.second;
   }
-
-
 }
 
-
-
-template< typename Mesh> // seperate because -> typedef mesh in CGALSurface
-bool load_surface(const std::string file, Mesh& mesh) // new name load polygons if load fails
-{
-   
-  std::ifstream input(file);
-
-  std::string extension = file.substr(file.find_last_of(".")+1);//TODO: FIX boost linking problem
-  if (!input)
-  {
-    std::cerr << "Cannot open file " << std::endl;
-    return false;
-  }
-
-  typedef typename Mesh::Point Point_3;
-  
-  
-  std::vector<Point_3> points;
-  std::vector< std::vector<std::size_t> > polygons;
-
-  if ( extension=="off")
-  {
-
-    //  if (input >> mesh) // ERROR
-    //    return true;
-    // }
- 
- 
-     std::cout<< "reading off" << std::endl;
-     if (!CGAL::read_OFF(input, points, polygons))
-     {
-         std::cerr << "Error parsing the OFF file " << std::endl;
-         return false;
-     }
-     std::cout<< "finished" << std::endl;
-  }
-  else if ( extension=="stl")
-  {
-     if (!read_polygons_STL(input, points, polygons)) 
-     {
-         std::cerr << "Error parsing the STL file " << std::endl;
-         return false;
-     }
-  }
-  else
-  {
-     std::cerr << "Error unkown file" << std::endl;
-     return false;
-  }
-
-  CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons);
-
-
-  CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons,mesh);
-
-  if (CGAL::is_closed(mesh) && (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)))
-  {
-   std::cout<< "reverse_face_orientation"<< std::endl;
-
-    CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
-  }
-  return true;
-}
 
 
 
@@ -466,6 +464,7 @@ CGALSurface::CGALSurface(const std::string filename)
     load_surface(filename,mesh);
 }
 
+// Boolean operation FIXME to overloaded operators ?
 void CGALSurface::surface_intersection( CGALSurface& other)
 {
      CGAL::Polygon_mesh_processing::corefine_and_compute_intersection(mesh, other.get_mesh(),mesh) ;
@@ -483,15 +482,15 @@ void CGALSurface::surface_union( CGALSurface& other)
 
 void CGALSurface::smooth_taubin(const size_t nb_iter) {
     for (size_t i = 0; i < nb_iter; ++i) {
-        this->smooth_laplacian(0.8);
-        this->smooth_laplacian(-0.805);
+        this->smooth_laplacian(0.8,1);
+        this->smooth_laplacian(-0.805,1);
     }
 }
 
 int CGALSurface::num_self_intersections() {
     std::vector< std::pair<face_descriptor, face_descriptor> > intersected_tris;
     CGAL::Polygon_mesh_processing::self_intersections(mesh, std::back_inserter(intersected_tris));
-    return intersected_tris.size();  // Could actually return the triangles themselves
+    return intersected_tris.size();  // Could actually return the triangles themselves -> return facets
 }
 
 int CGALSurface::collapse_edges(const double stop_ratio) {
@@ -514,26 +513,17 @@ void CGALSurface::mesh_slice(double x1,double x2, double x3 ,double x4)
      typedef Kernel::Point_2 Point_2;
      typedef std::vector<Point_2> Polyline_2;
      typedef std::vector<Polyline_2> Polylines_2;
-     typedef CGAL::Optimal_transportation_reconstruction_2<Kernel> Otr_2;
 
-     typedef CGAL::Exact_intersections_tag                                     Itag;
-     typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel,CGAL::Default, Itag> CDT;
+     
+
+
      // Intersection Polylines
      //-------------------------------------------------------------
      CGAL::Polygon_mesh_slicer<Mesh, Kernel> slicer(mesh); 
      Polylines polylines_3D;
+
      slicer(Kernel::Plane_3(x1, x2, x3, x4), std::back_inserter(polylines_3D));
 
-
-    //  Mesh p = Kernel::Plane_3(x1, x2, x3, x4);
-     
-    // surface_intersection(p);
-     //-------------------------------------------------------
-     // Triangulate polylines 3D
-     //-------------------------------------------------------
-
-
-     //#include <CGAL/Reconstruction_simplification_2.h>
      //-------------------------------------------------------------
      // Basis in slice 
      //-------------------------------------------------------------
@@ -553,43 +543,64 @@ void CGALSurface::mesh_slice(double x1,double x2, double x3 ,double x4)
      // Polylines in 2D
      //-------------------------------------------------------------
   
-     std::vector<Point_2> points;
-      
+     std::vector<std::vector<Point_2>> polylines_2;
+     
      for ( auto  pol = polylines_3D.begin(); pol != polylines_3D.end(); ++pol ) 
      {
-         std::cout<< pol->size() << std::endl;
+         std::vector<Point_2> points;
          for ( auto pit = pol->begin(); pit != pol->end(); ++pit)
          {
-               
                points.push_back(Point_2( pit->x()*e1.x() + pit->y()*e1.y() + pit->z()*e1.z() , pit->x()*e2.x() + pit->y()*e2.y() + pit->z()*e2.z() ));
          }
+         polylines_2.push_back(points);
      }
    
-     Otr_2 otr2(points);
-     otr2.run(100);
-     std::vector<Point_2> vertices;
-     std::vector<std::size_t> isolated_vertices;
-     std::vector<std::pair<std::size_t,std::size_t> > edges;
-     otr2.indexed_output(std::back_inserter(points),std::back_inserter(isolated_vertices), std::back_inserter(edges));
+     // Polylines in 2D -> simplify polylines in 2D
 
 
-     std::cout<< points.size() <<std::endl;
-     std::cout<< edges.size() <<std::endl;
-     CDT cdt;
+
+     typedef CGAL::Triangulation_vertex_base_2<Kernel> Vb_2;
+     typedef CGAL::Delaunay_mesh_face_base_2<Kernel> Fb_2;
+     typedef CGAL::Triangulation_data_structure_2<Vb_2, Fb_2> Tds_2;
+     typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, Tds_2,CGAL::Exact_predicates_tag> CDT_2;
+     typedef CGAL::Delaunay_mesh_size_criteria_2<CDT_2> Criteria;
+     typedef CGAL::Delaunay_mesher_2<CDT_2, Criteria> Mesher;
+
+     typedef CGAL::Delaunay_mesh_size_criteria_2<CDT_2> Criteria;
+     typedef CGAL::Delaunay_mesher_2<CDT_2, Criteria> Mesher;
+
+     CDT_2 cdt;
 
 
-     cdt.insert(points.begin(),points.end());
-
-     for ( auto eit = edges.begin() ; eit!= edges.end() ; ++eit )
+ 
+     for ( auto pol = polylines_2.begin(); pol != polylines_2.end(); ++pol)
      {
-           cdt.insert_constraint(points[eit->first], points[eit->second]);
+          cdt.insert_constraint(pol->begin(), pol->end() );
+          break;
      }
-     //CGAL::make_conforming_Gabriel_2(cdt);
-     
 
-     //  std::ofstream out("out-new.off");
-     //CGAL::export_triangulation_2_to_off(out,cdt);
-     //scdt.output
+     //CGAL::Polyline_simplification_2::simplify(ct, Cost(), Stop(0.8));
+
+
+
+
+     //CGAL::refine_Delaunay_mesh_2(ct, Criteria());
+
+    
+     Mesher mesher(cdt);
+     mesher.refine_mesh();
+
+     for(CDT_2::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
+     {
+         if (!fit->is_in_domain())
+         {
+            cdt.delete_face(fit);
+         }
+     } 
+
+     std::ofstream out("out-new.off");
+     CGAL::export_triangulation_2_to_off(out,cdt);
+  
 
 
      
@@ -733,10 +744,13 @@ void CGALSurface::adjust_boundary(const double c)
     CGALSurface::adjusting_boundary_region(vb, ve,c);
 
 }
-void CGALSurface::smooth_laplacian(const double c)
+void CGALSurface::smooth_laplacian(const double c, int iter)
 {
     Mesh::Vertex_range::iterator  vb = mesh.vertices().begin(), ve=mesh.vertices().end();
-    CGALSurface::smooth_laplacian_region(vb, ve,c);
+    for ( int i = 0 ; i< iter ; ++i)
+    {
+        CGALSurface::smooth_laplacian_region(vb, ve,c);
+    }
 }
 
 void CGALSurface::make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1) // TODO :allow tilted cubes

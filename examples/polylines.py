@@ -1,13 +1,13 @@
 """Compute number of self-intersections."""
 
-import brainmesh as  bm
+import SVMTK as  svm
 from pathlib import Path
 outdir = Path("results")
 outdir.mkdir(exist_ok=True)
 
-sphere = bm.BrainSurface("data/sphere_r6.off")
+sphere = svm.Surface("data/sphere_r6.off")
 
-mesh = bm.BrainMesh(sphere)
+mesh = svm.Domain(sphere)
 
 dx = 1.0
 vector1 = [ (0,0,i*dx-3.) for i in range(6) ] 

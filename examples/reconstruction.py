@@ -1,12 +1,12 @@
 """Compute number of self-intersections."""
 
-import brainmesh as  bm
+import SVMTK as  svm
 from pathlib import Path
 
 outdir = Path("results")
 outdir.mkdir(exist_ok=True)
 
-pig = bm.BrainSurface("data/blobby.off")
+pig = svm.Surface("data/blobby.off")
 
 self_intersecting = pig.self_intersections()
 if self_intersecting:

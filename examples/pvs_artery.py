@@ -1,5 +1,5 @@
 
-import brainmesh as bm
+import SVMTK as svm
 
 
 def pvs(x,y,z) : 
@@ -12,16 +12,16 @@ def pvs(x,y,z) :
 if __name__ == "__main__":
     
 
-   surf = bm.BrainSurface();
+   surf = svm.Surface();
 
    surf.implicit_surface(pvs, 6.0,30,0.1,0.1)
    
-   surf2 = bm.BrainSurface();
+   surf2 = svm.Surface();
 
    surf2.make_cylinder(0.,0.,-3.,0.,0.,3.,1.0,21)
 
 
-   maker = bm.BrainMesh([surf,surf2])
+   maker = svm.Domain([surf,surf2])
 
    maker.add_sharp_border_edges(surf2)
 

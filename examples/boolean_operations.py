@@ -1,10 +1,10 @@
 """Compute boolean operations between blobby and eight."""
 
-import brainmesh as bm
+import SVMTK as svm
 from pathlib import Path
 
 
-def print_stats(surf: bm.BrainSurface) -> None:
+def print_stats(surf: svm.Surface) -> None:
     """Print num_facet, num_edges and num vertices."""
     print(f"num_faces: {surf.num_faces()}")
     print(f"num_edges: {surf.num_edges()}")
@@ -19,8 +19,8 @@ class BooleanOperation:
 
     def __init__(self, input_name1: str, input_name2: str) -> None:
         """Load surfaces from filepaths."""
-        self.surf1 = bm.BrainSurface(input_name1)
-        self.surf2 = bm.BrainSurface(input_name2)
+        self.surf1 = svm.Surface(input_name1)
+        self.surf2 = svm.Surface(input_name2)
 
     def intersection(self) -> None:
         """Copute the intersection between surface1 and surface2."""

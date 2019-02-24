@@ -1,19 +1,19 @@
-import brainmesh as bm
+import SVMTK as svm
 
 
 if __name__ == "__main__":
     
  
-   surf = bm.BrainSurface();
+   surf = svm.Surface();
 
    surf.make_cube(-2.,-2.,-2.,2.,2.,2.)
   
-   maker = bm.BrainMesh(surf)
+   maker = svm.Domain(surf)
 
    maker.add_sharp_border_edges(surf)
 
-   line1 = [ bm.Point_3(0,0,-1.0),bm.Point_3(0,0,0.0), bm.Point_3(0,1.0,1.0)] 
-   line2 = [ bm.Point_3(0,0,0.0), bm.Point_3(0,-1.0,1.0) ]
+   line1 = [ svm.Point_3(0,0,-1.0),svm.Point_3(0,0,0.0), svm.Point_3(0,1.0,1.0)] 
+   line2 = [ svm.Point_3(0,0,0.0), svm.Point_3(0,-1.0,1.0) ]
  
    maker.add_feature( line1)
    maker.add_feature( line2)
@@ -22,7 +22,7 @@ if __name__ == "__main__":
    maker.set_features()
 
    maker.create_mesh(24.)
-   maker.excude(100, 0)
+   maker.exude(100, 0)
    maker.save("bifurcation_in_cube.mesh")
 
 

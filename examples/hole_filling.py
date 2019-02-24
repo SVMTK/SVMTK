@@ -1,5 +1,5 @@
 
-import brainmesh as bm
+import SVMTK as svm
 
 
 def pvs(x,y,z) : 
@@ -10,7 +10,7 @@ def pvs(x,y,z) :
 if __name__ == "__main__":
     
 
-   surf = bm.BrainSurface();
+   surf = svm.Surface();
 
    surf.implicit_surface(pvs, 6.0,30,0.1,0.1)
    
