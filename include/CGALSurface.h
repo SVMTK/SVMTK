@@ -286,7 +286,7 @@ class CGALSurface
 
         void fix_close_junctures(double c);
 
-        void mesh_slice(double x1,double x2, double x3 ,double x4) ;
+        void mesh_slice(double x1,double x2, double x3 ,double x4, std::string outpath) ;
 
         // Local Functions
         void fair(CGALSurface::vertex_vector vector); 
@@ -506,7 +506,7 @@ int CGALSurface::collapse_edges(const double stop_ratio) {
     return r;
 }
 
-void CGALSurface::mesh_slice(double x1,double x2, double x3 ,double x4)
+void CGALSurface::mesh_slice(double x1,double x2, double x3 ,double x4, std::string outpath)
 {
 
      // NOTE :: NOT WORKING
@@ -598,7 +598,7 @@ void CGALSurface::mesh_slice(double x1,double x2, double x3 ,double x4)
          }
      } 
 
-     std::ofstream out("out-new.off");
+     std::ofstream out(outpath);
      CGAL::export_triangulation_2_to_off(out,cdt);
   
 
