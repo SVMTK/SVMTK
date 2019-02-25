@@ -129,5 +129,5 @@ PYBIND11_MODULE(brainmesh, m) {
     //    .def(py::init<std::string>())
     //    .def("surface_mesh", &Neuron::surface_mesh );
 
-    /* m.def("surface_overlapp", &surface_overlapp<CGALSurface>); */
+    m.def("surface_overlapp", &surface_overlapp<CGALSurface>);
 }

@@ -105,32 +105,28 @@ double Sphere_wrapper::y0 = 0;
 double Sphere_wrapper::z0 = 0;
 
 
-/* template< typename CGALSurface>  // remove header */
-/* void surface_overlapp(CGALSurface& surf1, CGALSurface& surf2, const double c, const int max_iter=300) { */
-/*     typedef typename CGALSurface::vertex_vector vertex_vector; */
+template< typename CGALSurface>  // remove header
+void surface_overlapp(CGALSurface& surf1, CGALSurface& surf2, const double c, const int max_iter=300) {
+    typedef typename CGALSurface::vertex_vector vertex_vector;
 
-/*     vertex_vector surf1points; */
-/*     vertex_vector surf2points; */
+    vertex_vector surf1points;
+    vertex_vector surf2points;
 
-/*     surf1points = surf1.points_inside(surf2); */
-/*     surf2points = surf2.points_inside(surf1); */
+    surf1points = surf1.points_inside(surf2);
+    surf2points = surf2.points_inside(surf1);
 
-/*     int iter =0; */
-/*     while (!surf1points.empty() && !surf2points.empty() && iter++ <= max_iter) { */
-/*         surf1.fair(surf1points); */
-/*         surf2.fair(surf2points); */
+    int iter =0;
+    while (!surf1points.empty() && !surf2points.empty() && iter++ <= max_iter) {
+        surf1.fair(surf1points);
+        surf2.fair(surf2points);
 
-/*         surf1points= surf1.points_inside(surf2 , surf1points); */
-/*         surf2points = surf2.points_inside(surf1, surf2points); */
+        surf1points= surf1.points_inside(surf2 , surf1points);
+        surf2points = surf2.points_inside(surf1, surf2points);
 
-/*         surf1.adjusting_boundary_region(surf1points.begin() ,surf1points.end(), c); */
-/*         surf2.adjusting_boundary_region(surf2points.begin() ,surf2points.end(), c); */
-
-/* /1*         iter++; *1/ */
-/* /1*         if(iter > max_iter) *1/ */
-/*             /1* break; *1/ */
-/*     } */
-/* } */
+        surf1.adjusting_boundary_region(surf1points.begin() ,surf1points.end(), c);
+        surf2.adjusting_boundary_region(surf2points.begin() ,surf2points.end(), c);
+    }
+}
 
 
 class CGALSurface {
