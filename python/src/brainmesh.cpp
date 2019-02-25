@@ -102,12 +102,12 @@ PYBIND11_MODULE(brainmesh, m) {
     /*     .def("create_mesh", (void (CGALMeshCreator::*)(double)) &CGALMeshCreator::create_mesh) */
     /*     .def("default_creating_mesh", &CGALMeshCreator::default_creating_mesh) */
 
-    /*     .def("lloyd", &CGALMeshCreator::lloyd) */
-    /*     .def("odt", &CGALMeshCreator::odt) */
-    /*     .def("excude", &CGALMeshCreator::excude) */
-    /*     .def("perturb", &CGALMeshCreator::perturb) */
+        .def("lloyd", &CGALMeshCreator::lloyd)
+        .def("odt", &CGALMeshCreator::odt)
+        .def("excude", &CGALMeshCreator::excude)
+        .def("perturb", &CGALMeshCreator::perturb)
 
-    /*     .def("add_sharp_border_edges", (void (CGALMeshCreator::*)(CGALSurface&)) &CGALMeshCreator::add_sharp_border_edges) */
+        .def("add_sharp_border_edges", (void (CGALMeshCreator::*)(CGALSurface&)) &CGALMeshCreator::add_sharp_border_edges)
 
         /* .def("refine_mesh", &CGALMeshCreator::refine_mesh) */
         .def("reset_borders", &CGALMeshCreator::reset_borders)
@@ -120,9 +120,9 @@ PYBIND11_MODULE(brainmesh, m) {
         .def("set_parameter", &CGALMeshCreator::set_parameter)
 
         .def("set_borders", &CGALMeshCreator::set_borders)
-        .def("set_features", (void(CGALMeshCreator::*)(CGALMeshCreator::Polylines&)) &CGALMeshCreator::set_features) 
-        .def("set_features", (void(CGALMeshCreator::*)()) &CGALMeshCreator::set_features) 
-        .def("add_feature", &CGALMeshCreator::add_feature) 
+        .def("set_features", (void(CGALMeshCreator::*)(CGALMeshCreator::Polylines&)) &CGALMeshCreator::set_features)
+        .def("set_features", (void(CGALMeshCreator::*)()) &CGALMeshCreator::set_features)
+        .def("add_feature", &CGALMeshCreator::add_feature)
         .def("save_mesh", &CGALMeshCreator::save_mesh);
 
 
@@ -130,5 +130,5 @@ PYBIND11_MODULE(brainmesh, m) {
     /* //    .def(py::init<std::string>()) */
     /* //    .def("surface_mesh", &Neuron::surface_mesh ); */
 
-    m.def("surface_overlapp", &surface_overlapp<CGALSurface> );
+    /* m.def("surface_overlapp", &surface_overlapp<CGALSurface>); */
 }
