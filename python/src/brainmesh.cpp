@@ -92,38 +92,38 @@ PYBIND11_MODULE(brainmesh, m) {
         .def("num_edges", &CGALSurface::num_edges)
         .def("num_vertices", &CGALSurface::num_vertices);
 
-    py::class_<CGALMeshCreator>(m, "BrainMesh")
-        .def(py::init<CGALSurface &>())
-        .def(py::init<std::vector<CGALSurface>>())
-        .def(py::init<std::vector<CGALSurface>, AbstractMap&>())
+    /* py::class_<CGALMeshCreator>(m, "BrainMesh") */
+    /*     .def(py::init<CGALSurface &>()) */
+    /*     .def(py::init<std::vector<CGALSurface>>()) */
+    /*     .def(py::init<std::vector<CGALSurface>, AbstractMap&>()) */
 
-        .def("create_mesh", (void (CGALMeshCreator::*)()) &CGALMeshCreator::create_mesh)
-        // .def("create_mesh", (void (CGALMeshCreator::*)(int)) &CGALMeshCreator::create_mesh)
-        .def("create_mesh", (void (CGALMeshCreator::*)(double)) &CGALMeshCreator::create_mesh)
-        .def("default_creating_mesh", &CGALMeshCreator::default_creating_mesh)
+    /*     .def("create_mesh", (void (CGALMeshCreator::*)()) &CGALMeshCreator::create_mesh) */
+    /*     // .def("create_mesh", (void (CGALMeshCreator::*)(int)) &CGALMeshCreator::create_mesh) */
+    /*     .def("create_mesh", (void (CGALMeshCreator::*)(double)) &CGALMeshCreator::create_mesh) */
+    /*     .def("default_creating_mesh", &CGALMeshCreator::default_creating_mesh) */
 
-        .def("lloyd", &CGALMeshCreator::lloyd)
-        .def("odt", &CGALMeshCreator::odt)
-        .def("excude", &CGALMeshCreator::excude)
-        .def("perturb", &CGALMeshCreator::perturb)
+    /*     .def("lloyd", &CGALMeshCreator::lloyd) */
+    /*     .def("odt", &CGALMeshCreator::odt) */
+    /*     .def("excude", &CGALMeshCreator::excude) */
+    /*     .def("perturb", &CGALMeshCreator::perturb) */
 
-        .def("add_sharp_border_edges", (void (CGALMeshCreator::*)(CGALSurface&)) &CGALMeshCreator::add_sharp_border_edges)
+    /*     .def("add_sharp_border_edges", (void (CGALMeshCreator::*)(CGALSurface&)) &CGALMeshCreator::add_sharp_border_edges) */
 
-        /* .def("refine_mesh", &CGALMeshCreator::refine_mesh) */
-        .def("reset_borders", &CGALMeshCreator::reset_borders)
+    /*     /1* .def("refine_mesh", &CGALMeshCreator::refine_mesh) *1/ */
+    /*     .def("reset_borders", &CGALMeshCreator::reset_borders) */
 
-    /*     // TODO: What to do about theese two? Need more classes? */
-    /*     /1*  *1/ */
-    /*     /1* .def("lipschitz_size_field", &CGALMeshCreator::lipschitz_size_field) Make subclass with lipschits *1/ */ 
+    /* /1*     // TODO: What to do about theese two? Need more classes? *1/ */
+    /* /1*     /2*  *2/ *1/ */
+    /* /1*     /2* .def("lipschitz_size_field", &CGALMeshCreator::lipschitz_size_field) Make subclass with lipschits *2/ *1/ */ 
 
-        .def("set_parameters", &CGALMeshCreator::set_parameters) // std::map<std::string, double>
-        .def("set_parameter", &CGALMeshCreator::set_parameter)
+    /*     .def("set_parameters", &CGALMeshCreator::set_parameters) // std::map<std::string, double> */
+    /*     .def("set_parameter", &CGALMeshCreator::set_parameter) */
 
-        .def("set_borders", &CGALMeshCreator::set_borders)
-        .def("set_features", (void(CGALMeshCreator::*)(CGALMeshCreator::Polylines&)) &CGALMeshCreator::set_features) 
-        .def("set_features", (void(CGALMeshCreator::*)()) &CGALMeshCreator::set_features) 
-        .def("add_feature", &CGALMeshCreator::add_feature) 
-        .def("save_mesh", &CGALMeshCreator::save_mesh);
+    /*     .def("set_borders", &CGALMeshCreator::set_borders) */
+    /*     .def("set_features", (void(CGALMeshCreator::*)(CGALMeshCreator::Polylines&)) &CGALMeshCreator::set_features) */ 
+    /*     .def("set_features", (void(CGALMeshCreator::*)()) &CGALMeshCreator::set_features) */ 
+    /*     .def("add_feature", &CGALMeshCreator::add_feature) */ 
+    /*     .def("save_mesh", &CGALMeshCreator::save_mesh); */
 
 
     /* //py::class_<Neuron,CGALSurface>(m,"Neuron") */
