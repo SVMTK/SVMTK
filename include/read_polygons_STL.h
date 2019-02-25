@@ -2,7 +2,7 @@
 
 #define __READ_POLYGONS_STL_H
 
-#include <boost/filesystem.hpp>
+
 #include <boost/tokenizer.hpp>
 #include <boost/algorithm/string.hpp>
 

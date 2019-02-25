@@ -560,8 +560,7 @@ void CGALSurface::mesh_slice(double x1,double x2, double x3 ,double x4, std::str
      typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, Tds_2,CGAL::Exact_predicates_tag> CDT_2;
      typedef CGAL::Delaunay_mesh_size_criteria_2<CDT_2> Criteria;
      typedef CGAL::Delaunay_mesher_2<CDT_2, Criteria> Mesher;
-     typedef CGAL::Delaunay_mesh_size_criteria_2<CDT_2> Criteria;
-     typedef CGAL::Delaunay_mesher_2<CDT_2, Criteria> Mesher;
+
 
      CDT_2 cdt;
 

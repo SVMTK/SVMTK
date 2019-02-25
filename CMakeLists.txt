@@ -6,7 +6,7 @@ find_package(CGAL 4.13 REQUIRED)
 include(${CGAL_USE_FILE})
 
 # Boost and its components
-find_package(Boost COMPONENTS system filesystem REQUIRED )
+find_package(Boost REQUIRED )
 include_directories(${BOOST_USE_FILES})
 
 # Eigen3.2 and its components
@@ -24,7 +24,7 @@ add_subdirectory(external/pybind11)
 include_directories(${source_dir}/include)
 # set(PYBIND11_PYTHON_VERSION 3.7)
 
-set( CMAKE_CXX_FLAGS "-fPIC -shared ${CMAKE_CXX_FLAGS} -std=c++17 -frounding-math -lgmpxx -lgmp -lboost_system ")
+set( CMAKE_CXX_FLAGS "-fPIC -shared ${CMAKE_CXX_FLAGS} -std=c++17 -frounding-math -lgmpxx -lgmp ")
 
 
 
