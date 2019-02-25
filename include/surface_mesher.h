@@ -21,7 +21,7 @@
 #include <CGAL/Surface_mesh_triangulation_generator_3.h>
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
 #include <CGAL/Complex_2_in_triangulation_3.h>
-#include <CGAL/boost/graph/copy_face_graph.h>
+/* #include <CGAL/boost/graph/copy_face_graph.h> */
 
 
 template <typename FT, typename P>
