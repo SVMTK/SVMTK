@@ -12,7 +12,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "read_polygons_STL.h"
+//#include "read_polygons_STL.h"
 
 
 namespace utils {
@@ -57,7 +57,7 @@ namespace utils {
 
         // This seems unnecessary
         std::string file(filename);
-        std::string extension = file.substr(file.find_last_of(".") + 1);  //TODO: FIX boost linking problem
+        std::string extension = file.substr(file.find_last_of(".") + 1);
 
         if (!input) {
             std::cerr << "Cannot open file " << std::endl;
@@ -76,10 +76,10 @@ namespace utils {
             }
         }
         else if (extension == "stl") {
-            if (!read_polygons_STL(input, points, polygons)) { // TODO: the connection causes errors 
-                std::cerr << "Error parsing the STL file " << std::endl;
-                return false;
-            }
+            // if (!read_polygons_STL(input, points, polygons)) { // TODO: the connection causes errors 
+            //     std::cerr << "Error parsing the STL file " << std::endl;
+            //     return false;
+            // }
         }
         else {
             std::cerr << "Error unkown file extension" << std::endl;
