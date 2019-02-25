@@ -9,10 +9,9 @@
 /* #include "read_polygons_STL.h" */
 /* #include "surface_mesher.h" */
 #include "reconstruct_surface.h"
-/* #include "utils.h" */
+#include "utils.h"
 
 // BOOST
-/* #include <boost/foreach.hpp> */
 #include <CGAL/boost/graph/copy_face_graph.h>
 
 //  STL
@@ -284,14 +283,14 @@ class CGALSurface {
 CGALSurface::CGALSurface(const std::string filename1, const std::string filename2) {
     Mesh mesh1;
     Mesh mesh2;
-    /* utils::load_surface(mesh1, filename1); */
-    /* utils::load_surface(mesh2, filename2); */
+    utils::load_surface(mesh1, filename1);
+    utils::load_surface(mesh2, filename2);
     CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh1, mesh2, mesh);
 }
 
 
 CGALSurface::CGALSurface(const std::string filename) {
-    /* utils::load_surface(mesh, filename); */
+    utils::load_surface(mesh, filename);
 }
 
 
