@@ -92,7 +92,7 @@ PYBIND11_MODULE(brainmesh, m) {
         .def("num_edges", &CGALSurface::num_edges)
         .def("num_vertices", &CGALSurface::num_vertices);
 
-    py::class_<CGALMeshCreator>(m, "BrainMesh")
+    /* py::class_<CGALMeshCreator>(m, "BrainMesh") */
     /*     .def(py::init<CGALSurface &>()) */
     /*     .def(py::init<std::vector<CGALSurface>>()) */
     /*     .def(py::init<std::vector<CGALSurface>, AbstractMap&>()) */
