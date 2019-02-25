@@ -11,10 +11,10 @@
 namespace py = pybind11;
 
 
-/* class PyAbstractMap : public AbstractMap{ */
-/*     public: */
-/*         using AbstractMap::AbstractMap; /1* Inherit constructors *1/ */
-/* }; */
+class PyAbstractMap : public AbstractMap{
+    public:
+        using AbstractMap::AbstractMap; /* Inherit constructors */
+};
 
 
 typedef std::function<double(double,double,double)> Surface_implicit_function;
