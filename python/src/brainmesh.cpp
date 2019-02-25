@@ -4,17 +4,16 @@
 #include <pybind11/functional.h>
 
 #include "CGALSurface.h"
-/* #include "CGALMeshCreator.h" */
-/* #include "surface_mesher.h" */
+#include "CGALMeshCreator.h"
 
 
 namespace py = pybind11;
 
 
-/* class PyAbstractMap : public AbstractMap{ */
-/*     public: */
-/*         using AbstractMap::AbstractMap; /1* Inherit constructors *1/ */
-/* }; */
+class PyAbstractMap : public AbstractMap{
+    public:
+        using AbstractMap::AbstractMap; /* Inherit constructors */
+};
 
 
 typedef std::function<double(double,double,double)> Surface_implicit_function;
@@ -35,12 +34,12 @@ PYBIND11_MODULE(brainmesh, m) {
        .def(py::init<double, double, double>())
        .def("x", &Point_3::x);
 
-    /* py::class_<AbstractMap, PyAbstractMap> abstractmap(m, "AbstractMap"); */
+    py::class_<AbstractMap, PyAbstractMap> abstractmap(m, "AbstractMap");
 
-    /* py::class_<SubdomainMap,AbstractMap>(m, "SubdomainMap") */
-    /*     .def(py::init<>()) */
-    /*     .def("print",  &SubdomainMap::print) */
-    /*     .def("add", &SubdomainMap::add); */
+    py::class_<SubdomainMap,AbstractMap>(m, "SubdomainMap")
+        .def(py::init<>())
+        .def("print",  &SubdomainMap::print)
+        .def("add", &SubdomainMap::add);
 
     py::class_<CGALSurface>(m, "BrainSurface")
         .def(py::init<std::string &>())
@@ -92,43 +91,43 @@ PYBIND11_MODULE(brainmesh, m) {
         .def("num_edges", &CGALSurface::num_edges)
         .def("num_vertices", &CGALSurface::num_vertices);
 
-    /* py::class_<CGALMeshCreator>(m, "BrainMesh") */
-    /*     .def(py::init<CGALSurface &>()) */
-    /*     .def(py::init<std::vector<CGALSurface>>()) */
-    /*     .def(py::init<std::vector<CGALSurface>, AbstractMap&>()) */
+    py::class_<CGALMeshCreator>(m, "BrainMesh")
+        .def(py::init<CGALSurface &>())
+        .def(py::init<std::vector<CGALSurface>>())
+        .def(py::init<std::vector<CGALSurface>, AbstractMap&>())
 
-    /*     .def("create_mesh", (void (CGALMeshCreator::*)()) &CGALMeshCreator::create_mesh) */
-    /*     // .def("create_mesh", (void (CGALMeshCreator::*)(int)) &CGALMeshCreator::create_mesh) */
-    /*     .def("create_mesh", (void (CGALMeshCreator::*)(double)) &CGALMeshCreator::create_mesh) */
-    /*     .def("default_creating_mesh", &CGALMeshCreator::default_creating_mesh) */
+        .def("create_mesh", (void (CGALMeshCreator::*)()) &CGALMeshCreator::create_mesh)
+        // .def("create_mesh", (void (CGALMeshCreator::*)(int)) &CGALMeshCreator::create_mesh)
+        .def("create_mesh", (void (CGALMeshCreator::*)(double)) &CGALMeshCreator::create_mesh)
+        .def("default_creating_mesh", &CGALMeshCreator::default_creating_mesh)
 
-    /*     .def("lloyd", &CGALMeshCreator::lloyd) */
-    /*     .def("odt", &CGALMeshCreator::odt) */
-    /*     .def("excude", &CGALMeshCreator::excude) */
-    /*     .def("perturb", &CGALMeshCreator::perturb) */
+        .def("lloyd", &CGALMeshCreator::lloyd)
+        .def("odt", &CGALMeshCreator::odt)
+        .def("excude", &CGALMeshCreator::excude)
+        .def("perturb", &CGALMeshCreator::perturb)
 
-    /*     .def("add_sharp_border_edges", (void (CGALMeshCreator::*)(CGALSurface&)) &CGALMeshCreator::add_sharp_border_edges) */
+        .def("add_sharp_border_edges", (void (CGALMeshCreator::*)(CGALSurface&)) &CGALMeshCreator::add_sharp_border_edges)
 
-/*         /1* .def("refine_mesh", &CGALMeshCreator::refine_mesh) *1/ */
-/*         .def("reset_borders", &CGALMeshCreator::reset_borders) */
+        /* .def("refine_mesh", &CGALMeshCreator::refine_mesh) */
+        .def("reset_borders", &CGALMeshCreator::reset_borders)
 
-/*         // TODO: What to do about theese two? Need more classes? */
-/*         /1*  *1/ */
-/*         /1* .def("lipschitz_size_field", &CGALMeshCreator::lipschitz_size_field) Make subclass with lipschits *1/ */ 
+        // TODO: What to do about theese two? Need more classes?
+        /*  */
+        /* .def("lipschitz_size_field", &CGALMeshCreator::lipschitz_size_field) Make subclass with lipschits */ 
 
-/*         .def("set_parameters", &CGALMeshCreator::set_parameters) // std::map<std::string, double> */
-/*         .def("set_parameter", &CGALMeshCreator::set_parameter) */
+        .def("set_parameters", &CGALMeshCreator::set_parameters) // std::map<std::string, double>
+        .def("set_parameter", &CGALMeshCreator::set_parameter)
 
-/*         .def("set_borders", &CGALMeshCreator::set_borders) */
-/*         .def("set_features", (void(CGALMeshCreator::*)(CGALMeshCreator::Polylines&)) &CGALMeshCreator::set_features) */
-/*         .def("set_features", (void(CGALMeshCreator::*)()) &CGALMeshCreator::set_features) */
-/*         .def("add_feature", &CGALMeshCreator::add_feature) */
-/*         .def("save_mesh", &CGALMeshCreator::save_mesh); */
+        .def("set_borders", &CGALMeshCreator::set_borders)
+        .def("set_features", (void(CGALMeshCreator::*)(CGALMeshCreator::Polylines&)) &CGALMeshCreator::set_features)
+        .def("set_features", (void(CGALMeshCreator::*)()) &CGALMeshCreator::set_features)
+        .def("add_feature", &CGALMeshCreator::add_feature)
+        .def("save_mesh", &CGALMeshCreator::save_mesh);
 
 
-    /* //py::class_<Neuron,CGALSurface>(m,"Neuron") */
-    /* //    .def(py::init<std::string>()) */
-    /* //    .def("surface_mesh", &Neuron::surface_mesh ); */
+    //py::class_<Neuron,CGALSurface>(m,"Neuron")
+    //    .def(py::init<std::string>())
+    //    .def("surface_mesh", &Neuron::surface_mesh );
 
     /* m.def("surface_overlapp", &surface_overlapp<CGALSurface>); */
 }
