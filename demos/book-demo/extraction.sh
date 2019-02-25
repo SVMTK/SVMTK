@@ -6,7 +6,7 @@ where:
     -h  show this help text
     -s  subject name"
 
-while getopts 'h:s:' option; do
+while getopts 'hs:' option; do
   case "$option" in
     h) echo "$usage"
        exit
