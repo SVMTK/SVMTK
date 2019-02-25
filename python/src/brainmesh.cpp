@@ -11,10 +11,10 @@
 namespace py = pybind11;
 
 
-class PyAbstractMap : public AbstractMap{
-    public:
-        using AbstractMap::AbstractMap; /* Inherit constructors */
-};
+/* class PyAbstractMap : public AbstractMap{ */
+/*     public: */
+/*         using AbstractMap::AbstractMap; /1* Inherit constructors *1/ */
+/* }; */
 
 
 typedef std::function<double(double,double,double)> Surface_implicit_function;
@@ -35,12 +35,12 @@ PYBIND11_MODULE(brainmesh, m) {
        .def(py::init<double, double, double>())
        .def("x", &Point_3::x);
 
-    py::class_<AbstractMap, PyAbstractMap> abstractmap(m, "AbstractMap");
+    /* py::class_<AbstractMap, PyAbstractMap> abstractmap(m, "AbstractMap"); */
 
-    py::class_<SubdomainMap,AbstractMap>(m, "SubdomainMap")
-        .def(py::init<>())
-        .def("print",  &SubdomainMap::print)
-        .def("add", &SubdomainMap::add);
+    /* py::class_<SubdomainMap,AbstractMap>(m, "SubdomainMap") */
+    /*     .def(py::init<>()) */
+    /*     .def("print",  &SubdomainMap::print) */
+    /*     .def("add", &SubdomainMap::add); */
 
     py::class_<CGALSurface>(m, "BrainSurface")
         .def(py::init<std::string &>())
