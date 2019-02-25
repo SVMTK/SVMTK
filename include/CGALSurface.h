@@ -415,7 +415,7 @@ void CGALSurface::make_sphere(double x0, double y0, double z0, const double r0) 
     sphere.y0 = y0;
     sphere.z0 = z0;
 
-    /* surface_mesher(mesh, sphere.function, x0, y0, z0, r0, 30, r0/5, r0/5); */
+    surface_mesher(mesh, sphere.function, x0, y0, z0, r0, 30, r0/5, r0/5);
 }
 
 
@@ -793,8 +793,8 @@ void CGALSurface::implicit_surface(Implicit_function implicit_function,
             const double angular_bound,
             const double radius_bound,
             const double distance_bound) {
-    /* surface_mesher(mesh, implicit_function, bounding_sphere_radius, angular_bound, */
-    /*         radius_bound, distance_bound); */
+    surface_mesher(mesh, implicit_function, bounding_sphere_radius, angular_bound,
+            radius_bound, distance_bound);
 }
 
 
