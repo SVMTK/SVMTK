@@ -14,33 +14,32 @@
 #include <map>
 #include <math.h>
 
+
 template<typename T>
-double convert_string(const std::string& s) // TODO: inline
-{
-  std::istringstream is(s);
-  T val;
-  is >> val;
+double convert_string(const std::string& s) { // TODO: inline
+    std::istringstream is(s);
+    T val;
+    is >> val;
 
-  return val;
+    return val;
 }
 
-void get_next_line(std::ifstream& file, std::string& line, std::size_t &lineno) // TODO: inline
-{
-  do 
-  {
-    std::getline(file, line);
-    boost::algorithm::trim(line);
-    lineno++;
-  } while ( !file.eof() && line == "");
+
+void get_next_line(std::ifstream& file, std::string& line, std::size_t &lineno) { // TODO: inline
+    do {
+        std::getline(file, line);
+        boost::algorithm::trim(line);
+        lineno++;
+    } while (!file.eof() && line == "");
 }
 
-template< typename Point_3, typename  Polygon_3>
+
+template<typename Point_3, typename  Polygon_3>
 bool read_polygons_STL(std::ifstream& file,
             std::vector<Point_3>& points,
             std::vector<Polygon_3>& facets,
             bool verbose = false)
 {
-
     typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
     std::map<Point_3,int> pmap; 
 
