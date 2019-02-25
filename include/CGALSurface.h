@@ -6,7 +6,6 @@
 #endif
 
 // Local
-/* #include "read_polygons_STL.h" */
 /* #include "surface_mesher.h" */
 #include "reconstruct_surface.h"
 #include "utils.h"
