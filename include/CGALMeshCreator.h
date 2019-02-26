@@ -4,48 +4,47 @@
 #define __CGAL_MESH_CREATOR_H
 
 
+
+// LOCAL
 #include "CGALSurface.h" 
 #include "SubdomainMap.h" 
 #include "Polyhedral_vector_to_labeled_function_wrapper.h"
 
-//CGAL
+// STD 
+#include <list>
+#include <fstream>
+#include <memory>
+ 
+//CGAL MESH_3
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h> // CGALSURFACE  CGALSURFACE ? 
 #include <CGAL/Mesh_triangulation_3.h>
 #include <CGAL/Labeled_mesh_domain_3.h>
 #include <CGAL/Mesh_domain_with_polyline_features_3.h>
 #include <CGAL/Polyhedral_mesh_domain_with_features_3.h>
 #include <CGAL/Mesh_3/experimental/Lipschitz_sizing_polyhedron.h>
-//#include <CGAL/Mesh_3/Detect_features_in_polyhedra.h>
-
 #include <CGAL/Mesh_complex_3_in_triangulation_3.h>
 #include <CGAL/Mesh_criteria_3.h>
 #include <CGAL/Mesh_cell_base_3.h>
 #include <CGAL/Mesh_vertex_base_3.h>
-#include <CGAL/remove_far_points_in_mesh_3.h>
-#include <CGAL/config.h>
-#include <CGAL/assertions.h>
-
+#include <CGAL/Mesh_3/Detect_polylines_in_polyhedra.h>
+#include <CGAL/Mesh_3/polylines_to_protect.h>
 
 #include <CGAL/refine_mesh_3.h>
-
-#include <CGAL/Min_sphere_of_spheres_d.h>
-#include <CGAL/Min_sphere_of_spheres_d_traits_3.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h> // FIX
-
-
-
 #include <CGAL/IO/File_medit.h>
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/refine_mesh_3.h>
 #include <CGAL/IO/Polyhedron_iostream.h>
 
-#include <CGAL/Mesh_3/Detect_polylines_in_polyhedra.h>
-#include <CGAL/Mesh_3/polylines_to_protect.h>
+// CGAL BOUNDING SPHERE
+#include <CGAL/Min_sphere_of_spheres_d.h>
+#include <CGAL/Min_sphere_of_spheres_d_traits_3.h>
 
-#include <list>
 
-#include <fstream>
-#include <memory>
+
+
+
+
+
 
 
 
@@ -247,13 +246,7 @@ void remove_isolated_vertices(C3T3& c3t3)
     {
        c3t3.triangulation().remove(it->first);
     }
-    else 
-    {
-       
-       Index index(++count);
-       c3t3.set_index(it->first,index);
 
-    }
   }
   int after = c3t3.triangulation().number_of_vertices() ; 
   std::cout<<"Number of vertices removed: "  << before - after  << std::endl;

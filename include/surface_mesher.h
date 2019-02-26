@@ -2,14 +2,17 @@
 
 #define __SURFACE_MESHER_H
 
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h> 
 
 
-#include <CGAL/Surface_mesh_traits_generator_3.h>
-#include <CGAL/make_surface_mesh.h>
 #include <CGAL/Implicit_surface_3.h>
+#include <CGAL/make_surface_mesh.h>
+// CGAL SURFACE MESH
+#include <CGAL/Surface_mesh_traits_generator_3.h>
 #include <CGAL/Surface_mesh_default_criteria_3.h>
+#include <CGAL/Surface_mesh_triangulation_generator_3.h>
+#include <CGAL/Surface_mesh_default_triangulation_3.h>
 #include <CGAL/IO/Complex_2_in_triangulation_3_file_writer.h>
-
 
 #include <functional>
 
@@ -18,11 +21,10 @@
 #include <CGAL/IO/Polyhedron_iostream.h>
 
 // needed
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h> // or excat ?
+
 #include <CGAL/IO/output_surface_facets_to_polyhedron.h>
-#include <CGAL/Mesh_polyhedron_3.h>
-#include <CGAL/Surface_mesh_triangulation_generator_3.h>
-#include <CGAL/Surface_mesh_default_triangulation_3.h>
+//#include <CGAL/Mesh_polyhedron_3.h>
+
 #include <CGAL/Complex_2_in_triangulation_3.h>
 #include <CGAL/boost/graph/copy_face_graph.h>
 
@@ -85,7 +87,7 @@ void surface_mesher(Mesh& mesh, Implicit_Function func,  double bounding_sphere_
     typedef Kernel::Point_3 Point_3;
     typedef Kernel::FT FT;
     //Surface_mesh_traits().construct_initial_points_object()(surface_of_sphere_2, CGAL::inserter(tr_3), initial_number_of_points)
-    typedef CGAL::Mesh_polyhedron_3<Kernel>::type Polyhedron;
+
 
     typedef FT_to_point_function_wrapper<FT, Point_3> Function;
     typedef CGAL::Implicit_surface_3<Kernel, Function> Surface_3;
@@ -93,7 +95,7 @@ void surface_mesher(Mesh& mesh, Implicit_Function func,  double bounding_sphere_
 
     Tr tr;
     C2t3 c2t3 (tr);
-    Polyhedron poly;
+
     Function wrapper(func);
     //
 

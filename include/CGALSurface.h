@@ -25,32 +25,19 @@
 #include <CGAL/IO/STL_reader.h>
 
 
-
-
-
-
 // TODO: Clean up PMP  header files
-//---------------------------------------------------------
-//---------------------CLEAN UP-----------------------------------
-//---------------------------------------------------------
+//--------------------------------------------------------
+//---------------------CLEAN UP---------------------------
+//--------------------------------------------------------
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
+#include <CGAL/Constrained_triangulation_plus_2.h>
 #include <CGAL/Triangulation_conformer_2.h>
 #include <CGAL/IO/Triangulation_off_ostream_2.h>
-#include <CGAL/Polygon_2.h>
-#include <CGAL/Constrained_triangulation_plus_2.h>
-#include <CGAL/Polyline_simplification_2/simplify.h>
 #include <CGAL/Delaunay_mesher_2.h>
 #include <CGAL/Delaunay_mesh_face_base_2.h>
 #include <CGAL/Delaunay_mesh_size_criteria_2.h>
 #include <CGAL/Polyline_simplification_2/Squared_distance_cost.h>
-#include <CGAL/Gps_circle_segment_traits_2.h>
-#include <CGAL/Polygon_set_2.h>
-#include <CGAL/Boolean_set_operations_2.h>
-
-
-#include <CGAL/Constrained_Delaunay_triangulation_2.h>
-
-#include <CGAL/Polyline_simplification_2/simplify.h>
+#include <CGAL/Polyline_simplification_2/simplify.h> 
 
 //---------------------------------------------------------
 // CGAL- Polygon_mesh_processing
@@ -82,14 +69,9 @@
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_ratio_stop_predicate.h>
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_and_length.h>
 
-
-
-
-// ?? 
+// CGAL
 #include <CGAL/Point_with_normal_3.h>
 #include <CGAL/poisson_surface_reconstruction.h>
-
-
 
 // CGAL IO
 #include <CGAL/IO/OFF_reader.h>
@@ -100,7 +82,6 @@
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
-
 #include <CGAL/Side_of_triangle_mesh.h> 
 
 
