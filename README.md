@@ -1,4 +1,4 @@
-# BrainMesh
+# SurfaceVolumeMeshingToolKit
 
 ## Requirements
 
