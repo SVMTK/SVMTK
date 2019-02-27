@@ -12,7 +12,7 @@
 #include <fstream>
 #include <iostream>
 
-//#include "read_polygons_STL.h"
+#include "read_polygons_STL.h"
 
 
 namespace utils
