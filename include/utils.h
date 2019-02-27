@@ -12,7 +12,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "read_polygons_STL.h"
+//#include "read_polygons_STL.h"
 
 
 namespace utils
@@ -88,12 +88,12 @@ namespace utils
         }
         else if (extension == "stl")
         {
-            if (!read_polygons_STL(input, points, polygons))
-            {
-                // TODO: the connection causes errors
-                std::cerr << "Error parsing the STL file " << std::endl;
-                return false;
-            }
+            /* if (!read_polygons_STL(input, points, polygons)) */
+            /* { */
+            /*     // TODO: the connection causes errors */
+            /*     std::cerr << "Error parsing the STL file " << std::endl; */
+            /*     return false; */
+            /* } */
         }
         else
         {
