@@ -40,6 +40,8 @@
 #include <CGAL/Min_sphere_of_spheres_d_traits_3.h>
 
 
+#include <CGAL/Mesh_3/Dump_c3t3.h>
+#include <CGAL/Mesh_3/Dump_c3t3.h>
 
 
 
@@ -156,6 +158,8 @@ class CGALMeshCreator {
         void default_creating_mesh();
         void save(std::string OutPath); // TODO: check save formats
 
+        void refine_mesh(const double mesh_resolution );
+
         void refine_mesh();
 
         Polylines& get_features() {return features; }  // OK 
@@ -213,43 +217,120 @@ class CGALMeshCreator {
         C3t3 c3t3;
 };
 
+
+
 template<typename C3T3>
-void remove_isolated_vertices(C3T3& c3t3)
+int remove_isolated_vertices(C3T3& c3t3)
 { 
 
   typedef typename C3T3::Triangulation Tr;
   typedef typename C3T3::Cells_in_complex_iterator Cell_iterator;
+  typedef typename C3T3::Facets_in_complex_iterator Facets_iterator;
   typedef typename C3T3::Index Index;
-  typedef typename Tr::Finite_vertices_iterator Finite_vertices_iterator;
-  typedef typename Tr::Vertex_handle Vertex_handle;
+  typedef typename C3T3::Facet Facet;
+  typedef typename C3T3::Surface_patch_index Surface_Index;
 
+  typedef typename C3T3::Cell_handle Cell_handle;
+  typedef typename Tr::Finite_cells_iterator Finite_cells_iterator;
+  typedef typename Tr::Finite_vertices_iterator Finite_vertices_iterator;
+  typedef typename Tr::Finite_facets_iterator 	Finite_facets_iterator;
+  typedef typename C3T3::Subdomain_index Subdomain_index;
+  typedef typename Tr::Vertex_handle Vertex_handle;
+  typedef typename Tr::Weighted_point Weighted_point;
+
+  // FIXME: description
+  // Isolated vertices are written to file and included in the mesh. This means that after creating a FunctionSpace in  dolfin, 
+  // the isolated vertices create isolated degrees of freedom. 
+
+  // Soltion to this is to iterate over all cell and mark the none-isolated cells, then iterate over vertices and remove them.
+  // The vertices are on the triangulation level, but facets are on the mesh_in_complex level. 
+  // Therefore removing a vertex will cause the number of facets to be wrong. 
+
+  // Facet are stored as cell_handle + i, thus  removal on complex does not seem to be functional
+  // Therefore it would  seem that the most prudent method is to use the triangulation -> but that 
+  // does not affect the output
+
+  // Find Facet that becomes removed and find out why 
+  // 
+  //-----------------------------------------------------------------------------------------------------------------------------------------------
   std::map<Vertex_handle, bool> vertex_map;
-  std::cout << vertex_map.size() << std::endl;
+  std::map<Facet, bool> facet_map;
+
+  std::vector<Vertex_handle> rmvertices;
+  std::vector<Facet> rmfacets;
+
   for( Finite_vertices_iterator vit = c3t3.triangulation().finite_vertices_begin();vit != c3t3.triangulation().finite_vertices_end();++vit)
   { 
-      vertex_map[vit] = false ;  
+        vertex_map[vit] = false ;  
   }
- 
+
   for(Cell_iterator cit = c3t3.cells_in_complex_begin();cit != c3t3.cells_in_complex_end(); ++cit)
   {
-    for (std::size_t i = 0; i < 4; i++)
+    for (std::size_t i = 0; i < 4; ++i) // 
     {
+
         vertex_map[cit->vertex(i)] = true;
     }
   }
 
+
   int before = c3t3.triangulation().number_of_vertices() ;
-  int count=0;
+  int facet_before = c3t3.number_of_facets();
+
   for (typename std::map<Vertex_handle, bool>::const_iterator it = vertex_map.begin();it != vertex_map.end(); ++it) // check post or pre increment
   {
     if (!it->second) 
     {
-       c3t3.triangulation().remove(it->first);
+       rmvertices.push_back(it->first);
+       //c3t3.remove_from_complex(it->first);
+       //c3t3.triangulation().remove(it->first);
     }
 
   }
+  c3t3.triangulation().remove(rmvertices.begin(), rmvertices.end());
+
+   
+  //-----------------------------------------------------------------------------------------------------------------------------------------------
+  /*for( Facets_iterator fit = c3t3.facets_in_complex_begin();fit != c3t3.facets_in_complex_end(); ++fit)
+  {
+      facet_map[*fit] = false; // all ?? 
+  }
+  for(Finite_cells_iterator cit = c3t3.triangulation().finite_cells_begin();cit != c3t3.triangulation().finite_cells_end(); ++cit)
+  {
+    for (std::size_t i = 0; i < 4; ++i)
+    {
+        if ( c3t3.triangulation().has_vertex(cit, i, rmvertices[0]) )
+        {
+          rmfacets.push_back(Facet(cit,i));
+  
+        }  
+    }
+  }
+
+  for(typename std::map<Facet, bool>::const_iterator it = facet_map.begin();it != facet_map.end(); ++it)
+  {
+    if (!it->second) 
+    {
+       rmfacets.push_back(it->first);
+       //c3t3.remove_from_complex(it->first);
+    }
+  }*/
+  //-----------------------------------------------------------------------------------------------------------------------------------------------
+
+
+  std::cout<< rmvertices.size() << std::endl;
+  std::cout<< rmfacets.size() << std::endl;
+
   int after = c3t3.triangulation().number_of_vertices() ; 
+  int facet_after = c3t3.number_of_facets();
+
+  //std::cout<<"Number of vertices before: "   << before  <<" after :" << after  << std::endl;
   std::cout<<"Number of vertices removed: "  << before - after  << std::endl;
+  //std::cout<<"Number of facets before: "   << facet_before  <<" after :" << facet_after  << std::endl;
+  //std::cout<<"Number of facets removed: "  << facet_before - facet_after  << std::endl;
+
+  return (before - after);
+
 
 }
 
@@ -369,6 +450,8 @@ void CGALMeshCreator::default_creating_mesh()
 
     remove_isolated_vertices(c3t3);
 
+
+
 }
 void CGALMeshCreator::create_mesh()
 {
@@ -384,7 +467,10 @@ void CGALMeshCreator::create_mesh()
 
     c3t3 = CGAL::make_mesh_3<C3t3>(*domain_ptr.get(), criteria);
 
+    if ( remove_isolated_vertices(c3t3) > 0) 
+         refine_mesh();
     remove_isolated_vertices(c3t3);
+   
 
 }
 
@@ -404,8 +490,12 @@ void CGALMeshCreator::create_mesh(const double mesh_resolution )
 
     c3t3 = CGAL::make_mesh_3<C3t3>(*domain_ptr.get(), criteria);
 
-    remove_isolated_vertices(c3t3);
+    if ( remove_isolated_vertices(c3t3) > 0) 
+         refine_mesh(mesh_resolution);
+  
 
+
+   
 }
 
 
@@ -414,7 +504,8 @@ void CGALMeshCreator::create_mesh(const double mesh_resolution )
 void CGALMeshCreator::save(std::string OutPath)
 {
     std::ofstream  medit_file(OutPath);
-    c3t3.output_to_medit(medit_file,true);
+
+    c3t3.output_to_medit(medit_file,false);
     medit_file.close();
 
 
@@ -423,7 +514,7 @@ void CGALMeshCreator::save(std::string OutPath)
 
 void CGALMeshCreator::refine_mesh()
 {
-   Mesh_criteria criteria( CGAL::parameters::facet_angle=parameters["facet_angle"],
+    Mesh_criteria criteria(CGAL::parameters::facet_angle=parameters["facet_angle"],
                            CGAL::parameters::facet_size =parameters["facet_size"],
                            CGAL::parameters::facet_distance=parameters["facet_distance"],
                            CGAL::parameters::cell_radius_edge_ratio=parameters["cell_radius_edge_ratio"],
@@ -433,7 +524,22 @@ void CGALMeshCreator::refine_mesh()
 
 
 }
+void CGALMeshCreator::refine_mesh(const double mesh_resolution )
+{
+    double r = min_sphere.get_bounding_sphere_radius(); 
+    const double cell_size = r/mesh_resolution*2.0;
 
+    Mesh_criteria criteria(CGAL::parameters::edge_size = cell_size,
+                                       CGAL::parameters::facet_angle = 30.0,
+                                       CGAL::parameters::facet_size = cell_size,
+                                       CGAL::parameters::facet_distance = cell_size/10.0, 
+                                       CGAL::parameters::cell_radius_edge_ratio = 3.0,
+                                       CGAL::parameters::cell_size = cell_size);
+
+   refine_mesh_3(c3t3, *domain_ptr.get(), criteria,CGAL::parameters::no_reset_c3t3());
+
+
+}
 
 void CGALMeshCreator::label_boundary_cells(int btag , int ntag ) // workaround to mark boundary cells of for example lateral ventircles. this allows for easy marking of Facetfunction in FEniCS 
 {

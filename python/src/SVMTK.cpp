@@ -110,8 +110,11 @@ PYBIND11_MODULE(SVMTK, m) {
         .def(py::init<std::vector<CGALSurface>, AbstractMap&>())
 
         .def("create_mesh", (void (CGALMeshCreator::*)()) &CGALMeshCreator::create_mesh) 
-        //.def("create_mesh", (void (CGALMeshCreator::*)(int)) &CGALMeshCreator::create_mesh)
         .def("create_mesh", (void (CGALMeshCreator::*)(double)) &CGALMeshCreator::create_mesh)
+        .def("refine_mesh", (void (CGALMeshCreator::*)()) &CGALMeshCreator::refine_mesh)
+        .def("refine_mesh", (void (CGALMeshCreator::*)(double)) &CGALMeshCreator::refine_mesh)
+
+
         .def("default_creating_mesh", &CGALMeshCreator::default_creating_mesh)
 
         .def("lloyd", &CGALMeshCreator::lloyd)
@@ -121,7 +124,7 @@ PYBIND11_MODULE(SVMTK, m) {
 
         .def("add_sharp_border_edges", (void (CGALMeshCreator::*)(CGALSurface&)) &CGALMeshCreator::add_sharp_border_edges)
 
-        .def("refine_mesh", &CGALMeshCreator::refine_mesh)
+
         .def("reset_borders", &CGALMeshCreator::reset_borders)
 
     /*     // TODO: What to do about theese two? Need more classes? */
