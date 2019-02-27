@@ -1,6 +1,6 @@
 #ifndef __READ_POLYGONS_STL_H
-
 #define __READ_POLYGONS_STL_H
+
 
 #include <boost/filesystem.hpp>
 #include <boost/tokenizer.hpp>
@@ -16,7 +16,9 @@
 
 
 template<typename T>
-double convert_string(const std::string& s) { // TODO: inline
+double convert_string(const std::string& s)
+{
+    // TODO: inline
     std::istringstream is(s);
     T val;
     is >> val;
@@ -25,12 +27,16 @@ double convert_string(const std::string& s) { // TODO: inline
 }
 
 
-void get_next_line(std::ifstream& file, std::string& line, std::size_t &lineno) { // TODO: inline
-    do {
+void get_next_line(std::ifstream& file, std::string& line, std::size_t &lineno)
+{
+    // TODO: inline
+    do
+    {
         std::getline(file, line);
         boost::algorithm::trim(line);
         lineno++;
-    } while (!file.eof() && line == "");
+    }
+    while (!file.eof() && line == "");
 }
 
 
@@ -56,7 +62,6 @@ bool read_polygons_STL(std::ifstream& file,
     const boost::char_separator<char> sep(" ");
 
     get_next_line(file, line, lineno);
-
     if (line.substr(0, 5) != "solid")
     {
        std::cout<<" Error0" << line <<std::endl;
@@ -69,64 +74,53 @@ bool read_polygons_STL(std::ifstream& file,
     int count = 1; // Shift 
     do
     {
-    
-      if ( line.substr(0, 5) == facet)
-      {
-         get_next_line(file, line, lineno);
+        if ( line.substr(0, 5) == facet)
+        {
+            get_next_line(file, line, lineno);
+            if (line != "outer loop")
+            {
+                std::cout<<" Error1" << line <<std::endl;
+                return false;
+            }
 
-         if (line != "outer loop")
-         {
-            std::cout<<" Error1" << line <<std::endl;
-            return false;
-         }
-         
-         get_next_line(file, line, lineno);
+            get_next_line(file, line, lineno);
+            tpolygon.clear();
+            do
+            {
+                tokenizer tokens(line, sep);
+                tokenizer::iterator tok_iter = tokens.begin();
+                if (*tok_iter != "vertex")
+                {
+                    std::cout<<" Error2 " << line <<std::endl;
+                    return false;
+                }
 
+                ++tok_iter;
+                const double x = convert_string<double>(*tok_iter); ++tok_iter;
+                const double y = convert_string<double>(*tok_iter); ++tok_iter;
+                const double z = convert_string<double>(*tok_iter); ++tok_iter;
 
-         tpolygon.clear();
-         do 
-         {
+                tpoint = Point_3(x, y, z);
+                if (pmap[tpoint] == 0) // if point is zero -> assign count
+                {
+                    pmap[tpoint] = count;
+                    points.push_back(tpoint);
+                    count++; 
 
-         tokenizer tokens(line, sep);
-         tokenizer::iterator tok_iter = tokens.begin();
-        
-         if (*tok_iter != "vertex")
-         {
-           std::cout<<" Error2 " << line <<std::endl;
-           return false;
-         }
-         ++tok_iter;
+                }
 
-         const double x = convert_string<double>(*tok_iter); ++tok_iter;
-         const double y = convert_string<double>(*tok_iter); ++tok_iter;
-         const double z = convert_string<double>(*tok_iter); ++tok_iter;
+                tpolygon.push_back(pmap[tpoint] - 1);  // Reshift
+                get_next_line(file, line, lineno);
+            }
+            while (line.substr(0,7)!=endloop); 
 
-         tpoint = Point_3(x, y, z);
+            get_next_line(file, line, lineno);
+        }   
 
-         if (pmap[tpoint]==0) // if point is zero -> assign count
-         {
-            pmap[tpoint] = count;
-            points.push_back(tpoint);
-            count++; 
-
-         }
-         tpolygon.push_back(pmap[tpoint]-1);  // Reshift
-
-         get_next_line(file, line, lineno);
-
-         } while (line.substr(0,7)!=endloop); 
-
-         get_next_line(file, line, lineno);
-
-
-      }   
-    
-      facets.push_back(tpolygon);
-
-
-        
-      get_next_line(file, line, lineno);
-    } while (line.substr(0, 8) != endsolid); 
+        facets.push_back(tpolygon);
+        get_next_line(file, line, lineno);
+    }
+    while (line.substr(0, 8) != endsolid); 
   
     std::cout << facets.size() << std::endl;
     std::cout << points.size() << std::endl;
@@ -134,4 +128,6 @@ bool read_polygons_STL(std::ifstream& file,
     pmap.clear();
     return true;
 }
+
+
 #endif
