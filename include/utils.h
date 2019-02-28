@@ -1,6 +1,7 @@
 #ifndef __CGAL_UTILS_H
 #define __CGAL_UTILS_H
 
+
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/IO/OFF_reader.h>
@@ -19,21 +20,24 @@ namespace utils
 {
     typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 
+    using std::cout;
+    using std::endl;
+
     template<typename Mesh>
     int read_off(Mesh &mesh, const std::string filename)
     {
         std::ifstream input(filename);
         if (!input)
         {
-            std::cout << "Cannot open file " << std::endl;
+            cout << "Cannot open file " << endl;
             return 1;
         }
 
-        std::vector<Kernel::Point_3> points;
-        std::vector< std::vector<std::size_t> > polygons;
+        std::vector< Kernel::Point_3 > points;
+        std::vector< std::vector< std::size_t > > polygons;
         if (!CGAL::read_OFF(input, points, polygons))
         {
-            std::cout << "Error parsing the OFF file " << std::endl;
+            cout << "Error parsing the OFF file " << endl;
             return 1;
         }
 
@@ -47,8 +51,7 @@ namespace utils
         return 0;
     }
 
-
-    template<typename Mesh>
+    template< typename Mesh >
     int save_off(const Mesh &mesh, const std::string outpath)
     {
         std::ofstream out(outpath);
@@ -57,8 +60,7 @@ namespace utils
         return 1;
     }
 
-
-    template<typename Mesh>     // seperate because -> typedef mesh in CGALSurface
+    template< typename Mesh >     // seperate because -> typedef mesh in CGALSurface
     bool load_surface(Mesh& mesh, std::string filename)
     {
         std::ifstream input(filename);
@@ -69,7 +71,7 @@ namespace utils
 
         if (!input)
         {
-            std::cerr << "Cannot open file " << std::endl;
+            std::cerr << "Cannot open file " << endl;
             return false;
         }
 
@@ -79,10 +81,10 @@ namespace utils
 
         if (extension == "off")
         {
-            std::cout << "reading off" << std::endl;
+            cout << "reading off" << endl;
             if (!CGAL::read_OFF(input, points, polygons))
             {
-                std::cerr << "Error parsing the OFF file " << std::endl;
+                std::cerr << "Error parsing the OFF file " << endl;
                 return false;
             }
         }
@@ -90,14 +92,13 @@ namespace utils
         {
             if (!read_polygons_STL(input, points, polygons))
             {
-                // TODO: the connection causes errors
-                std::cerr << "Error parsing the STL file " << std::endl;
+                std::cerr << "Error parsing the STL file " << endl;
                 return false;
             }
         }
         else
         {
-            std::cerr << "Error unkown file extension" << std::endl;
+            std::cerr << "Error unkown file extension" << endl;
             return false;
         }
 

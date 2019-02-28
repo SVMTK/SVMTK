@@ -1,0 +1,38 @@
+#!/bin/bash
+
+
+usage="$(basename "$0") converts binary surface file ${0%.*} to stl format. The converted file 
+is stored in the folder <mesh> in the subject directory
+where:
+    -h  show this help text"
+
+while getopts ':hs:' option; do
+  case "$option" in
+    h) echo "$usage"
+       exit
+  esac
+done
+
+mkdir -p ../mesh
+ME=$(basename $0)
+case $ME in
+        lh.pial.extraction)
+           mris_convert ../surf/lh.pial ../mesh/lh-pial.stl 
+           ;;
+        rh.pial.extraction)
+           mris_convert ../surf/rh.pial ../mesh/rh-pial.stl 
+           ;;
+        lh.white.extraction)
+           mris_convert ../surf/lh.white ../mesh/lh-white.stl 
+           ;;
+        rh.white.extraction)
+           mris_convert ../surf/rh.white ../mesh/rh-white.stl 
+           ;;
+        full.extraction)
+           mris_convert ../surf/lh.pial ../mesh/lh-pial.stl 
+           mris_convert ../surf/rh.pial ../mesh/rh-pial.stl 
+           mris_convert ../surf/lh.white ../mesh/lh-white.stl 
+           mris_convert ../surf/rh.white ../mesh/rh-white.stl 
+           ;;
+
+esac
