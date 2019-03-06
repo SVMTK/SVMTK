@@ -10,6 +10,7 @@
 
 
 // Local
+#include "CGALSlice.h" 
 #include "read_polygons_STL.h"
 #include "surface_mesher.h"
 #include "reconstruct_surface.h"
@@ -84,6 +85,7 @@
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
 #include <CGAL/Side_of_triangle_mesh.h> 
 
+#include <CGAL/Polygon_mesh_processing/bbox.h>
 
 
 //--------------------------------------------
@@ -148,7 +150,7 @@ bool load_surface(const std::string file, Mesh& mesh) // new name load polygons 
 
 
 
-template< typename CGALSurface>  // FIXME
+template< typename CGALSurface>  // FIXME: good c input is ? 
 void surface_overlapp(CGALSurface& surf1 , CGALSurface& surf2 , double c,    int max_iter  = 300)
 {
     typedef typename CGALSurface::vertex_vector vertex_vector;
@@ -163,16 +165,25 @@ void surface_overlapp(CGALSurface& surf1 , CGALSurface& surf2 , double c,    int
 
     while (  !surf1points.empty() and  !surf2points.empty() )
     {
+            // isotropic remeshing.
             surf1.fair(surf1points);
             surf2.fair(surf2points);
 
-            surf1points= surf1.points_inside(surf2 , surf1points);
-            surf2points = surf2.points_inside(surf1, surf2points);
+            surf1points = surf1.points_inside(surf2 , surf1points);
+            surf2points = surf2.points_inside(surf1 , surf2points);
 
+            // FIXME: gloabal c is not optimal-> c should be a vector that is defined as the shortest what? 
+
+            // we compute if a point of surf1 is inside surf2. then we move that ppoint c times negitve normal.
+            // the normal is always 1-> while c is predefined. 
+            //  therefore this algorithm is only robust for istropic surface mesh.
+            // c should be depnent on min edge of edges connected to the point. 
+
+            // this way the normal is not  
             surf1.adjusting_boundary_region(surf1points.begin() ,surf1points.end(), c);
             surf2.adjusting_boundary_region(surf2points.begin() ,surf2points.end(), c);
 
-            //std::cout<< surf1points.size() + surf2points.size() << std::endl;
+           
             iter++;
             if( iter >max_iter)
                  break;
@@ -222,13 +233,16 @@ class CGALSurface
 
         void split_edges(double  target_edge_length);
 
+        // ---------- CSG  ------------------
         void make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1, double radius,  int number_of_segments=360) ;
 
-        void make_cone( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0 , double r1,  int number_of_segments=360) ;
+        void make_cone( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0 , double r1,  int number_of_segments=360) ; // FIXME:
 
         void make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1);
 
         void make_sphere( double x0, double y0, double  z0, double r0);
+        //-------------------------------------
+
 
         void clip(double x1,double x2, double x3 ,double x4, bool clip);
         
@@ -236,14 +250,6 @@ class CGALSurface
 
         Mesh& get_mesh() {return mesh;} // operator overload pybind error due to non-const
     
-        void surface_intersection( CGALSurface& other);
-
-        void surface_difference( CGALSurface& other);
-
-        void surface_union( CGALSurface& other);
-
-        void smooth_taubin(const size_t nb_iter); 
-
         int collapse_edges(const double stop_ratio);
 
         int fill_holes();
@@ -251,28 +257,30 @@ class CGALSurface
         bool triangulate_faces();
       
         void stitch_borders();
-         
-        bool insert_surface(CGALSurface& surf){mesh+=surf.get_mesh();} // 
 
         void clear(){ mesh.clear();}
-        // Global functions 
+
+
+
+        // TODO: CHECK ALL PYBINDED
         void isotropic_remeshing(double target_edge_length, unsigned int nb_iter, bool protect_border);
-    
         void adjust_boundary(const double c);
-
         void smooth_laplacian(const double c, int iter);
+        void smooth_taubin(const size_t nb_iter); 
+        void fair(); 
+        void fair(CGALSurface::vertex_vector vector);  
 
-        void fix_close_junctures(double c);
 
-        void mesh_slice(double x1,double x2, double x3 ,double x4, std::string outpath) ;
+        void seperate_close_junctures(double c);
+        std::shared_ptr<CGALSlice> mesh_slice(double x1,double x2, double x3 ,double x4) ;
+        void surface_intersection( CGALSurface& other);
+        void surface_difference( CGALSurface& other);
+        void surface_union( CGALSurface& other);     
+        std::pair<double,double> span( int direction);
+       
 
-        // Local Functions
-        void fair(CGALSurface::vertex_vector vector); 
-
-        void insert_points(std::vector<Point_3>& points) ;
-
-        // TODO: typedef input itertator ?? 
-        template<typename InputIterator>  // -> operation on surface_mesh-> index-based 
+        // NOTE: Do not expose 
+        template<typename InputIterator>   
         void adjusting_boundary_region(InputIterator begin , InputIterator  end, const double c);
 
         template<typename InputIterator>
@@ -280,11 +288,13 @@ class CGALSurface
 
         //-----------------------------------------------------------------------------------
         //TODO: Add query and overload ? ?
-        vertex_vector points_inside(CGALSurface& other); // Query overlaod 
+        vertex_vector points_inside(CGALSurface& other); // Query overlaod  
 
         vertex_vector points_outside(CGALSurface& other);
 
-        vertex_vector  points_inside(CGALSurface& other,CGALSurface::vertex_vector &points);
+        vertex_vector points_inside(CGALSurface& other, CGALSurface::vertex_vector &points);
+        // -------------------------------------------------------------------------------------
+
 
         void reconstruct_surface(const double sm_angle,const double sm_radius,const double sm_distance) ;
 
@@ -294,12 +304,11 @@ class CGALSurface
 
         int num_vertices() const {return mesh.number_of_vertices();}
 
+
+        // BOTH NEEDED ?
         int num_self_intersections();
    
-        bool self_intersections(); 
-
-
-        Polylines get_features() { Polylines plines; return plines;} // should be virtual or something ->
+        //bool self_intersections(); REMOVED 
         
         void reconstruct( double sm_angle = 20.0,
                           double sm_radius = 100.0,
@@ -325,7 +334,7 @@ class CGALSurface
         void write_STL(const std::string filename);
 
 
-   //private :
+   
    protected:
        Mesh mesh;
 
@@ -333,6 +342,15 @@ class CGALSurface
 };
 
 
+std::pair<double,double> CGALSurface::span(int direction)
+{
+     auto bbox_3 = CGAL::Polygon_mesh_processing::bbox(mesh);
+
+     std::pair<double,double> span (bbox_3.min(direction),bbox_3.max(direction) );
+     return span;
+      
+     
+}
 void CGALSurface::write_STL(const std::string filename)
 {
     std::ofstream file(filename);
@@ -445,12 +463,15 @@ void CGALSurface::surface_intersection( CGALSurface& other)
 }
 void CGALSurface::surface_difference( CGALSurface& other)
 {
-     CGAL::Polygon_mesh_processing::corefine_and_compute_difference(mesh , other.get_mesh(),mesh);
+     Mesh out_mesh;
+     CGAL::Polygon_mesh_processing::corefine_and_compute_difference(mesh , other.get_mesh(),out_mesh);
+     mesh = out_mesh;
+
 }
 
 void CGALSurface::surface_union( CGALSurface& other)
 {
-     CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh, other.get_mesh(),mesh);
+     CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh, other.get_mesh(), mesh);
 }
 
 
@@ -480,7 +501,7 @@ int CGALSurface::collapse_edges(const double stop_ratio) {
     return r;
 }
 
-void CGALSurface::mesh_slice(double x1,double x2, double x3 ,double x4, std::string outpath) // get slice object, simplify, mesh -> new class 
+std::shared_ptr<CGALSlice> CGALSurface::mesh_slice(double x1,double x2, double x3 ,double x4) // get slice object, simplify, mesh -> new class 
 {
      // TODO: implement a slice class 
      typedef Kernel::Point_2 Point_2;
@@ -510,13 +531,11 @@ void CGALSurface::mesh_slice(double x1,double x2, double x3 ,double x4, std::str
      Vector_3 e2 = CGAL::cross_product(n,e1);
 
      //-------------------------------------------------------------
-     // Polylines in 2D + simplification : Stop and cost input
+     // Polylines to 2D 
      //-------------------------------------------------------------
 
-     typedef CGAL::Polyline_simplification_2::Stop_above_cost_threshold Stop;
-     typedef CGAL::Polyline_simplification_2::Squared_distance_cost Cost;
+
      std::vector<std::vector<Point_2>> polylines_2;
-     Cost cost;
      for ( auto  pol = polylines_3D.begin(); pol != polylines_3D.end(); ++pol ) 
      {
          std::vector<Point_2> result;
@@ -525,57 +544,14 @@ void CGALSurface::mesh_slice(double x1,double x2, double x3 ,double x4, std::str
          {
                polyline_2.push_back(Point_2( pit->x()*e1.x() + pit->y()*e1.y() + pit->z()*e1.z() , pit->x()*e2.x() + pit->y()*e2.y() + pit->z()*e2.z() ));
          }
-         CGAL::Polyline_simplification_2::simplify(polyline_2.begin(), polyline_2.end(), cost, Stop(0.01), std::back_inserter(result));
-  
-         polylines_2.push_back( result);
-
-
+         polylines_2.push_back( polyline_2);
      }
+     
+     std::shared_ptr<CGALSlice> slice(new CGALSlice(polylines_2)); 
 
-     //-------------------------------------------------------------
-     // Meshing slice : 1 polylines constraint  ? Criteria ?
-     //-------------------------------------------------------------
-     typedef CGAL::Triangulation_vertex_base_2<Kernel> Vb_2;
-     typedef CGAL::Delaunay_mesh_face_base_2<Kernel> Fb_2;
-     typedef CGAL::Triangulation_data_structure_2<Vb_2, Fb_2> Tds_2;
-     typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, Tds_2,CGAL::Exact_predicates_tag> CDT_2;
-     typedef CGAL::Delaunay_mesh_size_criteria_2<CDT_2> Criteria;
-     typedef CGAL::Delaunay_mesher_2<CDT_2, Criteria> Mesher;
-
-
-     CDT_2 cdt;
-
-     //for ( auto pol = polylines_2.begin(); pol != polylines_2.end(); ++pol)
-     //{cdt.insert_constraint(pol->begin(), pol->end() );}
-    
-     cdt.insert_constraint(polylines_2[0].begin(), polylines_2[0].end() ); //
-
-     Mesher mesher(cdt);
-     mesher.set_criteria(Criteria(0.125, 0.5));
-     mesher.refine_mesh();
-     //-------------------------------------------------------------
-     // Remove facets outside 
-     //-------------------------------------------------------------
-     for(CDT_2::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
-     {
-         if (!fit->is_in_domain())
-         {
-            cdt.delete_face(fit);
-         }
-     } 
-     std::ofstream out(outpath);
-     CGAL::export_triangulation_2_to_off(out,cdt);
-  
+     return slice;
 }
 
-
-
-
-bool CGALSurface::self_intersections()
-{
-    return CGAL::Polygon_mesh_processing::does_self_intersect(mesh,
-                CGAL::Polygon_mesh_processing::parameters::vertex_point_map(get(CGAL::vertex_point, mesh)));
-}
 
 void CGALSurface::isotropic_remeshing(double target_edge_length, unsigned int nb_iter, bool protect_border)
 {
@@ -667,7 +643,7 @@ CGALSurface::vertex_vector CGALSurface::points_inside(CGALSurface& other)
   return result;
 }
 
-CGALSurface::vertex_vector CGALSurface::points_inside(CGALSurface& other,CGALSurface::vertex_vector &points)
+CGALSurface::vertex_vector CGALSurface::points_inside(CGALSurface& other,CGALSurface::vertex_vector &points) // query inside outside on boundary =?
 {
   vertex_vector result;
   CGALSurface::Inside inside_poly2(other.get_mesh());
@@ -677,10 +653,9 @@ CGALSurface::vertex_vector CGALSurface::points_inside(CGALSurface& other,CGALSur
       CGAL::Bounded_side res = inside_poly2(mesh.point(v_it));
       if (res == CGAL::ON_BOUNDED_SIDE or res == CGAL::ON_BOUNDARY){result.push_back(v_it);}
   }
-  points.clear();
+  points = result;
   return result;
 }
-///////////////////////////////////////////////////////////////////////////
 
 
 CGALSurface::vertex_vector CGALSurface::points_outside(CGALSurface& other)
@@ -714,7 +689,7 @@ void CGALSurface::smooth_laplacian(const double c, int iter)
     }
 }
 
-void CGALSurface::make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1) // TODO :allow tilted cubes
+void CGALSurface::make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1) // TODO :allow tilted cubes  vector  
 {
 
         assert(x0!=x1);
@@ -906,13 +881,14 @@ void CGALSurface::fair(CGALSurface::vertex_vector vector)
 }
 
 
-
-
-
-void CGALSurface::insert_points(std::vector<Point_3>& points)  // template iterator ?? ADD POINT ineffective, but could be implemented
+void CGALSurface::fair()
 {
-     for( std::vector<Point_3>::iterator it=points.begin(); it!= points.end(); ++it){mesh.add_vertex(*it);}
+     CGAL::Polygon_mesh_processing::fair(mesh,mesh.vertices());
 }
+
+
+
+
 
 void CGALSurface::reconstruct( double sm_angle,
                                double sm_radius,
@@ -930,7 +906,7 @@ poisson_reconstruction(mesh,sm_angle,
 }
 
 
-void CGALSurface::fix_close_junctures(double c) // TODO:name seperate junction and add negtive value as default
+void CGALSurface::seperate_close_junctures(double c)// FIXME // TODO:name seperate junction and add negtive value as default
 {
    // TODO :  Clean up typedefs, algorithm COULD be faster
    typedef boost::graph_traits<Mesh>::vertex_descriptor                     Point;
@@ -964,10 +940,10 @@ void CGALSurface::fix_close_junctures(double c) // TODO:name seperate junction a
    for (vertex_descriptor v_it : mesh.vertices())
    {
         flag = true;
-
+    
         K_neighbor_search search(tree, mesh.point(v_it), 2,0,true,tr_dist); //tree.closest_point(point_query); must be second closest
         
-        closest = mesh.point((search.begin()+1)->first); //closest point is the query point, therefore chose second point 
+        closest = mesh.point((search.begin()+1)->first); // The closest point is the query point, therefore choose second point as closest. 
         
         Point_3 current = mesh.point(v_it);
         distance = CGAL::squared_distance(current, closest );
@@ -982,11 +958,19 @@ void CGALSurface::fix_close_junctures(double c) // TODO:name seperate junction a
            }
          *vbegin++;
         }while(vbegin!=done);
-
-        if (flag){results.push_back(v_it);}
-
+    
+        if (flag){results.push_back(v_it);} // 
+   
    }
-   adjusting_boundary_region(results.begin(),results.end(),c);
+   // move negative of distance - edgeL ->          l
+   // if true then length of edge > distance we want  edgeL < distance ->  diff = edgeL - distance -> effect both edgeL and distance chagnes     
+
+   // adjust  diff + distance = edgeL 
+   // edgeL <= distance
+   // diff = edgeL -distance
+
+   // FIXME: Uniform c is not optimal
+   adjusting_boundary_region(results.begin(),results.end(),-c);
    
    //fair(results); 
    

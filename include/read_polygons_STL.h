@@ -129,9 +129,9 @@ bool read_polygons_STL(std::ifstream& file,
       get_next_line(file, line, lineno);
     } while (line.substr(0, 8) != endsolid); 
   
-    std::cout << facets.size() << std::endl;
-    std::cout << points.size() << std::endl;
-    std::cout << pmap.size() << std::endl;
+    std::cout <<"The number of triangles: " << facets.size() << std::endl;
+    std::cout <<"The number of points   : " << points.size() << std::endl;
+
     pmap.clear();
     return true;
 }

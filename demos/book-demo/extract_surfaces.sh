@@ -14,6 +14,7 @@ while getopts 'hs:' option; do
     s)
       subjid=$OPTARG
       mkdir -p $SUBJECTS_DIR/${subjid}/mesh
+      # mris_convert is a Freesurfer command that converts surface files to other formats, such as stl and vtk.
       mris_convert $SUBJECTS_DIR/${subjid}/surf/lh.pial $SUBJECTS_DIR/${subjid}/mesh/lh-pial.stl 
       mris_convert $SUBJECTS_DIR/${subjid}/surf/rh.pial $SUBJECTS_DIR/${subjid}/mesh/rh-pial.stl 
       mris_convert $SUBJECTS_DIR/${subjid}/surf/lh.white $SUBJECTS_DIR/${subjid}/mesh/lh-white.stl 

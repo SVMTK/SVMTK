@@ -4,7 +4,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
 
-
+#include "CGALSlice.h"
 #include "CGALSurface.h"
 #include "CGALMeshCreator.h"
 //#include "Neuron.h"
@@ -49,10 +49,19 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("print",  &SubdomainMap::print)
         .def("add", &SubdomainMap::add);
 
+    py::class_<CGALSlice,std::shared_ptr<CGALSlice>>(m, "Slice")
+        .def(py::init<>())
+        .def(py::init<CGALSlice&>())
+        .def("create_mesh", &CGALSlice::create_mesh) 
+        .def("simplify", &CGALSlice::simplify) 
+        .def("keep_component", &CGALSlice::keep_component) 
+        .def("save", &CGALSlice::save)
+        .def("mark_holes", &CGALSlice::find_holes)
+        .def("add_constraints",(void (CGALSlice::*)(CGALSlice&)) &CGALSlice::add_constraints);
 
 
 
-    py::class_<CGALSurface>(m, "Surface")
+    py::class_<CGALSurface,std::shared_ptr<CGALSurface>>(m, "Surface")
         .def(py::init<std::string &>())                                             
         .def(py::init<>())
 
@@ -62,8 +71,8 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("intersection", &CGALSurface::surface_intersection)
         .def("union", &CGALSurface::surface_union)
         .def("difference", &CGALSurface::surface_difference)
-        .def("mesh_slice", &CGALSurface::mesh_slice)
-
+        .def("slice", &CGALSurface::mesh_slice)
+        .def("span", &CGALSurface::span)
 
         .def("fill_holes", &CGALSurface::fill_holes)
         .def("triangulate_faces", &CGALSurface::triangulate_faces)
@@ -81,71 +90,53 @@ PYBIND11_MODULE(SVMTK, m) {
 	.def("make_cone", &CGALSurface::make_cone)
 	.def("make_cylinder", &CGALSurface::make_cylinder)
         .def("make_sphere", &CGALSurface::make_sphere)
-
-        .def("self_intersections", &CGALSurface::self_intersections)
         .def("num_self_intersections", &CGALSurface::num_self_intersections) 
         .def("collapse_edges", &CGALSurface::collapse_edges)
         .def("save", &CGALSurface::save)
         .def("split_edges", &CGALSurface::split_edges)
 
 
-        .def("fair", &CGALSurface::fair)
+        .def("fair", (void (CGALSurface::*)(CGALSurface::vertex_vector)) &CGALSurface::fair)
+        .def("fair", (void (CGALSurface::*)()) &CGALSurface::fair)
         //.def("load", &CGALSurface::load)//
-        .def("fix_close_junctures", &CGALSurface::fix_close_junctures)
+        .def("seperate_close_junctures", &CGALSurface::seperate_close_junctures)
         .def("reconstruct", &CGALSurface::reconstruct)
-
-        /* // Experimental reconstruction -- creates self-intersections */
-        /* .def("reconstruct_surface", &CGALSurface::reconstruct_surface, */
-        /*         py::arg("sm_angle") = 20, */
-        /*         py::arg("sm_radius") = 30, */
-        /*         py::arg("sm_distance") = 0.375) */
 
         .def("num_faces", &CGALSurface::num_faces)
         .def("num_edges", &CGALSurface::num_edges)
         .def("num_vertices", &CGALSurface::num_vertices);
 
-    py::class_<CGALMeshCreator>(m, "Domain")
+    py::class_<CGALMeshCreator,std::shared_ptr<CGALMeshCreator>>(m, "Domain")
         .def(py::init<CGALSurface &>())
         .def(py::init<std::vector<CGALSurface>>())
         .def(py::init<std::vector<CGALSurface>, AbstractMap&>())
+        .def("set_parameters", &CGALMeshCreator::set_parameters) // std::map<std::string, double>
+        .def("set_parameter", &CGALMeshCreator::set_parameter)
 
         .def("create_mesh", (void (CGALMeshCreator::*)()) &CGALMeshCreator::create_mesh) 
         .def("create_mesh", (void (CGALMeshCreator::*)(double)) &CGALMeshCreator::create_mesh)
         .def("refine_mesh", (void (CGALMeshCreator::*)()) &CGALMeshCreator::refine_mesh)
         .def("refine_mesh", (void (CGALMeshCreator::*)(double)) &CGALMeshCreator::refine_mesh)
 
+        .def("get_boundary", &CGALMeshCreator::get_boundary)
 
-        .def("default_creating_mesh", &CGALMeshCreator::default_creating_mesh)
+        .def("default_creating_mesh", &CGALMeshCreator::default_creating_mesh) // FIXME : REMOVE
 
         .def("lloyd", &CGALMeshCreator::lloyd)
         .def("odt", &CGALMeshCreator::odt)
         .def("exude", &CGALMeshCreator::exude)
         .def("perturb", &CGALMeshCreator::perturb)
-
         .def("add_sharp_border_edges", (void (CGALMeshCreator::*)(CGALSurface&)) &CGALMeshCreator::add_sharp_border_edges)
-
-
         .def("reset_borders", &CGALMeshCreator::reset_borders)
 
-    /*     // TODO: What to do about theese two? Need more classes? */
-    /*     /1*  *1/ */
-    /*     /1* .def("lipschitz_size_field", &CGALMeshCreator::lipschitz_size_field) Make subclass with lipschits *1/ */ 
 
-        .def("set_parameters", &CGALMeshCreator::set_parameters) // std::map<std::string, double>
-        .def("set_parameter", &CGALMeshCreator::set_parameter)
-
-
+        .def("number_of_cells", &CGALMeshCreator::number_of_cells)
         .def("set_borders", &CGALMeshCreator::set_borders)
-
-        .def("set_features", (void(CGALMeshCreator::*)(CGALMeshCreator::Polylines&)) &CGALMeshCreator::set_features) 
         .def("set_features", (void(CGALMeshCreator::*)()) &CGALMeshCreator::set_features) 
         .def("add_feature", &CGALMeshCreator::add_feature) 
         .def("save", &CGALMeshCreator::save); 
 
 
-    //py::class_<Neuron,CGALSurface>(m,"Neuron")
-    //    .def(py::init<std::string>())
-    //    .def("surface_mesh", &Neuron::surface_mesh );
 
 
 
