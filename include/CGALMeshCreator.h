@@ -68,10 +68,7 @@ class CGALMeshCreator {
         typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
         typedef K::Point_3 Point_3;
         typedef CGAL::Mesh_polyhedron_3<K>::type Polyhedron; 
-
         typedef CGAL::Polyhedral_mesh_domain_with_features_3<K, Polyhedron> Polyhedral_mesh_domain_3; // Use CGAL::Polyhedral_mesh_domain_with_features_3<K> Polyhedral_mesh_domain_3;
-
-        // FIXME: There is a problem with the function wrapper
         typedef CGAL::Polyhedral_vector_to_labeled_function_wrapper<Polyhedral_mesh_domain_3, K  > Function_wrapper; //
 
 
@@ -129,8 +126,8 @@ class CGALMeshCreator {
         };
 
         CGALMeshCreator(CGALSurface& surface);
-        CGALMeshCreator(std::vector<CGALSurface> surfaces, AbstractMap& map);
         CGALMeshCreator(std::vector<CGALSurface> surfaces);
+        CGALMeshCreator(std::vector<CGALSurface> surfaces, AbstractMap& map);
 
         ~CGALMeshCreator() {}
 
@@ -153,7 +150,7 @@ class CGALMeshCreator {
 
         void default_creating_mesh();  // Remove ?? eller default
 
-        void save(std::string OutPath); // TODO: check save formats
+        void save(std::string OutPath); 
 
         void refine_mesh(const double mesh_resolution );
 

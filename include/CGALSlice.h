@@ -59,7 +59,7 @@ class CGALSlice
 
        CGALSlice(const Polylines_2 &polylines) ;
 
-
+       void write_STL(const std::string filename);
        bool check_constraints();
 
        void save(std::string outpath);
@@ -112,6 +112,7 @@ class CGALSlice
        Polyline_2 seeds;
        Polylines_2 constraints;
        CDT cdt;
+       double plane_qe[4]; // Store the plane  equation -
 
 
 };
@@ -128,16 +129,17 @@ CGALSlice::CGALSlice(const Polylines_2 &polylines)
     constraints=polylines;
     std::sort( constraints.begin(), constraints.end(),c);
 
-
     min_sphere.add_polylines(polylines);
+
 }
 
 bool CGALSlice::check_constraints()
 { 
-     
+     if ( constraints[0].size() < 20) 
+         return false;
      for ( auto  pol = constraints.begin(); pol != constraints.end(); ++pol ) 
      {
-         if(pol->empty())
+         if(pol->empty() )
          {
           return false;
          }
@@ -147,22 +149,38 @@ bool CGALSlice::check_constraints()
      return true;
 }
 
+
+
 void CGALSlice::find_holes( int min_num_edges)
 {
 
      if(!check_constraints())
      {
-      std::cout  << "Missing constraints, terminating operation" << std::endl;
+      std::cout  << "Missing constraints, terminating find holes" << std::endl;
       return;
      }
-
+     if(constraints.size() < 2)
+     {
+      //std::cout  << "There are no holes."<<  std::endl;
+      return;
+     }
      
      Polyline_2 temp = constraints[0];
+     int j=0;
+     Point_2 c2 = CGAL::centroid(temp.begin(), temp.end(), CGAL::Dimension_tag<0>());
+     if ( CGAL::bounded_side_2(temp.begin(), temp.end(), c2 , Kernel())==CGAL::ON_UNBOUNDED_SIDE)
+     {
+       std::cout << "Bad slice" << std::endl;
+     } 
+
+
+
+
      for ( auto  pol = std::next(constraints.begin())  ; pol != constraints.end();) 
      {
-
          Point_2 c2 = CGAL::centroid(pol->begin(), pol->end(), CGAL::Dimension_tag<0>());
-         if ( CGAL::bounded_side_2(temp.begin(), temp.end(), c2 , Kernel())==CGAL::ON_BOUNDED_SIDE  and  pol->size() > min_num_edges )           
+         if ( CGAL::bounded_side_2(temp.begin(), temp.end(), c2 , Kernel())==CGAL::ON_BOUNDED_SIDE  and                                // inside the largest polyline 
+              CGAL::bounded_side_2(pol->begin(), pol->end(), c2 , Kernel())==CGAL::ON_BOUNDED_SIDE  and  pol->size() > min_num_edges ) // inside its own polyline i.e. have enclosed area          
          {
             seeds.push_back(c2);
             ++pol;
@@ -180,13 +198,40 @@ void CGALSlice::find_holes( int min_num_edges)
 
 }
 
+void CGALSlice::write_STL(const std::string filename)
+{
+    // FIXME
+    std::ofstream file(filename);
+    file.precision(6);
 
+
+
+    file << "solid "<< filename << std::endl;
+
+    for (CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit )
+    {
+
+
+       file << "facet normal " <<  0.0 << " " << 0.0    << " " <<  1.0 <<std::endl;
+       file << "outer loop"<< std::endl;
+     
+       
+       file << "\t" << "vertex " << fit->vertex(0)->point().x() <<" "<< fit->vertex(0)->point().y()   <<" "<< 0.0 << std::endl;  
+       file << "\t" << "vertex " << fit->vertex(1)->point().x() <<" "<< fit->vertex(1)->point().y()   <<" "<< 0.0   << std::endl; 
+       file << "\t" << "vertex " << fit->vertex(2)->point().x() <<" "<< fit->vertex(2)->point().y()   <<" "<< 0.0  << std::endl;             
+       
+       file <<"endloop" << std::endl;
+       file <<"endfacet"<< std::endl;
+    }
+    file << "endsolid"  << std::endl;
+
+}
 void CGALSlice::simplify( double stop_crit )
 {
 
      if(!check_constraints())
      {
-      std::cout  << "Missing constraints, terminating operation" << std::endl;
+      std::cout  << "Missing constraints, terminating simplify" << std::endl;
       return;
      }
      Polylines_2 temp;
@@ -206,12 +251,14 @@ void CGALSlice::simplify( double stop_crit )
 
 void CGALSlice::create_mesh(double mesh_resolution) 
 {
-
+     int ceed = 0;
      if(!check_constraints())
      {
-      std::cout  << "Missing constraints, terminating operation" << std::endl;
+      std::cout  << "Missing constraints, terminating create_mesh" << std::endl;
       return;
      }
+
+
      for ( auto  pol = constraints.begin(); pol != constraints.end(); ++pol ) 
      { 
           cdt.insert_constraint(pol->begin(), pol->end()); //
@@ -220,16 +267,20 @@ void CGALSlice::create_mesh(double mesh_resolution)
      double r = min_sphere.get_bounding_sphere_radius();
      double longest_edge = r/mesh_resolution;
 
+
      Mesher mesher(cdt);
+     if ( !seeds.empty())
+           mesher.set_seeds(seeds.begin(),seeds.end());
 
-     mesher.set_seeds(seeds.begin(),seeds.end());
-     mesher.set_criteria(Criteria(0.125, longest_edge));
-     mesher.refine_mesh();
+     mesher.set_criteria(Criteria(0.125, longest_edge), true );
 
 
+     mesher.refine_mesh(); // error step_by_step_refine_mesh(); 	
      //-------------------------------------------------------------
      // Remove facets outside can lead to errors if not a simple connected closed polyline.
      //-------------------------------------------------------------
+
+
      for(CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
      {
          if (!fit->is_in_domain())
@@ -237,7 +288,6 @@ void CGALSlice::create_mesh(double mesh_resolution)
             cdt.delete_face(fit);
          }
      } 
-       
 
 
 
@@ -247,8 +297,25 @@ void CGALSlice::create_mesh(double mesh_resolution)
 void CGALSlice::save(std::string outpath)
 {
 
+     if ( cdt.number_of_faces()==0 ) 
+     {
+        std::cout <<"Bad slice, will not be saved"<< std::endl;
+        return ;     
+     }
+     std::string extension = outpath.substr(outpath.find_last_of(".")+1);
      std::ofstream out(outpath);
-     CGAL::export_triangulation_2_to_off(out,cdt);
+     if ( extension=="off")
+     {
+       std::ofstream out(outpath);
+       CGAL::export_triangulation_2_to_off(out,cdt);
+     } 
+     else if ( extension=="stl")
+     {
+        std::cout << " only off extension is functional" << std::endl;
+        write_STL(outpath);
+     }
+
+
 }
 
 
@@ -259,4 +326,4 @@ void CGALSlice::save(std::string outpath)
 
 
 
-#endif
+#endif 
