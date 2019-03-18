@@ -46,4 +46,4 @@ if __name__ =='__main__':
 
         if Z.surf is not None:
            surf = domain.get_boundary()         # Extracts all boundary facets to a SVM Surface Object
-           surf(Z.surf)                         # Saves the Surface Object containing the boundary
+           surf.save(Z.surf)                         # Saves the Surface Object containing the boundary
