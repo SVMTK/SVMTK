@@ -177,8 +177,8 @@ void surface_overlapp(CGALSurface& surf1 , CGALSurface& surf2 )
             surf1.adjusting_boundary_region(map1.begin() ,map1.end());
             surf2.adjusting_boundary_region(map2.begin() ,map2.end());
 
-            surf1.smooth_taubin(2);   // After adjusting the boundary smoothing is needed, taubin is least volatile.
-            surf2.smooth_taubin(2);   // After adjusting the boundary smoothing is needed, taubin is least volatile.
+            surf1.smooth_taubin_region(surf1points.begin(), surf1points.end(),2);   // After adjusting the boundary smoothing is needed, taubin is least volatile.
+            surf2.smooth_taubin_region(surf2points.begin(), surf2points.end(),2);   // After adjusting the boundary smoothing is needed, taubin is least volatile.
 
             surf1points = surf1.points_inside(surf2 , surf1points);
             surf2points = surf2.points_inside(surf1 , surf2points);
@@ -281,11 +281,13 @@ class CGALSurface
     template<typename InputIterator>   
     void adjusting_boundary_region(InputIterator begin , InputIterator  end, const double c);
 
-
     void adjusting_boundary_region(std::map<vertex_descriptor,double>::iterator begin, std::map<vertex_descriptor,double>::iterator end );
  
     template<typename InputIterator>
     void smooth_laplacian_region(InputIterator begin , InputIterator end ,const double c);
+
+    template<typename InputIterator>
+    void smooth_taubin_region(InputIterator begin , InputIterator end ,const size_t iter);
 
         //-----------------------------------------------------------------------------------
         //TODO: Add query and overload ? ?
@@ -517,6 +519,14 @@ void CGALSurface::smooth_taubin(const size_t nb_iter) {
     for (size_t i = 0; i < nb_iter; ++i) {
         this->smooth_laplacian(0.8,1);
         this->smooth_laplacian(-0.805,1);
+    }
+}
+template<typename InputIterator >
+void CGALSurface::smooth_taubin_region(InputIterator begin , InputIterator end ,const size_t nb_iter)
+{
+    for (size_t i = 0; i < nb_iter; ++i) {
+        this->smooth_laplacian_region(begin,end,0.8);
+        this->smooth_laplacian_region(begin,end,-0.805);
     }
 }
 

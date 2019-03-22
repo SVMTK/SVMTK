@@ -34,14 +34,15 @@ if __name__ =='__main__':
         smap.add("100",1)                       # Marks all cells that are only inside the pial surface.
         smap.add("110",2)                       # Marks all cells inside both the pial and white surface.
        
-        if Z.keep:
-           smap.add("111",3)                    # Marks all cells inisde the pial, white and ventricle surface.
+        
+        smap.add("111",3)                    # Marks all cells inisde the pial, white and ventricle surface.
 
  
         domain   = svm.Domain(surfaces,smap)    # Creates a domain with specified subdomains
        
         domain.create_mesh(Z.res)               # Generates the volume mesh of the loaded surface.
   
+        domain.remove_subdomain(3)              # removes cells with subdomain 3 tag 
         domain.save(Z.o)                        # Save the mesh at the 
 
         if Z.surf is not None:

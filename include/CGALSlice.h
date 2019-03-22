@@ -272,6 +272,7 @@ void CGALSlice::create_mesh(double mesh_resolution)
      if ( !seeds.empty())
            mesher.set_seeds(seeds.begin(),seeds.end());
 
+
      mesher.set_criteria(Criteria(0.125, longest_edge), true );
 
 

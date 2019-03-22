@@ -25,3 +25,5 @@ if __name__ == "__main__":
    maker.create_mesh(32)
 
    maker.save("subdomains.mesh")
+   boundary = maker.get_boundary()
+   boundary.save("sudagfn.off")

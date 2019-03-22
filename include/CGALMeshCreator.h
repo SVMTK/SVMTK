@@ -194,6 +194,7 @@ class CGALMeshCreator {
 
         // Specific labeling of boundary cells 
         void label_boundary_cells(int btag, int ntag); // 
+
         void remove_label_cells(int tag);              // tags 
         
         int number_of_cells(){return c3t3.number_of_cells();}
@@ -212,7 +213,7 @@ class CGALMeshCreator {
 
 
 template<typename C3T3>
-int remove_isolated_vertices(C3T3& c3t3)
+int remove_isolated_vertices(C3T3& c3t3, bool remove_domain=false)
 { 
   //FIXME : CLEANUP
   typedef typename C3T3::Triangulation Tr;
@@ -258,8 +259,8 @@ int remove_isolated_vertices(C3T3& c3t3)
 
 
 
-  std::cout<<"Number of vertices removed: "  << before - after  << std::endl;
-  if ((before - after) > 10)   
+  std::cout<<"Number of isolated vertices removed: "  << before - after  << std::endl;
+  if ((before - after) > 10 and !remove_domain)   
   {
        // FIXME : Better 
        std::cout<<"The number of removed vertices are substantial."<< std::endl;  
@@ -437,7 +438,7 @@ void CGALMeshCreator::save(std::string OutPath)
 {
     std::ofstream  medit_file(OutPath);
 
-    c3t3.output_to_medit(medit_file,false);
+    c3t3.output_to_medit(medit_file,false,true);
     medit_file.close();
 
 
@@ -492,7 +493,17 @@ void CGALMeshCreator::label_boundary_cells(int btag , int ntag ) // workaround t
 void CGALMeshCreator::remove_label_cells(int tag) //rename
 {
   Subdomain_index subdomain_index(tag);
+
+
+
+  int before = c3t3.number_of_cells();
   for(C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin(subdomain_index);cit != c3t3.cells_in_complex_end(); ++cit){ c3t3.remove_from_complex(cit);}
+  int after = c3t3.number_of_cells();
+  std::cout << "Number of removed subdomain cells : " << (before -after) << std::endl;
+
+
+  if ( remove_isolated_vertices(c3t3,true) > 0)
+     c3t3.rescan_after_load_of_triangulation();
 }
 
 
