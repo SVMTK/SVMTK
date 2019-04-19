@@ -20,4 +20,4 @@ if __name__ == "__main__":
     maker.set_borders()
     maker.default_creating_mesh()
 
-    maker.save_mesh("pvs_artery.mesh")
+    maker.save("pvs_artery.mesh")

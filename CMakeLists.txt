@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.12)
-project(BrainMesh)
+project(SVMTK)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -31,5 +31,5 @@ set(PYBIND11_PYTHON_VERSION 3.6)
 
 set(CMAKE_CXX_FLAGS "-fPIC -shared ${CMAKE_CXX_FLAGS} -std=c++17 -frounding-math -lgmpxx -lgmp ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-pybind11_add_module(brainmesh SHARED python/src/brainmesh.cpp)
-target_link_libraries(brainmesh PRIVATE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${Boost})
+pybind11_add_module(svmtk SHARED python/src/svmtk.cpp)
+target_link_libraries(svmtk PRIVATE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${Boost})

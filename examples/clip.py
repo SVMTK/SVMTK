@@ -22,4 +22,4 @@ if __name__ == "__main__":
     #maker.add_sharp_border_edges(surf2)
     maker.set_borders()
     maker.create_mesh(9.0)
-    maker.save_mesh("pvs_artery.mesh")
+    maker.save("pvs_artery.mesh")

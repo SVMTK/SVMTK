@@ -21,4 +21,4 @@ if __name__ == "__main__":
 
     maker = bm.BrainMesh(surf)
     maker.create_mesh()
-    maker.save_mesh("results/chair.mesh")
+    maker.save("results/chair.mesh")

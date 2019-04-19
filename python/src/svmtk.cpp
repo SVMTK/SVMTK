@@ -5,6 +5,7 @@
 
 #include "CGALSurface.h"
 #include "CGALMeshCreator.h"
+#include "CGALSlice.h"
 
 
 namespace py = pybind11;
@@ -22,13 +23,12 @@ typedef Kernel::Point_3 Point_3;
 
 
 // We want to construct Polyline in Python then let polyline translate into cgal Point in c++
-
 Point_3 Wrapper_point_3(const double x, const double y, const double z) {
     return Point_3(x, y, z);
 }
 
 
-PYBIND11_MODULE(brainmesh, m) {
+PYBIND11_MODULE(svmtk, m) {
 
     py::class_<Point_3>(m, "Point_3")
        .def(py::init<double, double, double>())
@@ -38,8 +38,18 @@ PYBIND11_MODULE(brainmesh, m) {
 
     py::class_<SubdomainMap,AbstractMap>(m, "SubdomainMap")
         .def(py::init<>())
-        .def("print",  &SubdomainMap::print)
+        .def("print", &SubdomainMap::print)
         .def("add", &SubdomainMap::add);
+
+    py::class_<CGALSlice,std::shared_ptr<CGALSlice>>(m, "Slice")
+        .def(py::init<>())
+        .def(py::init<CGALSlice&>())
+        .def("create_mesh", &CGALSlice::create_mesh)
+        .def("simplify", &CGALSlice::simplify)
+        .def("keep_component", &CGALSlice::keep_component)
+        .def("save", &CGALSlice::save)
+        .def("mark_holes", &CGALSlice::find_holes)
+        .def("add_constraints", (void (CGALSlice::*)(CGALSlice&)) &CGALSlice::add_constraints);
 
     py::class_<CGALSurface>(m, "BrainSurface")
         .def(py::init<std::string &>())
@@ -93,12 +103,15 @@ PYBIND11_MODULE(brainmesh, m) {
 
     py::class_<CGALMeshCreator>(m, "BrainMesh")
         .def(py::init<CGALSurface &>())
-        .def(py::init<std::vector<CGALSurface>>())
-        .def(py::init<std::vector<CGALSurface>, AbstractMap&>())
+        .def(py::init<std::vector<CGALSurface> &>())
+        .def(py::init<std::vector<CGALSurface> &, AbstractMap&>())
+
+        .def("set_parameters", &CGALMeshCreator::set_parameters) // std::map<std::string, double>
+        .def("set_parameter", &CGALMeshCreator::set_parameter)
 
         .def("create_mesh", (void (CGALMeshCreator::*)()) &CGALMeshCreator::create_mesh)
-        // .def("create_mesh", (void (CGALMeshCreator::*)(int)) &CGALMeshCreator::create_mesh)
         .def("create_mesh", (void (CGALMeshCreator::*)(double)) &CGALMeshCreator::create_mesh)
+
         .def("default_creating_mesh", &CGALMeshCreator::default_creating_mesh)
 
         .def("lloyd", &CGALMeshCreator::lloyd)
@@ -107,27 +120,17 @@ PYBIND11_MODULE(brainmesh, m) {
         .def("perturb", &CGALMeshCreator::perturb)
 
         .def("add_sharp_border_edges", (void (CGALMeshCreator::*)(CGALSurface&)) &CGALMeshCreator::add_sharp_border_edges)
-
-        /* .def("refine_mesh", &CGALMeshCreator::refine_mesh) */
         .def("reset_borders", &CGALMeshCreator::reset_borders)
 
-        // TODO: What to do about theese two? Need more classes?
-        /*  */
-        /* .def("lipschitz_size_field", &CGALMeshCreator::lipschitz_size_field) Make subclass with lipschits */ 
-
-        .def("set_parameters", &CGALMeshCreator::set_parameters) // std::map<std::string, double>
-        .def("set_parameter", &CGALMeshCreator::set_parameter)
-
         .def("set_borders", &CGALMeshCreator::set_borders)
-        .def("set_features", (void(CGALMeshCreator::*)(CGALMeshCreator::Polylines&)) &CGALMeshCreator::set_features)
         .def("set_features", (void(CGALMeshCreator::*)()) &CGALMeshCreator::set_features)
-        .def("add_feature", &CGALMeshCreator::add_feature)
-        .def("save_mesh", &CGALMeshCreator::save_mesh);
+        .def("add_feature", &CGALMeshCreator::add_feature) 
+        .def("save", &CGALMeshCreator::save)
 
-
-    //py::class_<Neuron,CGALSurface>(m,"Neuron")
-    //    .def(py::init<std::string>())
-    //    .def("surface_mesh", &Neuron::surface_mesh );
+        .def("number_of_cells", &CGALMeshCreator::number_of_cells)
+        .def("get_boundary", &CGALMeshCreator::get_boundary)
+        .def("refine_mesh", (void (CGALMeshCreator::*)()) &CGALMeshCreator::refine_mesh)
+        .def("refine_mesh", (void (CGALMeshCreator::*)(double)) &CGALMeshCreator::refine_mesh);
 
     m.def("surface_overlapp", &surface_overlapp<CGALSurface>);
 }

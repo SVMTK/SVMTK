@@ -7,7 +7,6 @@
 #include <CGAL/Surface_mesh_default_criteria_3.h>
 #include <CGAL/IO/Complex_2_in_triangulation_3_file_writer.h>
 
-
 #include <functional>
 
 #include <CGAL/Surface_mesh.h>
@@ -15,18 +14,18 @@
 #include <CGAL/IO/Polyhedron_iostream.h>
 
 // needed
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h> // or excat ?
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/IO/output_surface_facets_to_polyhedron.h>
 #include <CGAL/Mesh_polyhedron_3.h>
 #include <CGAL/Surface_mesh_triangulation_generator_3.h>
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
 #include <CGAL/Complex_2_in_triangulation_3.h>
-/* #include <CGAL/boost/graph/copy_face_graph.h> */
 
 
-template <typename FT, typename P>
-class FT_to_point_function_wrapper: public std::unary_function<P, FT> {
-    typedef std::function<double(double,double,double)> Implicit_function;
+template < typename FT, typename P >
+class FT_to_point_function_wrapper: public std::unary_function<P, FT>
+{
+    typedef std::function< double(double, double, double) > Implicit_function;
     Implicit_function function;
 
     public:
@@ -40,16 +39,16 @@ class FT_to_point_function_wrapper: public std::unary_function<P, FT> {
 };
 
 
-template<typename Mesh , typename Implicit_Function> // Implicit function -> return coordiantes x0,y0,z0-> make center 
+template< typename Mesh, typename Implicit_Function > // Implicit function -> return coordiantes x0,y0,z0-> make center 
 void surface_mesher(Mesh& mesh, Implicit_Function func, double& x0, double& y0, double& z0,
         const double bounding_sphere_radius, const double angular_bound,
-        const double radius_bound, const double distance_bound) {
+        const double radius_bound, const double distance_bound)
+{
     // remove implivit anf center use CEnter
     typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
     typedef CGAL::Surface_mesh_triangulation_generator_3<Kernel>::Type Tr;
     typedef CGAL::Complex_2_in_triangulation_3<Tr> C2t3;
     typedef Tr::Geom_traits GT;
-    typedef Kernel::Sphere_3 Sphere_3;
     typedef Kernel::Point_3 Point_3;
     typedef Kernel::FT FT;
 
@@ -73,7 +72,8 @@ void surface_mesher(Mesh& mesh, Implicit_Function func, double& x0, double& y0, 
 
 template<typename Mesh , typename Implicit_Function> // Requires origin
 void surface_mesher(Mesh& mesh, Implicit_Function func, const double bounding_sphere_radius,
-        const double angular_bound, const double radius_bound, const double distance_bound ) {
+        const double angular_bound, const double radius_bound, const double distance_bound)
+{
     typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
     typedef CGAL::Surface_mesh_triangulation_generator_3<Kernel>::Type Tr;
     typedef CGAL::Complex_2_in_triangulation_3<Tr> C2t3;

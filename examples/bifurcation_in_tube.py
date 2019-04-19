@@ -18,6 +18,6 @@ if __name__ == "__main__":
     maker.set_features()
 
     #maker.default_creating_mesh()
-    maker.create_mesh(24.)
+    maker.create_mesh(24.0)
     maker.excude(100, 0)
-    maker.save_mesh("bifurcation_in_cube.mesh")
+    maker.save("bifurcation_in_cube.mesh")

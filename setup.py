@@ -61,11 +61,11 @@ class CMakeBuild(build_ext):
 
 
 setup(
-    name="brainmesh",
+    name="svmtk",
     version="{0}.{1}".format(MAJOR, MINOR),
     description="A collection of tools for volume and surface meshing",
     long_description="",
-    ext_modules=[CMakeExtension("brainmesh")],
+    ext_modules=[CMakeExtension("svmtk")],
     cmdclass=dict(build_ext=CMakeBuild),
     packages=["source"],
     install_requires=[
@@ -75,7 +75,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "brainmesh-convert = source.convert:main",
+            "svmtk-convert = source.convert:main",
         ]
     },
     zip_safe=False

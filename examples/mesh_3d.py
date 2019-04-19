@@ -13,4 +13,4 @@ mc = bm.BrainMesh(blob)
 mc.create_mesh()
 # mc.refine_mesh()
 
-mc.save_mesh("results/3d_mesh")
+mc.save("results/3d_mesh")

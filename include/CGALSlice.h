@@ -28,6 +28,7 @@
 #include <CGAL/centroid.h>
 #include <CGAL/Polygon_2_algorithms.h>
 
+
 class CGALSlice
 {
     public :
@@ -51,8 +52,7 @@ class CGALSlice
        CGALSlice(){}
        ~CGALSlice(){}
 
-       CGALSlice(CGALSlice &slice){constraints = slice.get_constraints() ; }
-
+       CGALSlice(CGALSlice &slice) { constraints = slice.get_constraints(); }
 
        CGALSlice(const Polylines_2 &polylines) ;
 
@@ -82,7 +82,7 @@ class CGALSlice
 
        void find_holes(const int min_num_edges);
 
-       int  num_constraints() { return constraints.size(); }
+       int num_constraints() { return constraints.size(); }
 
        void create_mesh(const double mesh_resolution);
 
@@ -96,10 +96,8 @@ class CGALSlice
 
            void add_polylines(const Polylines_2 &polylines)
            {
-                /* for (auto it=polylines.begin();it != polylines.end(); ++it) */
                 for (const auto &it: polylines)
                 {
-                    /* for ( auto pit=it->begin() ; pit!=it->end(); ++pit) */
                     for (const auto &pit: it)
                          S.push_back(Sphere(pit, 0.0));
                 }
@@ -126,20 +124,13 @@ class CGALSlice
 
 CGALSlice::CGALSlice(const Polylines_2 &polylines) 
 {
-    /* struct compare{ */
-    /*               bool operator()(const std::vector<Point_2> & a, const std::vector<Point_2> & b) */
-    /*                    { return a.size() > b.size(); } */
-    /* }; */
     typedef std::vector<Point_2> plist;
 
-    /* compare c; */
     constraints = polylines;
-    /* std::sort(constraints.begin(), constraints.end(), c); */
     std::sort(constraints.begin(), constraints.end(),
             [](const plist &a, const plist &b){ return a.size() > b.size(); });
 
     min_sphere.add_polylines(polylines);
-
 }
 
 
@@ -150,9 +141,7 @@ bool CGALSlice::check_constraints()
     for (const auto &pol: constraints)
     {
         if (pol.empty())
-        {
             return false;
-        }
     }
     return true;
 }
@@ -169,19 +158,16 @@ void CGALSlice::find_holes(const int min_num_edges)
         return;
 
     Polyline_2 temp = constraints[0];
-    int j = 0;
     Point_2 c2 = CGAL::centroid(temp.begin(), temp.end(), CGAL::Dimension_tag<0>());
 
     if (CGAL::bounded_side_2(temp.begin(), temp.end(), c2, Kernel()) == CGAL::ON_UNBOUNDED_SIDE)
-    {
         std::cout << "Bad slice" << std::endl;
-    }
 
-    for (auto pol = std::next(constraints.begin()); pol != constraints.end();)
+    for (auto pol = std::next(constraints.begin()); pol != constraints.end(); )
     {
-        const Point_2 c2 = CGAL::centroid(pol->begin(), pol->end(), CGAL::Dimension_tag<0>());
-        if (CGAL::bounded_side_2(temp.begin(), temp.end(), c2, Kernel())==CGAL::ON_BOUNDED_SIDE and  // inside the largest polyline 
-                CGAL::bounded_side_2(pol->begin(), pol->end(), c2, Kernel())==CGAL::ON_BOUNDED_SIDE and
+        const Point_2 c2 = CGAL::centroid(pol->begin(), pol->end(), CGAL::Dimension_tag< 0 >());
+        if (CGAL::bounded_side_2(temp.begin(), temp.end(), c2, Kernel()) == CGAL::ON_BOUNDED_SIDE and  // inside the largest polyline 
+                CGAL::bounded_side_2(pol->begin(), pol->end(), c2, Kernel()) == CGAL::ON_BOUNDED_SIDE and
                 pol->size() > min_num_edges ) // inside its own polyline i.e. have enclosed area
         {
             seeds.push_back(c2);
@@ -240,7 +226,7 @@ void CGALSlice::simplify(const double stop_crit)
         CGAL::Polyline_simplification_2::simplify(pol.begin(), pol.end(), Cost(), Stop(stop_crit),
                 std::back_inserter(result));
         if (result.size() > 2) // a polyline segment i.e. 2 points can cause segmentation dump in attempt to mesh. 
-             temp.push_back(result);
+            temp.push_back(result);
     }
     constraints = temp;
 }
@@ -254,11 +240,8 @@ void CGALSlice::create_mesh(const double mesh_resolution)
         return;
     }
 
-    /* for ( auto  pol = constraints.begin(); pol != constraints.end(); ++pol ) */ 
     for (const auto &pol: constraints)
-    {
          cdt.insert_constraint(pol.begin(), pol.end());
-    }
 
     double r = min_sphere.get_bounding_sphere_radius();
     double longest_edge = r/mesh_resolution;
@@ -276,9 +259,7 @@ void CGALSlice::create_mesh(const double mesh_resolution)
     for(CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
     {
         if (!fit->is_in_domain())
-        {
             cdt.delete_face(fit);
-        }
     }
 }
 
