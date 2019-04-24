@@ -50,6 +50,8 @@ PYBIND11_MODULE(svmtk, m) {
         .def("keep_component", (void (CGALSlice::*)(size_t)) &CGALSlice::keep_component)
         .def("keep_component", (void (CGALSlice::*)(std::vector< size_t >)) &CGALSlice::keep_component)
 
+        .def("get_constraints", &CGALSlice::get_constraints_numpy)
+
         .def("save", &CGALSlice::save)
         .def("mark_holes", &CGALSlice::find_holes)
         .def("subdomain_map", &CGALSlice::subdomain_map)

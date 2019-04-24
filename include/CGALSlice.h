@@ -24,9 +24,12 @@
 #include <iostream>
 #include <fstream>
 
-
 #include <CGAL/centroid.h>
 #include <CGAL/Polygon_2_algorithms.h>
+
+// PYBIND11
+#include <pybind11/numpy.h>
+namespace py = pybind11;
 
 
 class CGALSlice
@@ -83,19 +86,19 @@ class CGALSlice
         void keep_component(const std::vector< size_t > constraint_indices) {
             // 0 is largest polyline
             Polylines_2 constraints_tmp(constraint_indices.size());
-            /* Polyline_2 temp = constraints[next]; */
             for (auto const idx: constraint_indices)
             {
                 constraints_tmp.emplace_back(constraints[idx]);
             }
             constraints.clear();        // Is this necessary?
             constraints = constraints_tmp;
-            /* constraints.push_back(temp); */
         };
+
+        py::array_t< double > get_constraints_numpy(const size_t);
 
         void find_holes(const int min_num_edges);
 
-        int num_constraints() { return constraints.size(); }
+        size_t num_constraints() { return constraints.size(); }
 
         void create_mesh(const double mesh_resolution);
 
@@ -319,6 +322,40 @@ int CGALSlice::subdomain_map(const double x, const double y)
         ++pol;
     }
     return subdomain_id;
+}
+
+
+py::array_t< double > CGALSlice::get_constraints_numpy(const size_t constraint_index)
+{
+    if (constraint_index >= num_constraints())
+    {
+        std::cout << "Constraint index out of bounds." << std::endl;
+        assert(false);
+    }
+
+    const auto constraint_size = constraints[constraint_index].size();
+    /* auto result = py::array_t< double >({constraint_size}, {2}); */
+
+    py::array_t< double > result;
+    result.resize(std::vector< ptrdiff_t >{constraint_size, 2});
+    /* auto result = py::array_t< double >(constraint_size*2); */
+
+    /* py::array_t< double > result; */
+    /* result.resize({constraint_size, 2}); */
+
+    auto array_buf = result.request();
+
+    double *buf_ptr = static_cast< double * >(array_buf.ptr);
+
+    for (size_t idx = 0; idx < 2*constraint_size; idx = idx + 2)
+    {
+        /* buf_ptr[idx] = constraints[constraint_index][idx].x(); */
+        /* buf_ptr[2*idx] = constraints[constraint_index][idx].y(); */
+        buf_ptr[idx] = constraints[constraint_index][idx].x();
+        buf_ptr[idx + 1] = constraints[constraint_index][idx].y();
+    }
+
+    return result;
 }
 
 
