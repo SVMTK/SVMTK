@@ -49,9 +49,10 @@ PYBIND11_MODULE(svmtk, m) {
         .def("keep_component", &CGALSlice::keep_component)
         .def("save", &CGALSlice::save)
         .def("mark_holes", &CGALSlice::find_holes)
+        .def("subdomain_map", &CGALSlice::subdomain_map)
         .def("add_constraints", (void (CGALSlice::*)(CGALSlice&)) &CGALSlice::add_constraints);
 
-    py::class_<CGALSurface>(m, "BrainSurface")
+    py::class_<CGALSurface>(m, "Surface")
         .def(py::init<std::string &>())
         .def(py::init<>())
 
@@ -61,7 +62,7 @@ PYBIND11_MODULE(svmtk, m) {
         .def("intersection", &CGALSurface::surface_intersection)
         .def("union", &CGALSurface::surface_union)
         .def("difference", &CGALSurface::surface_difference)
-        .def("mesh_slice", &CGALSurface::mesh_slice)
+        .def("slice", &CGALSurface::slice)
 
         .def("fill_holes", &CGALSurface::fill_holes)
         .def("triangulate_faces", &CGALSurface::triangulate_faces)
@@ -101,7 +102,7 @@ PYBIND11_MODULE(svmtk, m) {
         .def("num_edges", &CGALSurface::num_edges)
         .def("num_vertices", &CGALSurface::num_vertices);
 
-    py::class_<CGALMeshCreator>(m, "BrainMesh")
+    py::class_<CGALMeshCreator>(m, "Domain")
         .def(py::init<CGALSurface &>())
         .def(py::init<std::vector<CGALSurface> &>())
         .def(py::init<std::vector<CGALSurface> &, AbstractMap&>())

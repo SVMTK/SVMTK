@@ -17,7 +17,7 @@
 #include <CGAL/Min_sphere_of_spheres_d.h>
 #include <CGAL/Min_sphere_of_spheres_d_traits_2.h>
 
-#include <assert.h>  
+#include <assert.h>
 #include <iterator>
 #include <vector>
 #include <string>
@@ -66,7 +66,7 @@ class CGALSlice
 
        void add_constraints(Polylines_2 &polylines) {
            min_sphere.add_polylines(polylines);
-           constraints.insert(constraints.end(),polylines.begin(),polylines.end());
+           constraints.insert(constraints.end(), polylines.begin(), polylines.end());
        }
 
        void clear_costraints() { constraints.clear(); }
@@ -88,11 +88,13 @@ class CGALSlice
 
        void simplify(const double stop_crit); // simplify all polylines
 
+       int subdomain_map(const double x, const double y);
+
        struct Minimum_sphere
        {
-           typedef CGAL::Min_sphere_of_spheres_d_traits_2<Kernel,FT> Traits;
-           typedef CGAL::Min_sphere_of_spheres_d<Traits> Min_sphere;
-           typedef Traits::Sphere                    Sphere;
+           typedef CGAL::Min_sphere_of_spheres_d_traits_2< Kernel, FT > Traits;
+           typedef CGAL::Min_sphere_of_spheres_d< Traits > Min_sphere;
+           typedef Traits::Sphere Sphere;
 
            void add_polylines(const Polylines_2 &polylines)
            {
@@ -108,8 +110,9 @@ class CGALSlice
                 Min_sphere ms(S.begin(), S.end());
                 return CGAL::to_double(ms.radius());
             }
+
             private:
-                std::vector<Sphere> S;
+                std::vector< Sphere > S;
        };
 
 
@@ -122,7 +125,7 @@ class CGALSlice
 };
 
 
-CGALSlice::CGALSlice(const Polylines_2 &polylines) 
+CGALSlice::CGALSlice(const Polylines_2 &polylines)
 {
     typedef std::vector<Point_2> plist;
 
@@ -284,6 +287,25 @@ void CGALSlice::save(const std::string outpath)
         std::cout << " only off extension is functional" << std::endl;
         write_STL(outpath);
     }
+}
+
+
+int CGALSlice::subdomain_map(const double x, const double y)
+{
+    // Return the smalles constraint of which (x, y) is a member.
+    if (constraints.size() == 1)
+        return 1;
+
+    const auto vertex = Point_2(x, y);
+
+    int subdomain_id = 2;
+    for (auto pol = std::next(constraints.begin()); pol != constraints.end(); )
+    {
+        if (CGAL::bounded_side_2(pol->begin(), pol->end(), vertex, Kernel()) != CGAL::ON_UNBOUNDED_SIDE)
+            subdomain_id++;
+        ++pol;
+    }
+    return subdomain_id;
 }
 
 

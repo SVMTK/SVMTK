@@ -67,7 +67,8 @@ setup(
     long_description="",
     ext_modules=[CMakeExtension("svmtk")],
     cmdclass=dict(build_ext=CMakeBuild),
-    packages=["source"],
+    packages=["svmtk_utils"],
+    package_dir={"": "src"},
     install_requires=[
         "numpy",
         "meshio",
@@ -75,7 +76,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "svmtk-convert = source.convert:main",
+            "svmtk-convert = svmtk_utils.convert:main",
         ]
     },
     zip_safe=False

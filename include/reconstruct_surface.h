@@ -23,23 +23,29 @@
 #include <fstream>
 #include <math.h>
 
-namespace reconstruct {
 
-    struct Counter {
+namespace reconstruct
+{
+
+    struct Counter
+    {
         std::size_t i, N;
-        Counter(std::size_t N) : i(0), N(N) {}
+        Counter(std::size_t N) : i(0), N(N) { }
 
-        void operator()() {
+        void operator()()
+        {
             i++;
         }
     };
 
 
-    struct InsertVisitor {
+    struct InsertVisitor
+    {
         Counter& c;
-        InsertVisitor(Counter& c) : c(c) {}
+        InsertVisitor(Counter& c) : c(c) { }
 
-        void before_insertion() {
+        void before_insertion()
+        {
             c();
         }
     };
@@ -49,13 +55,14 @@ namespace reconstruct {
     // main()
     // ----------------------------------------------------------------------------
 
-    template < typename Mesh>
+    template < typename Mesh >
     void poisson_reconstruction(Mesh &mesh,
         const double sm_angle = 20.0,
         const double sm_radius = 100.0,
         const double sm_distance = 0.25,
         const double approximation_ratio = 0.02,
-        const double average_spacing_ratio = 5.0) {
+        const double average_spacing_ratio = 5.0)
+    {
 
         typedef CGAL::Exact_predicates_inexact_constructions_kernel ReconstructKernel;
 

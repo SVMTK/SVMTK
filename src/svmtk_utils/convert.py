@@ -41,7 +41,7 @@ def readAsc(filename: Path) -> meshio.Mesh:
     return datatuple
 
 
-def brainmeshConvert(input_name: str, output_name: str) -> None:
+def brainmeshConvert(input_name: str, output_name: str, enforce_2d: bool = False) -> None:
     """Read `infile`, and save to `outfile`. Formats are inferred from suffixes.
 
     Arguments:
@@ -58,6 +58,8 @@ def brainmeshConvert(input_name: str, output_name: str) -> None:
         mesh = readAsc(inpath)
     else:
         mesh = meshio.read(str(inpath))
+    if enforce_2d:
+        mesh.points = mesh.points[:, :2]
     meshio.write(str(outpath), mesh)
 
 
@@ -78,6 +80,10 @@ def create_parser() -> ArgumentParser:
         help="path to output file",
         required=True
     )
+    parser.add_argument(
+        "--enforce_2d",
+        action="store_true"
+    )
     return parser
 
 
@@ -85,7 +91,7 @@ def main() -> None:
     """brainmesh-convert entry point."""
     parser = create_parser()
     args = parser.parse_args()
-    brainmeshConvert(args.input, args.output)
+    brainmeshConvert(args.input, args.output, args.enforce_2d)
 
 
 if __name__ == "__main__":
