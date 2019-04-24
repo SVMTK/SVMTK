@@ -46,7 +46,10 @@ PYBIND11_MODULE(svmtk, m) {
         .def(py::init<CGALSlice&>())
         .def("create_mesh", &CGALSlice::create_mesh)
         .def("simplify", &CGALSlice::simplify)
-        .def("keep_component", &CGALSlice::keep_component)
+
+        .def("keep_component", (void (CGALSlice::*)(size_t)) &CGALSlice::keep_component)
+        .def("keep_component", (void (CGALSlice::*)(std::vector< size_t >)) &CGALSlice::keep_component)
+
         .def("save", &CGALSlice::save)
         .def("mark_holes", &CGALSlice::find_holes)
         .def("subdomain_map", &CGALSlice::subdomain_map)

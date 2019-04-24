@@ -32,88 +32,101 @@
 class CGALSlice
 {
     public :
-       typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
-       typedef Kernel::Point_2 Point_2;
+        typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
+        typedef Kernel::Point_2 Point_2;
 
-       typedef CGAL::Triangulation_vertex_base_2<Kernel> Vb;
-       typedef CGAL::Delaunay_mesh_face_base_2<Kernel> Fb;
-       typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
-       typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, Tds,CGAL::Exact_predicates_tag> CDT;
-       typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
-       typedef CGAL::Delaunay_mesher_2<CDT, Criteria> Mesher;
-       typedef Kernel::FT FT;
-       typedef std::vector<Point_2> Polyline_2;
-       typedef std::vector<Polyline_2> Polylines_2;
+        typedef CGAL::Triangulation_vertex_base_2<Kernel> Vb;
+        typedef CGAL::Delaunay_mesh_face_base_2<Kernel> Fb;
+        typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
+        typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, Tds,CGAL::Exact_predicates_tag> CDT;
+        typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
+        typedef CGAL::Delaunay_mesher_2<CDT, Criteria> Mesher;
+        typedef Kernel::FT FT;
+        typedef std::vector<Point_2> Polyline_2;
+        typedef std::vector<Polyline_2> Polylines_2;
 
-       //typedef CGAL::Polyline_simplification_2::Stop_above_cost_threshold Stop;
-       typedef CGAL::Polyline_simplification_2::Stop_below_count_ratio_threshold Stop;
-       typedef CGAL::Polyline_simplification_2::Squared_distance_cost Cost;
+        //typedef CGAL::Polyline_simplification_2::Stop_above_cost_threshold Stop;
+        typedef CGAL::Polyline_simplification_2::Stop_below_count_ratio_threshold Stop;
+        typedef CGAL::Polyline_simplification_2::Squared_distance_cost Cost;
 
-       CGALSlice(){}
-       ~CGALSlice(){}
+        CGALSlice(){}
+        ~CGALSlice(){}
 
-       CGALSlice(CGALSlice &slice) { constraints = slice.get_constraints(); }
+        CGALSlice(CGALSlice &slice) { constraints = slice.get_constraints(); }
 
-       CGALSlice(const Polylines_2 &polylines) ;
+        CGALSlice(const Polylines_2 &polylines) ;
 
-       void write_STL(const std::string filename);
+        void write_STL(const std::string filename);
 
-       bool check_constraints();
+        bool check_constraints();
 
-       void save(const std::string outpath);
+        void save(const std::string outpath);
 
-       void add_constraints(CGALSlice &slice) { add_constraints(slice.get_constraints()); }
+        void add_constraints(CGALSlice &slice) { add_constraints(slice.get_constraints()); }
 
-       void add_constraints(Polylines_2 &polylines) {
-           min_sphere.add_polylines(polylines);
-           constraints.insert(constraints.end(), polylines.begin(), polylines.end());
-       }
+        void add_constraints(Polylines_2 &polylines) {
+            min_sphere.add_polylines(polylines);
+            constraints.insert(constraints.end(), polylines.begin(), polylines.end());
+        }
 
-       void clear_costraints() { constraints.clear(); }
+        void clear_costraints() { constraints.clear(); }
 
-       Polylines_2& get_constraints() { return constraints; }
+        Polylines_2& get_constraints() { return constraints; }
 
-       void keep_component(const int next) {
-           // 0 is largest polyline
-           Polyline_2 temp = constraints[next];
-           constraints.clear();
-           constraints.push_back(temp);
-       };
+        void keep_component(const size_t next) {
+            // 0 is largest polyline
+            Polyline_2 temp = constraints[next];
+            constraints.clear();
+            constraints.push_back(temp);
+        };
 
-       void find_holes(const int min_num_edges);
-
-       int num_constraints() { return constraints.size(); }
-
-       void create_mesh(const double mesh_resolution);
-
-       void simplify(const double stop_crit); // simplify all polylines
-
-       int subdomain_map(const double x, const double y);
-
-       struct Minimum_sphere
-       {
-           typedef CGAL::Min_sphere_of_spheres_d_traits_2< Kernel, FT > Traits;
-           typedef CGAL::Min_sphere_of_spheres_d< Traits > Min_sphere;
-           typedef Traits::Sphere Sphere;
-
-           void add_polylines(const Polylines_2 &polylines)
-           {
-                for (const auto &it: polylines)
-                {
-                    for (const auto &pit: it)
-                         S.push_back(Sphere(pit, 0.0));
-                }
-            }
-
-            double get_bounding_sphere_radius()
+        void keep_component(const std::vector< size_t > constraint_indices) {
+            // 0 is largest polyline
+            Polylines_2 constraints_tmp(constraint_indices.size());
+            /* Polyline_2 temp = constraints[next]; */
+            for (auto const idx: constraint_indices)
             {
-                Min_sphere ms(S.begin(), S.end());
-                return CGAL::to_double(ms.radius());
+                constraints_tmp.emplace_back(constraints[idx]);
             }
+            constraints.clear();        // Is this necessary?
+            constraints = constraints_tmp;
+            /* constraints.push_back(temp); */
+        };
 
-            private:
-                std::vector< Sphere > S;
-       };
+        void find_holes(const int min_num_edges);
+
+        int num_constraints() { return constraints.size(); }
+
+        void create_mesh(const double mesh_resolution);
+
+        void simplify(const double stop_crit); // simplify all polylines
+
+        int subdomain_map(const double x, const double y);
+
+        struct Minimum_sphere
+        {
+            typedef CGAL::Min_sphere_of_spheres_d_traits_2< Kernel, FT > Traits;
+            typedef CGAL::Min_sphere_of_spheres_d< Traits > Min_sphere;
+            typedef Traits::Sphere Sphere;
+
+            void add_polylines(const Polylines_2 &polylines)
+            {
+                 for (const auto &it: polylines)
+                 {
+                     for (const auto &pit: it)
+                          S.push_back(Sphere(pit, 0.0));
+                 }
+             }
+
+             double get_bounding_sphere_radius()
+             {
+                 Min_sphere ms(S.begin(), S.end());
+                 return CGAL::to_double(ms.radius());
+             }
+
+             private:
+                 std::vector< Sphere > S;
+        };
 
 
     private:
