@@ -74,14 +74,13 @@ namespace CGAL {
 
                     for ( int i = 0 ; i < nb_func ; ++i )
                     {
-                        // bits = char(bits | ( ((*function_vector_[i])(p) < 0) << i )); // function_ ?? 
                         bits[i] =(bool)function_vector_[i]->is_in_domain_object()(p);
                     }
-                    //std::cout << bits << std::endl;
+
                     return subdmap->index(bits);
                 }
 
-
+                //return_type index_from_surface_patch_index
 
                 /*struct Construct_intersection
                 {

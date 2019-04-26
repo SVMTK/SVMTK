@@ -129,6 +129,7 @@ bool read_polygons_STL(std::ifstream& file,
       get_next_line(file, line, lineno);
     } while (line.substr(0, 8) != endsolid); 
   
+    std::cout <<"Reading surface " << std::endl;
     std::cout <<"The number of triangles: " << facets.size() << std::endl;
     std::cout <<"The number of points   : " << points.size() << std::endl;
 

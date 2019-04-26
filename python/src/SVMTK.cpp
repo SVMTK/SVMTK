@@ -7,7 +7,6 @@
 #include "CGALSlice.h"
 #include "CGALSurface.h"
 #include "CGALMeshCreator.h"
-//#include "Neuron.h"
 #include "surface_mesher.h"
 
 
@@ -57,7 +56,7 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("keep_component", &CGALSlice::keep_component) 
         .def("save", &CGALSlice::save)
         .def("mark_holes", &CGALSlice::find_holes)
-        .def("add_constraints",(void (CGALSlice::*)(CGALSlice&)) &CGALSlice::add_constraints);
+        .def("add_constraints",(void (CGALSlice::*)(CGALSlice&,bool)) &CGALSlice::add_constraints);
 
 
 
@@ -84,8 +83,8 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("smooth_taubin", &CGALSurface::smooth_taubin)
 
         // Either use these two for operator overloading, or return the vertices
-        .def("points_inside",(CGALSurface::vertex_vector (CGALSurface::*)(CGALSurface&)) &CGALSurface::points_inside)
-        .def("points_outside", &CGALSurface::points_outside)
+        //.def("inside", &CGALSurface::inside)
+        //.def("outside", &CGALSurface::outside)
         .def("make_cube", &CGALSurface::make_cube)
 	.def("make_cone", &CGALSurface::make_cone)
 	.def("make_cylinder", &CGALSurface::make_cylinder)
@@ -141,8 +140,9 @@ PYBIND11_MODULE(SVMTK, m) {
 
 
 
-
-       m.def("surface_overlapp", &surface_overlapp<CGALSurface> );
+       m.def("seperate_surfaces",  py::overload_cast<CGALSurface&,CGALSurface&,CGALSurface&>( &surface_overlapp<CGALSurface> ));
+       m.def("morphological_surface_union", &morphological_surface_union<CGALSurface>); 
+       m.def("seperate_surfaces",  py::overload_cast<CGALSurface&,CGALSurface&>( &surface_overlapp<CGALSurface>) );
 
 
 }

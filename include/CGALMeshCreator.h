@@ -14,7 +14,9 @@
 #include <list>
 #include <fstream>
 #include <memory>
- 
+#include <set> 
+#include <map>
+
 //CGAL MESH_3
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h> // CGALSURFACE  CGALSURFACE ? 
 #include <CGAL/Mesh_triangulation_3.h>
@@ -46,7 +48,7 @@
 #include <CGAL/Mesh_3/Dump_c3t3.h>
 
 
-
+#include <CGAL/internal/Mesh_3/Boundary_of_subdomain_of_complex_3_in_triangulation_3_to_off.h>
 
 
 
@@ -85,20 +87,23 @@ class CGALMeshCreator {
         typedef CGAL::Mesh_complex_3_in_triangulation_3< Tr, Corner_index, Curve_index> C3t3;
 
         typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
-        typedef Tr::Vertex_handle Vertex_handle;
+
         typedef Tr::Finite_vertices_iterator Finite_vertices_iterator;
         typedef Tr::Locate_type Locate_type;
-
+        typedef Tr::Facet Facet;
         typedef std::vector<Point_3>  Polyline_3;
         typedef std::vector<Polyline_3> Polylines;
-
+        typedef Tr::Weighted_point Weighted_point;
 
         typedef C3t3::Subdomain_index Subdomain_index;
+        typedef C3t3::Cell_handle Cell_handle;
+        typedef C3t3::Vertex_handle Vertex_handle;
+        typedef C3t3::Surface_patch_index Surface_patch_index;
         typedef C3t3::Cells_in_complex_iterator Cell_iterator;
-
+        typedef C3t3::Facets_in_complex_iterator Facet_iterator;
         typedef std::map<std::string, double> Parameters;
 
-   
+        typedef std::vector<std::size_t>  Face;
         struct Minimum_sphere
         {
    
@@ -124,6 +129,8 @@ class CGALMeshCreator {
            private:
                  std::vector<Sphere> S;
         };
+
+
 
         CGALMeshCreator(CGALSurface& surface);
         CGALMeshCreator(std::vector<CGALSurface> surfaces);
@@ -184,7 +191,8 @@ class CGALMeshCreator {
         template< typename InputIterator> // Wrapping 
         void set_features(InputIterator begin, InputIterator end){domain_ptr->add_features(begin, end);} 
 
-        std::shared_ptr<CGALSurface> get_boundary();
+        std::shared_ptr<CGALSlice> mesh_slice(double x1,double x2, double x3 ,double x4);
+        std::shared_ptr<CGALSurface> get_boundary(int tag); // # subdomainindex
         // Direct wrapping of CGAL
         void lloyd(double time_limit= 0, int max_iteration_number = 0, double convergence = 0.02,double freeze_bound = 0.01, bool do_freeze = true);
         void odt(double time_limit= 0, int max_iteration_number = 0, double convergence = 0.02,double freeze_bound = 0.01, bool do_freeze = true);
@@ -198,7 +206,7 @@ class CGALMeshCreator {
         void remove_label_cells(int tag);              // tags 
         
         int number_of_cells(){return c3t3.number_of_cells();}
-
+        std::set<int>  number_of_subdomains();
 
     private :
         std::unique_ptr<Mesh_domain> domain_ptr;
@@ -207,6 +215,10 @@ class CGALMeshCreator {
         Polylines borders; 
         Polylines features;
         Parameters parameters;  
+
+         
+
+
         C3t3 c3t3;
 };
 
@@ -341,18 +353,64 @@ CGALMeshCreator::CGALMeshCreator(CGALSurface &surface)
 //  
 // --------------------------------
 
-std::shared_ptr<CGALSurface> CGALMeshCreator::get_boundary()
+std::shared_ptr<CGALSurface> CGALMeshCreator::get_boundary(int tag=0)
 {
+  // TODO: CHANGE
 
-   std::shared_ptr<CGALSurface> surf(new  CGALSurface()) ;
-   if ( c3t3.number_of_cells()>0 )
-   {
-        facets_in_complex_3_to_triangle_mesh( c3t3  ,surf->get_mesh()) ;
-   }
-   else
-   {
-       std::cout <<"No mesh generated, output is an empty surface file" << std::endl; 
-   }
+   std::vector<Face> faces;
+   std::vector<Point_3> points;
+
+   typedef CGAL::Hash_handles_with_or_without_timestamps Hash_fct;
+   typedef boost::unordered_map<Vertex_handle, std::size_t, Hash_fct> VHmap;
+   VHmap::iterator map_entry;
+   VHmap vh_to_ids;
+   int inum=0;
+   bool is_new;
+    
+   /*for(C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();cit != c3t3.cells_in_complex_end(); ++cit)
+   {  
+
+         for (std::size_t i = 0; i < 4; i++)
+         { 
+            Cell_handle cn = cit;
+            Cell_handle cm = cit->neighbor(i);
+            Face f;
+            f.resize(3);
+            
+            Subdomain_index ci = c3t3.subdomain_index(cn);
+            Subdomain_index cj = c3t3.subdomain_index(cm);
+            if ( ci!=cj and cj==0 )
+            {
+                for (std::size_t j =1; j < 4; j++)
+                {
+                    Vertex_handle v = cit->vertex((i+j)&3);
+                     
+                    boost::tie(map_entry, is_new) = vh_to_ids.insert(std::make_pair(v, inum));
+                    if(is_new)
+                    {
+                       const Weighted_point& p = c3t3.triangulation().point(cit,(i+j)&3);
+                       const Point_3 bp = Point_3(CGAL::to_double(p.x()),
+                                                  CGAL::to_double(p.y()),
+                                                  CGAL::to_double(p.z()));
+                       points.push_back(bp);
+                       ++inum;
+                    }
+                    f[j-1] = map_entry->second;
+                   
+                }
+                faces.push_back(f);
+            }
+         
+         } 
+  
+           
+
+   }*/
+ 
+   Subdomain_index useless = Subdomain_index(tag);
+   facets_in_complex_3_to_triangle_soup(c3t3, useless, points, faces, true, false);  
+   //facets_in_complex_3_to_triangle_soup(c3t3, points, faces,);
+   std::shared_ptr<CGALSurface> surf(new  CGALSurface(points, faces)) ;
    return surf;
 }
 
@@ -434,9 +492,28 @@ void CGALMeshCreator::create_mesh(const double mesh_resolution )
 
 
 
+
+
+
 void CGALMeshCreator::save(std::string OutPath)
 {
     std::ofstream  medit_file(OutPath);
+    typedef CGAL::Mesh_3::Rebind_cell_pmap<C3t3>                            Cell_pmap;
+    typedef CGAL::Mesh_3::Rebind_facet_pmap<C3t3,Cell_pmap>                 Facet_pmap;
+    typedef CGAL::Mesh_3::Null_facet_pmap<C3t3, Cell_pmap>                  Facet_pmap_twice;
+    typedef CGAL::Mesh_3::Null_vertex_pmap<C3t3, Cell_pmap, Facet_pmap>     Vertex_pmap;
+
+
+    //Default_vertex_pmap vertex_pmap(c3t3,cell_pmap,facet_map);
+
+    Cell_pmap cell_pmap(c3t3);
+    Facet_pmap facet_pmap(c3t3, cell_pmap);
+    Facet_pmap_twice  facet_twice_pmap(c3t3,cell_pmap);
+    Vertex_pmap vertex_pmap(c3t3, cell_pmap,facet_pmap);
+
+
+
+    //output_to_medit(medit_file,c3t3, vertex_pmap, facet_pmap, cell_pmap, facet_twice_pmap , false) ;
 
     c3t3.output_to_medit(medit_file,false,true);
     medit_file.close();
@@ -485,7 +562,9 @@ void CGALMeshCreator::label_boundary_cells(int btag , int ntag ) // workaround t
   for(C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin(subdomain_index);cit != c3t3.cells_in_complex_end(); ++cit)
   {
      for (std::size_t i = 0; i < 4; i++)
-     { if (c3t3.subdomain_index(cit->neighbor(i))!=subdomain_index){c3t3.set_subdomain_index(cit->neighbor(i), subdomain_index_bis);}    }      
+     { 
+          if (c3t3.subdomain_index(cit->neighbor(i))!=subdomain_index and c3t3.subdomain_index(cit->neighbor(i))!=0)
+          {c3t3.set_subdomain_index(cit->neighbor(i), subdomain_index_bis);}    }      
   }
 
 } 
@@ -494,16 +573,78 @@ void CGALMeshCreator::remove_label_cells(int tag) //rename
 {
   Subdomain_index subdomain_index(tag);
 
-
-
   int before = c3t3.number_of_cells();
-  for(C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin(subdomain_index);cit != c3t3.cells_in_complex_end(); ++cit){ c3t3.remove_from_complex(cit);}
-  int after = c3t3.number_of_cells();
-  std::cout << "Number of removed subdomain cells : " << (before -after) << std::endl;
 
+  std::map<Cell_handle,int> cell_map;
+
+
+
+  for(C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();cit != c3t3.cells_in_complex_end(); ++cit)
+  { 
+     cell_map[cit]=static_cast<int>( c3t3.subdomain_index(cit) );
+  }
+
+  Subdomain_index subdomain_index_bis(1001);
+  for(C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin(subdomain_index);cit != c3t3.cells_in_complex_end(); ++cit)
+  {
+     for (std::size_t i = 0; i < 4; i++)
+     { 
+          if (c3t3.subdomain_index(cit->neighbor(i))!=subdomain_index and c3t3.subdomain_index(cit->neighbor(i))!=0) 
+          {
+             c3t3.set_subdomain_index(cit->neighbor(i), subdomain_index_bis);}    
+          }      
+  }
+
+
+
+  for(auto cit =  c3t3.cells_in_complex_begin(subdomain_index);cit !=  c3t3.cells_in_complex_end(); ++cit)
+  {  
+    c3t3.remove_from_complex(cit);      
+  }
 
   if ( remove_isolated_vertices(c3t3,true) > 0)
+  {
      c3t3.rescan_after_load_of_triangulation();
+  }
+
+    for( C3t3::Triangulation::All_cells_iterator cit = c3t3.triangulation().all_cells_begin();
+                                                   cit != c3t3.triangulation().all_cells_end();
+                                                   ++cit)
+    {
+        if(c3t3.is_in_complex(cit))
+        {
+          for(int i=0; i<4; ++i)
+          {
+            if(!c3t3.triangulation().is_infinite(cit, i))
+            {
+              Cell_handle cn = cit;
+              Cell_handle cm = cit->neighbor(i);
+              Subdomain_index ci = c3t3.subdomain_index(cn);
+              Subdomain_index cj = c3t3.subdomain_index(cm);
+              Subdomain_index cix = Subdomain_index(cell_map[cn]); 
+              Subdomain_index cjx = Subdomain_index(cell_map[cn]); 
+              if ( cj!=ci and cj==0)
+              {  
+                 c3t3.remove_from_complex(cit,i);
+                 c3t3.add_to_complex(cit, i, Surface_patch_index(ci,cj));
+              }
+             
+            }
+          }
+        }
+   }
+
+
+  for(C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin(subdomain_index_bis);cit != c3t3.cells_in_complex_end(); ++cit)
+  { 
+    std::cout << cell_map[cit] << std::endl;
+    c3t3.set_subdomain_index(cit,Subdomain_index(cell_map[cit]));
+  }
+
+
+  int after = c3t3.number_of_cells();
+  std::cout << "Number of removed subdomain cells : " << (before -after) << std::endl;
+  c3t3.rescan_after_load_of_triangulation();
 }
 
 
@@ -537,6 +678,41 @@ void CGALMeshCreator::add_sharp_border_edges(CGALSurface& surface)
   surface.get_polyhedron(polyhedron);
   add_sharp_border_edges(polyhedron);
 
+}
+
+std::set<int>  CGALMeshCreator::number_of_subdomains()
+{
+   std::set<int> sd_indices;
+   for(Cell_iterator cit = c3t3.cells_in_complex_begin();cit != c3t3.cells_in_complex_end(); ++cit)
+   {
+        sd_indices.insert(        static_cast<int>(c3t3.subdomain_index(cit)) );
+   }
+   return sd_indices;
+}
+
+std::shared_ptr<CGALSlice> CGALMeshCreator::mesh_slice(double x1,double x2, double x3 ,double x4) 
+{ 
+
+   typedef std::vector<std::size_t>  Face;
+
+   std::vector<Point_3> points;
+   std::vector<Face> faces;
+
+   std::shared_ptr<CGALSlice > slice(new  CGALSlice()) ;
+
+   for( auto index =  number_of_subdomains().begin() ; index != number_of_subdomains().end() ;++index) // save smap
+   {
+        points.clear();
+        faces.clear();
+        facets_in_complex_3_to_triangle_soup(c3t3,  Subdomain_index(*index) , points,faces);
+        CGALSurface* surf  = new CGALSurface(points,faces); // implemented for this purpose
+        std::shared_ptr<CGALSlice > temp = surf->mesh_slice(x1,x2,x3 ,x4);     // new object ?? 
+
+        //temp operations 1
+        slice->keep_component(0);
+        slice->add_constraints(*temp.get());                     // add tag to constraint?         
+   }
+   return slice;
 }
 
 
