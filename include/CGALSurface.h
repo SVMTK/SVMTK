@@ -119,8 +119,8 @@ void surface_overlap(CGALSurface& surf1, CGALSurface& surf2)
     vertex_vector p1 = surf1.get_vertices();
     vertex_vector p2 = surf2.get_vertices();
 
-    p1 = surf2.inside(surf1,p1);
-    p2 = surf1.inside(surf2,p2);
+    p1 = surf2.inside(surf1, p1);
+    p2 = surf1.inside(surf2, p2);
 
     int iter =0;
     while (!p2.empty() or !p1.empty())
@@ -135,8 +135,8 @@ void surface_overlap(CGALSurface& surf1, CGALSurface& surf2)
          surf1.smooth_taubin_region(p1.begin(), p1.end(), 2);
          surf2.smooth_taubin_region(p2.begin(), p2.end(), 2);
 
-         p1 = surf2.inside(surf1,p1);
-         p2 = surf1.inside(surf2,p2);
+         p1 = surf2.inside(surf1, p1);
+         p2 = surf1.inside(surf2, p2);
 
          if (iter++ > 300)
              break;
@@ -252,18 +252,17 @@ class CGALSurface {
         typedef Tr::Geom_traits GT;
         typedef Kernel::Vector_3 Vector_3;
 
-        typedef boost::graph_traits<Mesh>::halfedge_descriptor    halfedge_descriptor;
-        typedef boost::graph_traits<Mesh>::face_descriptor        face_descriptor;
-        typedef boost::graph_traits<Mesh>::vertex_descriptor      vertex_descriptor;
-        typedef std::vector<vertex_descriptor>                    vertex_vector;
-        typedef CGAL::Side_of_triangle_mesh<Mesh,Kernel> Inside; // declear inside implementation ?
+        typedef boost::graph_traits< Mesh >::halfedge_descriptor    halfedge_descriptor;
+        typedef boost::graph_traits< Mesh >::face_descriptor        face_descriptor;
+        typedef boost::graph_traits< Mesh >::vertex_descriptor      vertex_descriptor;
+        typedef std::vector< vertex_descriptor >                    vertex_vector;
+        typedef CGAL::Side_of_triangle_mesh< Mesh, Kernel > Inside; // declear inside implementation ?
         typedef Mesh::Vertex_index Index;
 
-        typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
+        typedef CGAL::Polyhedron_3< Kernel > Polyhedron;
 
-        typedef std::pair<Point_3, Vector_3> RPwn;
-        typedef std::vector<Point_3>  Polyline_3;
-        typedef std::vector<Polyline_3> Polylines;
+        typedef std::vector< Point_3 >  Polyline_3;
+        typedef std::vector< Polyline_3 > Polylines;
         typedef Kernel::FT FT;
         typedef std::vector< std::size_t > Face;
 
@@ -928,9 +927,24 @@ CGALSurface::vertex_vector CGALSurface::get_vertices()
 {
     // CLEANER
     vertex_vector result;
-    for (vertex_descriptor v_it: mesh.vertices())
+    for (const auto v_it: mesh.vertices())
     {
-        result.push_back(v_it);
+        result.emplace_back(v_it);
+    }
+    return result;
+}
+
+
+CGALSurface::vertex_vector CGALSurface::inside(CGALSurface &other, CGALSurface::vertex_vector &points)
+{
+    vertex_vector result;
+    CGALSurface::Inside inside_poly2(mesh);
+
+    for (const auto v_it: points)
+    {
+        CGAL::Bounded_side res = inside_poly2(other.get_mesh().point(v_it));
+        if (res == CGAL::ON_BOUNDED_SIDE or res == CGAL::ON_BOUNDARY)
+            result.emplace_back(v_it);
     }
     return result;
 }
@@ -940,11 +954,11 @@ CGALSurface::vertex_vector CGALSurface::outside(CGALSurface &other, CGALSurface:
 {
     vertex_vector result;
     CGALSurface::Inside inside_poly2(mesh);
-    for (vertex_descriptor v_it: points)
+    for (const auto v_it: points)
     {
         CGAL::Bounded_side res = inside_poly2(other.get_mesh().point(v_it));
         if (res == CGAL::ON_UNBOUNDED_SIDE)
-            result.push_back(v_it);
+            result.emplace_back(v_it);
     }
     return result;
 }

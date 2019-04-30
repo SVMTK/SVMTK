@@ -19,7 +19,7 @@ class Polyhedral_vector_to_labeled_function_wrapper
 {
     public:
         // Types
-        typedef int return_type;  
+        typedef int return_type;
         typedef std::vector<Function_*>   Function_vector; // Polyhedron_mesh_domain_with features -> stores polyhedron
 
         typedef typename BGT::Point_3       Point_3;
@@ -36,7 +36,7 @@ class Polyhedral_vector_to_labeled_function_wrapper
 
         Polyhedral_vector_to_labeled_function_wrapper(std::vector<Function_*>& v, AbstractMap& map) : function_vector_(v)
         {
-            subdmap = j&map;
+            subdmap = &map;
         }
 
         ~Polyhedral_vector_to_labeled_function_wrapper() {}
