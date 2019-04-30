@@ -125,11 +125,11 @@ void surface_overlap(CGALSurface& surf1, CGALSurface& surf2)
     int iter =0;
     while (!p2.empty() or !p1.empty())
     {
-         map1 = surf1.shortest_edge_map(p1,-0.1);
-         map2 = surf2.shortest_edge_map(p2,-0.1);
+         map1 = surf1.shortest_edge_map(p1, -0.1);
+         map2 = surf2.shortest_edge_map(p2, -0.1);
 
-         surf1.adjusting_boundary_region(map1.begin() ,map1.end());
-         surf2.adjusting_boundary_region(map2.begin() ,map2.end());
+         surf1.adjusting_boundary_region(map1.begin(), map1.end());
+         surf2.adjusting_boundary_region(map2.begin(), map2.end());
 
          // After adjusting the boundary smoothing is needed, taubin is least volatile.
          surf1.smooth_taubin_region(p1.begin(), p1.end(), 2);
@@ -812,9 +812,8 @@ void CGALSurface::smooth_laplacian(const double c)
 
 
 template<typename InputIterator>
-void CGALSurface::adjusting_boundary_region(InputIterator begin , InputIterator  end, const double c)
+void CGALSurface::adjusting_boundary_region(InputIterator begin, InputIterator end, const double c)
 {
-    /* typedef typename CGAL::Vertex_around_target_circulator<Mesh> HV_const_circulator; */
     std::vector<std::pair<vertex_descriptor, Point_3> > smoothed;
     for ( ; begin != end; ++begin)
     {
@@ -825,6 +824,26 @@ void CGALSurface::adjusting_boundary_region(InputIterator begin , InputIterator 
 
     for (const auto s: smoothed)
         mesh.point(s.first) = s.second;
+}
+
+
+void CGALSurface::adjusting_boundary_region(std::map< vertex_descriptor, double >::iterator begin,
+        std::map< vertex_descriptor, double >::iterator end) // map or two vectors
+{
+    typedef typename CGAL::Vertex_around_target_circulator<Mesh> HV_const_circulator;
+    std::vector< std::pair< vertex_descriptor, Point_3 > > smoothed;
+
+    while(begin != end)
+    {
+        Vector_3 delta= CGAL::Polygon_mesh_processing::compute_vertex_normal(begin->first, mesh);
+        Point_3 p = mesh.point(begin->first) + begin->second*delta;
+        smoothed.push_back(std::make_pair(begin->first, p));
+        ++begin;
+    }
+    for (const auto s: smoothed)
+    {
+        mesh.point(s.first) = s.second;
+    }
 }
 
 
