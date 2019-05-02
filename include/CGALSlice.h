@@ -109,7 +109,7 @@ class CGALSlice
 
         std::shared_ptr< CGALSurface > export_3D();
 
-        void keep_component(size_t next);
+        void keep_component(const size_t next);
 
         void add_constraints(CGALSlice &slice, bool hole);
 
@@ -391,22 +391,14 @@ void CGALSlice::repair_domain(Polylines_2& polylines_bad, bool is_boundary=false
 }
 
 
-void CGALSlice::keep_component(size_t next)
+void CGALSlice::keep_component(const size_t next)
 {
-    if (next == 0)
-    {
-        constraints.clear();
-    }
-    else
-    {
-        if (constraints.size() - 1 < next)
-        {
-            next = constraints.size() - 1;
-        }
-        Polyline_2 temp= constraints[next - 1];
-        boundary.clear();
-        boundary.insert(boundary.vertices_end(), temp.begin(), temp.end());
-    }
+    // If next is out of bounds -- return last constriant
+    const size_t local_next = constraints.size() - 1 < next ? constraints.size() - 1 : next;
+
+    Polyline_2 temp = constraints[local_next];
+    boundary.clear();
+    boundary.insert(boundary.vertices_end(), temp.begin(), temp.end());
 }
 
 
@@ -549,7 +541,10 @@ void CGALSlice::write_STL(const std::string filename)
 void CGALSlice::simplify(const double stop_crit)
 {
     if(constraints.size() < 1 or constraints[0].size() < 10)
+    {
+        std::cout << "Cannot simplify: No or small constrants" << std::endl;
         return;
+    }
 
     Polylines_2 temp;
     for (const auto &pol: constraints)

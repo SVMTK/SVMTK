@@ -1,12 +1,12 @@
 """smooth a surface."""
 
-import brainmesh as bm
+from svmtk import Surface
 from pathlib import Path
 
 outdir = Path("results")
 outdir.mkdir(exist_ok=True)
 
-pig = bm.BrainSurface("data/pig.off")
+pig = Surface("data/pig.off")
 
 for i in range(5):
     pig.smooth_laplacian(0.8)

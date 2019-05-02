@@ -62,12 +62,16 @@ PYBIND11_MODULE(svmtk, m) {
         .def(py::init<>())
 
         .def("implicit_surface", &CGALSurface::implicit_surface<Surface_implicit_function>)
-        .def("triangulate_hole",&CGALSurface::triangulate_hole)
-        .def("clip",&CGALSurface::clip )
+        .def("triangulate_hole", &CGALSurface::triangulate_hole)
+
+        .def("clip", (void (CGALSurface::*)(double, double, double, double, bool)) &CGALSurface::clip)
+        .def("clip", (void (CGALSurface::*)(double, double, double, double, double, double, bool)) &CGALSurface::clip)
+
         .def("intersection", &CGALSurface::surface_intersection)
         .def("union", &CGALSurface::surface_union)
         .def("difference", &CGALSurface::surface_difference)
         .def("slice", &CGALSurface::slice)
+        .def("span", &CGALSurface::span)
 
         .def("fill_holes", &CGALSurface::fill_holes)
         .def("triangulate_faces", &CGALSurface::triangulate_faces)
@@ -79,22 +83,20 @@ PYBIND11_MODULE(svmtk, m) {
         .def("smooth_taubin", &CGALSurface::smooth_taubin)
 
         // Either use these two for operator overloading, or return the vertices
-        /* .def("points_inside",(CGALSurface::vertex_vector (CGALSurface::*)(CGALSurface&)) &CGALSurface::points_inside) */
-        /* .def("points_outside", &CGALSurface::points_outside) */
         .def("make_cube", &CGALSurface::make_cube)
         .def("make_cone", &CGALSurface::make_cone)
         .def("make_cylinder", &CGALSurface::make_cylinder)
         .def("make_sphere", &CGALSurface::make_sphere)
 
-        .def("self_intersections", &CGALSurface::self_intersections)
+        /* .def("self_intersections", &CGALSurface::self_intersections) */      // redundant?
         .def("num_self_intersections", &CGALSurface::num_self_intersections)
         .def("collapse_edges", &CGALSurface::collapse_edges)
         .def("save", &CGALSurface::save)
         .def("split_edges", &CGALSurface::split_edges)
 
+        .def("fair", (void (CGALSurface::*)(CGALSurface::vertex_vector)) &CGALSurface::fair)
         .def("fair", &CGALSurface::fair)
-        //.def("load", &CGALSurface::load)//
-        .def("fix_close_junctures", &CGALSurface::fix_close_junctures)
+        .def("seperate_close_junctures", &CGALSurface::fix_close_junctures)
 
         .def("reconstruct", &CGALSurface::reconstruct,
                 py::arg("sm_angle") = 20,
@@ -117,6 +119,10 @@ PYBIND11_MODULE(svmtk, m) {
 
         .def("create_mesh", (void (CGALMeshCreator::*)()) &CGALMeshCreator::create_mesh)
         .def("create_mesh", (void (CGALMeshCreator::*)(double)) &CGALMeshCreator::create_mesh)
+        .def("refine_mesh", (void (CGALMeshCreator::*)()) &CGALMeshCreator::refine_mesh)
+        .def("refine_mesh", (void (CGALMeshCreator::*)(double)) &CGALMeshCreator::refine_mesh)
+
+        .def("get_boundary", &CGALMeshCreator::get_boundary)
 
         .def("default_creating_mesh", &CGALMeshCreator::default_creating_mesh)
 
@@ -127,16 +133,14 @@ PYBIND11_MODULE(svmtk, m) {
 
         .def("add_sharp_border_edges", (void (CGALMeshCreator::*)(CGALSurface&)) &CGALMeshCreator::add_sharp_border_edges)
         .def("reset_borders", &CGALMeshCreator::reset_borders)
+        .def("remove_subdomain", &CGALMeshCreator::remove_label_cells)
 
         .def("set_borders", &CGALMeshCreator::set_borders)
         .def("set_features", (void(CGALMeshCreator::*)()) &CGALMeshCreator::set_features)
         .def("add_feature", &CGALMeshCreator::add_feature) 
         .def("save", &CGALMeshCreator::save)
 
-        .def("number_of_cells", &CGALMeshCreator::number_of_cells)
-        .def("get_boundary", &CGALMeshCreator::get_boundary)
-        .def("refine_mesh", (void (CGALMeshCreator::*)()) &CGALMeshCreator::refine_mesh)
-        .def("refine_mesh", (void (CGALMeshCreator::*)(double)) &CGALMeshCreator::refine_mesh);
+        .def("number_of_cells", &CGALMeshCreator::number_of_cells);
 
     m.def("seperate_surfaces", py::overload_cast<CGALSurface&, CGALSurface&, CGALSurface&>(&surface_overlap< CGALSurface >));
     m.def("morphological_surface_union", &morphological_surface_union<CGALSurface>);

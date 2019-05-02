@@ -1,4 +1,4 @@
-import brainmesh as bm
+from svmtk import Surface
 
 
 def pvs(x, y, z):
@@ -6,7 +6,7 @@ def pvs(x, y, z):
 
 
 if __name__ == "__main__":
-   surf = bm.BrainSurface();
+   surf = Surface();
    surf.implicit_surface(pvs, 6.0, 30, 0.1, 0.1)
    surf.fill_holes()
    surf.save("fill_holes.off")

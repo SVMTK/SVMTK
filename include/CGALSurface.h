@@ -19,7 +19,6 @@
 #include <iterator>
 #include <vector>
 
-// TODO: Clean up PMP  header files
 //---------------------------------------------------------
 //---------------------CLEAN UP-----------------------------------
 //---------------------------------------------------------
@@ -59,7 +58,6 @@
 #include <CGAL/Search_traits_adapter.h>
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 #include <CGAL/squared_distance_3.h> 
-
 #include <CGAL/Mesh_polyhedron_3.h>
 #include <CGAL/Poisson_reconstruction_function.h>
 
@@ -68,7 +66,7 @@
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_ratio_stop_predicate.h>
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_and_length.h>
 
-// ?? 
+// Poisson reconstruction
 #include <CGAL/Point_with_normal_3.h>
 #include <CGAL/poisson_surface_reconstruction.h>
 
@@ -79,11 +77,9 @@
 #include <CGAL/IO/Complex_2_in_triangulation_3_file_writer.h>
 
 // CGAL
-/* #include <CGAL/Exact_predicates_exact_constructions_kernel.h> */
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
-
 #include <CGAL/Side_of_triangle_mesh.h>
 
 
@@ -144,7 +140,7 @@ void surface_overlap(CGALSurface& surf1, CGALSurface& surf2)
 }
 
 
-template< typename CGALSurface> 
+template< typename CGALSurface >
 void surface_overlap(CGALSurface& surf1 , CGALSurface& surf2, CGALSurface& domain)
 {
     typedef typename CGALSurface::vertex_vector vertex_vector;
@@ -167,8 +163,8 @@ void surface_overlap(CGALSurface& surf1 , CGALSurface& surf2, CGALSurface& domai
          map1 = surf1.shortest_edge_map(p1,-0.1);
          map2 = surf2.shortest_edge_map(p2,-0.1);
 
-         surf1.adjusting_boundary_region(map1.begin() ,map1.end());
-         surf2.adjusting_boundary_region(map2.begin() ,map2.end());
+         surf1.adjusting_boundary_region(map1.begin(), map1.end());
+         surf2.adjusting_boundary_region(map2.begin(), map2.end());
 
          // After adjusting the boundary smoothing is needed, taubin is least volatile.
          surf1.smooth_taubin_region(p1.begin(), p1.end(), 2);
@@ -247,21 +243,21 @@ class CGALSurface {
     public:
         typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
         typedef Kernel::Point_3 Point_3;
-        typedef CGAL::Surface_mesh<Point_3> Mesh;
+        typedef CGAL::Surface_mesh< Point_3 > Mesh;
         typedef CGAL::Surface_mesh_default_triangulation_3 Tr;
         typedef Tr::Geom_traits GT;
         typedef Kernel::Vector_3 Vector_3;
 
-        typedef boost::graph_traits< Mesh >::halfedge_descriptor    halfedge_descriptor;
-        typedef boost::graph_traits< Mesh >::face_descriptor        face_descriptor;
-        typedef boost::graph_traits< Mesh >::vertex_descriptor      vertex_descriptor;
-        typedef std::vector< vertex_descriptor >                    vertex_vector;
+        typedef boost::graph_traits< Mesh >::halfedge_descriptor halfedge_descriptor;
+        typedef boost::graph_traits< Mesh >::face_descriptor face_descriptor;
+        typedef boost::graph_traits< Mesh >::vertex_descriptor vertex_descriptor;
+        typedef std::vector< vertex_descriptor > vertex_vector;
         typedef CGAL::Side_of_triangle_mesh< Mesh, Kernel > Inside; // declear inside implementation ?
         typedef Mesh::Vertex_index Index;
 
         typedef CGAL::Polyhedron_3< Kernel > Polyhedron;
 
-        typedef std::vector< Point_3 >  Polyline_3;
+        typedef std::vector< Point_3 > Polyline_3;
         typedef std::vector< Polyline_3 > Polylines;
         typedef Kernel::FT FT;
         typedef std::vector< std::size_t > Face;
@@ -293,6 +289,8 @@ class CGALSurface {
 
         void clip(const double x1, const double x2, const double x3, const double x4, const double x5,
                 const double x6, const bool clip);
+
+        void clip(const double x1, const double x2, const double x3, const double x4, const bool clip);
 
         void triangulate_hole();
 
@@ -574,6 +572,13 @@ void CGALSurface::clip(const double x1, const double x2, const double x3, const 
     const auto p = Point_3(x4, x5, x6);
 
     CGAL::Polygon_mesh_processing::clip(mesh, Kernel::Plane_3(p, v),
+            CGAL::Polygon_mesh_processing::parameters::clip_volume(clip));
+}
+
+
+void CGALSurface::clip(const double x1, const double x2, const double x3, const double x4, const bool clip)
+{
+    CGAL::Polygon_mesh_processing::clip(mesh, Kernel::Plane_3(x1, x2, x3, x4),
             CGAL::Polygon_mesh_processing::parameters::clip_volume(clip));
 }
 
@@ -1190,5 +1195,12 @@ void CGALSurface::surface_eval(CGALSurface::vertex_vector &input)
     }
 }
 
+
+std::pair< double, double > CGALSurface::span(int direction)
+{
+    auto bbox_3 = CGAL::Polygon_mesh_processing::bbox(mesh);
+    std::pair< double, double > span(bbox_3.min(direction), bbox_3.max(direction));
+    return span;
+}
 
 #endif

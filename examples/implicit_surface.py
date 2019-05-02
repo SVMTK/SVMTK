@@ -1,4 +1,4 @@
-import brainmesh as bm
+from svmtk import Surface, Domain
 
 
 def chair_function(x, y, z):
@@ -15,10 +15,10 @@ def chair_function(x, y, z):
 
 
 if __name__ == "__main__":
-    surf = bm.BrainSurface();
+    surf = Surface()
     surf.implicit_surface(chair_function, 6.0, 30, 0.1, 0.1)
     surf.save("results/chair.off")
 
-    maker = bm.BrainMesh(surf)
+    maker = Domain(surf)
     maker.create_mesh()
     maker.save("results/chair.mesh")
