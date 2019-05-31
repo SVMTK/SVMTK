@@ -173,7 +173,7 @@ class CGALMeshCreator {
 
         Polylines& get_borders() {return borders; }
 
-        void set_borders(){domain_ptr.get()->add_features(get_borders().begin(), get_borders() .end());} // -> TODO: integrate or REOMVE 
+        void set_borders(){domain_ptr.get()->add_features(get_borders().begin(), get_borders().end());} // -> TODO: integrate or REOMVE 
 
         void add_borders(Polyline_3 polyline) { borders.push_back(polyline);} 
       
@@ -185,7 +185,7 @@ class CGALMeshCreator {
 
         void remove_border(){return;}   
 
-     
+        void remove_label_cells(std::vector<int> tags);
         void set_features(Polylines& polylines){ set_features( polylines.begin() , polylines.end() );} 
 
         template< typename InputIterator> // Wrapping 
@@ -577,8 +577,6 @@ void CGALMeshCreator::remove_label_cells(int tag) //rename
 
   std::map<Cell_handle,int> cell_map;
 
-
-
   for(C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();cit != c3t3.cells_in_complex_end(); ++cit)
   { 
      cell_map[cit]=static_cast<int>( c3t3.subdomain_index(cit) );
@@ -594,8 +592,6 @@ void CGALMeshCreator::remove_label_cells(int tag) //rename
              c3t3.set_subdomain_index(cit->neighbor(i), subdomain_index_bis);}    
           }      
   }
-
-
 
   for(auto cit =  c3t3.cells_in_complex_begin(subdomain_index);cit !=  c3t3.cells_in_complex_end(); ++cit)
   {  
@@ -648,6 +644,183 @@ void CGALMeshCreator::remove_label_cells(int tag) //rename
 }
 
 
+void CGALMeshCreator::remove_label_cells(std::vector<int> tags) //rename
+{
+  int before = c3t3.number_of_cells();
+
+  std::map<Cell_handle,int> cell_map;
+  std::vector<std::tuple<Cell_handle,int,int>> rebind;
+  std::vector<Facet> facets;
+  std::map<Facet,int> fre;
+  std::map<Cell_handle,int> recell;
+ 
+
+
+
+
+  for(C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();cit != c3t3.cells_in_complex_end(); ++cit)
+  { 
+     cell_map[cit]=static_cast<int>( c3t3.subdomain_index(cit) );
+  }
+
+  /*for( auto j = tags.begin(); j!=tags.end(); ++j)
+  {
+      Subdomain_index temp(*j) ; 
+      for(C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin(temp);cit != c3t3.cells_in_complex_end(); ++cit)
+      {
+         for (std::size_t i = 0; i < 4; i++)
+         { 
+            if(std::find(tags.begin(), tags.end(), static_cast<int>(c3t3.subdomain_index(cit->neighbor(i)))  ) == tags.end() ) // not a cell to be removed               
+            {
+              if (c3t3.subdomain_index(cit->neighbor(i))!=temp ) 
+              {
+                  //c3t3.set_subdomain_index(,Subdomain_index(1000+*j ) );
+                  recell.push_back(cit->neighbor(i));
+              }    
+            }
+         } 
+      }     
+  }*/
+
+  for( auto j = tags.begin(); j!=tags.end(); ++j)
+  {
+      Subdomain_index temp(*j) ; 
+      for(C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();cit != c3t3.cells_in_complex_end(); ++cit)
+      {
+          for (std::size_t i = 0; i < 4; i++)
+          { 
+            if(std::find(tags.begin(), tags.end(), static_cast<int>(c3t3.subdomain_index(cit))  ) == tags.end() ) // not a cell to be removed               
+            {
+             if(c3t3.subdomain_index(cit->neighbor(i))==temp)
+             {
+               rebind.push_back(std::make_tuple(cit, i,*j)); // i is not 
+               facets.push_back(Facet(cit,i));
+             }
+            }
+          }
+      }
+  }
+     
+  std::cout << rebind.size() << std::endl;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+  for(std::vector<int>::iterator j = tags.begin(); j!=tags.end(); ++j)
+  {
+      for(auto cit =  c3t3.cells_in_complex_begin(Subdomain_index(*j));cit !=  c3t3.cells_in_complex_end(); ++cit)
+      {  
+          c3t3.remove_from_complex(cit); 
+      }     
+  }
+  std::cout << cell_map.size() << std::endl;
+
+
+  c3t3.rescan_after_load_of_triangulation(); 
+  remove_isolated_vertices(c3t3,true);
+
+
+  // #1 Base relabel
+  for(C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();cit != c3t3.cells_in_complex_end(); ++cit)
+  {
+      for(int i=0; i<4; ++i)
+      {
+        Cell_handle cn = cit;
+        Cell_handle cm = cit->neighbor(i);
+        Subdomain_index ci = c3t3.subdomain_index(cn);
+        Subdomain_index cj = c3t3.subdomain_index(cm);
+        Subdomain_index cix = Subdomain_index(cell_map[cn]); 
+        Subdomain_index cjx = Subdomain_index(cell_map[cm]); 
+        if( ci!=cj )
+        {
+              if ( ci > cj ) 
+              {
+              c3t3.remove_from_complex(cit,i);
+              c3t3.add_to_complex(cit, i, Surface_patch_index(ci,cj) ); 
+              }   
+        }
+      }
+  }
+  for ( auto cit = rebind.begin(); cit!=rebind.end(); ++cit)
+  {
+      Cell_handle cn = std::get<0>(*cit);
+      int s =std::get<1>(*cit);
+      Cell_handle cm=  cn->neighbor(s);
+      Subdomain_index ci = c3t3.subdomain_index(cn);
+      Subdomain_index cj = c3t3.subdomain_index(cm);
+      Subdomain_index cjx = Subdomain_index(cell_map[cm]); 
+      Subdomain_index ck = Subdomain_index(std::get<2>(*cit));
+      c3t3.remove_from_complex(cn,s);
+      c3t3.add_to_complex(cn,s,Surface_patch_index(ck,0) );// correct way
+  }
+
+
+ /* int num=0;
+  for(C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();cit != c3t3.cells_in_complex_end(); ++cit)
+  {
+      for(int i=0; i<4; ++i)
+      {
+            if(!c3t3.triangulation().is_infinite(cit, i))
+            {
+              Cell_handle cn = cit;
+              Cell_handle cm = cit->neighbor(i);
+              Subdomain_index ci = c3t3.subdomain_index(cn);
+              Subdomain_index cj = c3t3.subdomain_index(cm);
+              Subdomain_index cix = Subdomain_index(cell_map[cn]); 
+              Subdomain_index cjx = Subdomain_index(cell_map[cm]); 
+
+              bool flag = false;
+           
+              for ( auto rit = rebind.begin(); rit!=rebind.end(); ++rit) 
+              {
+                   Cell_handle tx =std::get<0>(*rit);
+                   int         sx = std::get<1>(*rit);
+                   if ( c3t3.triangulation().are_equal(cit,i,tx,sx ) and i==sx)
+                   {
+                      std::cout << "yes" << std::endl;
+                      num++;
+                      flag==true;
+                      break;
+                   } 
+              }
+
+              if ( cj!=ci and cj==0 and flag==false) // corrections needed 
+              {  
+                 c3t3.is_in_complex(cit,i);
+                 c3t3.remove_from_complex(cit,i);
+                 c3t3.add_to_complex(cit, i, Surface_patch_index(ci,cj) );    
+              }
+              
+             
+            }
+      }
+        
+  }
+  std::cout<< num << std::endl;
+  for ( auto cit = rebind.begin(); cit!=rebind.end(); ++cit)
+  {
+      Cell_handle cn = std::get<0>(*cit);
+      int s =std::get<1>(*cit);
+      Cell_handle cm=  cn->neighbor(s);
+      Subdomain_index ci = c3t3.subdomain_index(cn);
+      Subdomain_index cj = c3t3.subdomain_index(cm);
+      c3t3.remove_from_complex(cn,s);
+      c3t3.add_to_complex(cn,s,Surface_patch_index(ci,cj) );
+  }*/
+ /* for( auto j = tags.begin(); j!=tags.end(); ++j)
+  {
+     for(C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin(Subdomain_index(1000+*j) );cit != c3t3.cells_in_complex_end(); ++cit)
+     { 
+       c3t3.set_subdomain_index(cit,Subdomain_index(cell_map[cit]));
+     }
+  }*/
+
+  int after = c3t3.number_of_cells();
+
+  std::cout << "Number of removed subdomain cells : " << (before -after) << std::endl;
+  c3t3.rescan_after_load_of_triangulation();
+}
+
+
+
 //----------------------   Have overloaded functions or just one????????????????
 void CGALMeshCreator::add_sharp_border_edges(Polyhedron& polyhedron) // no need to expose ?  
 { 
@@ -656,7 +829,7 @@ void CGALMeshCreator::add_sharp_border_edges(Polyhedron& polyhedron) // no need 
   typedef boost::property_map<Polyhedron, CGAL::edge_is_feature_t>::type EIF_map;
   EIF_map eif = get(CGAL::edge_is_feature, polyhedron);
 
-  CGAL::Polygon_mesh_processing::detect_sharp_edges(polyhedron,80, eif); // -> threshold ?? 
+  CGAL::Polygon_mesh_processing::detect_sharp_edges(polyhedron,60, eif); // -> threshold ?? 
    for( Polyhedron::Edge_iterator he = polyhedron.edges_begin(); he != polyhedron.edges_end() ; ++he)
    {
       if(he->is_feature_edge() ) 

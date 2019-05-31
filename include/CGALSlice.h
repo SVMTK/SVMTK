@@ -238,7 +238,7 @@ void CGALSlice::repair_domain(Polylines_2& polylines_bad , bool is_boundary=fals
     // -----------------------------------------
     for ( auto c = polylines_bad.begin(); c !=polylines_bad.end() ; ++c ) 
     {
-       if (c->size() <  8) 
+       if (c->size() <  16) 
            break;
 
        if ( c->front() == c->back()) 

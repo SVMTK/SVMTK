@@ -127,8 +127,8 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("perturb", &CGALMeshCreator::perturb)
         .def("add_sharp_border_edges", (void (CGALMeshCreator::*)(CGALSurface&)) &CGALMeshCreator::add_sharp_border_edges)
         .def("reset_borders", &CGALMeshCreator::reset_borders)
-        .def("remove_subdomain", &CGALMeshCreator::remove_label_cells)
-
+        .def("remove_subdomain", (void (CGALMeshCreator::*)(std::vector<int>)) &CGALMeshCreator::remove_label_cells)
+        .def("remove_subdomain", (void (CGALMeshCreator::*)(int)) &CGALMeshCreator::remove_label_cells)
 
         .def("number_of_cells", &CGALMeshCreator::number_of_cells)
         .def("set_borders", &CGALMeshCreator::set_borders)
