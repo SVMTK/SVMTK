@@ -98,7 +98,7 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("fair", (void (CGALSurface::*)(CGALSurface::vertex_vector)) &CGALSurface::fair)
         .def("fair", (void (CGALSurface::*)()) &CGALSurface::fair)
         //.def("load", &CGALSurface::load)//
-        .def("seperate_close_junctures", &CGALSurface::seperate_close_junctures)
+        .def("separate_narrow_gaps", &CGALSurface::seperate_narrow_gaps)
         .def("reconstruct", &CGALSurface::reconstruct)
 
         .def("num_faces", &CGALSurface::num_faces)
@@ -119,7 +119,6 @@ PYBIND11_MODULE(SVMTK, m) {
 
         .def("get_boundary", &CGALMeshCreator::get_boundary)
 
-        .def("default_creating_mesh", &CGALMeshCreator::default_creating_mesh) // FIXME : REMOVE
 
         .def("lloyd", &CGALMeshCreator::lloyd)
         .def("odt", &CGALMeshCreator::odt)
@@ -127,8 +126,8 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("perturb", &CGALMeshCreator::perturb)
         .def("add_sharp_border_edges", (void (CGALMeshCreator::*)(CGALSurface&)) &CGALMeshCreator::add_sharp_border_edges)
         .def("reset_borders", &CGALMeshCreator::reset_borders)
-        .def("remove_subdomain", (void (CGALMeshCreator::*)(std::vector<int>)) &CGALMeshCreator::remove_label_cells)
-        .def("remove_subdomain", (void (CGALMeshCreator::*)(int)) &CGALMeshCreator::remove_label_cells)
+        .def("remove_subdomain", (void (CGALMeshCreator::*)(std::vector<int>)) &CGALMeshCreator::remove_subdomain)
+        .def("remove_subdomain", (void (CGALMeshCreator::*)(int)) &CGALMeshCreator::remove_subdomain)
 
         .def("number_of_cells", &CGALMeshCreator::number_of_cells)
         .def("set_borders", &CGALMeshCreator::set_borders)
@@ -140,9 +139,9 @@ PYBIND11_MODULE(SVMTK, m) {
 
 
 
-       m.def("seperate_surfaces",  py::overload_cast<CGALSurface&,CGALSurface&,CGALSurface&>( &surface_overlapp<CGALSurface> ));
+       m.def("separate_surfaces",  py::overload_cast<CGALSurface&,CGALSurface&,CGALSurface&>( &surface_overlapp<CGALSurface> ));
        m.def("morphological_surface_union", &morphological_surface_union<CGALSurface>); 
-       m.def("seperate_surfaces",  py::overload_cast<CGALSurface&,CGALSurface&>( &surface_overlapp<CGALSurface>) );
+       m.def("separate_surfaces",  py::overload_cast<CGALSurface&,CGALSurface&>( &surface_overlapp<CGALSurface>) );
 
 
 }

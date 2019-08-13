@@ -1,3 +1,19 @@
+// Copyright (C) 2018-2019 Lars Magnus Valnes and 
+//
+// This file is part of Surface Volume Meshing Toolkit (SVM-TK).
+//
+// SVM-Tk is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// SVM-Tk is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with SVM-Tk.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef CGALSurface_H
 
 
@@ -321,7 +337,7 @@ class CGALSurface
     typedef Kernel::Point_3 Point_3;
     typedef CGAL::Surface_mesh<Point_3> Mesh;
     typedef CGAL::Surface_mesh_default_triangulation_3 Tr;
-    typedef Tr::Geom_traits GT;
+    // typedef Tr::Geom_traits GT;
     typedef Kernel::Vector_3 Vector_3;
 
     typedef boost::graph_traits<Mesh>::halfedge_descriptor    halfedge_descriptor;
@@ -349,7 +365,7 @@ class CGALSurface
 
     // ----------  CSG  ------------------
     void make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1, double radius,  int number_of_segments=360) ;
-    void make_cone( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0 , double r1,  int number_of_segments=360) ; // FIXME:
+    void make_cone( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0 , double r1,  int number_of_segments=360) ; 
     void make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1);
     void make_sphere( double x0, double y0, double  z0, double r0);
     //----- Boolean operations ------------------------
@@ -363,6 +379,7 @@ class CGALSurface
     int num_edges() const { return mesh.number_of_edges();}
     int num_vertices() const {return mesh.number_of_vertices();}
     int num_self_intersections();
+
     template< typename Polyhedron_3>  // Template to address the different kernels in CGAL TODO: return Polyhedron?
     void get_polyhedron(Polyhedron_3 &polyhedron_3 ){CGAL::copy_face_graph(mesh,polyhedron_3);}
     // ------------TO BE REMOVED ? -------------------
@@ -372,30 +389,32 @@ class CGALSurface
     //----------------------------------------------
 
 
-
+    // ------------ Auxillary --------------------
     void split_edges(double  target_edge_length);
-    int collapse_edges(const double stop_ratio);
+    int  collapse_edges(const double stop_ratio);
     void clip(double x1,double x2, double x3 ,double x4, bool clip);
     void triangulate_hole();
-    int fill_holes();
+    int  fill_holes();
     bool triangulate_faces();
       
 
-    //----------------------------------------------
+    //-------------Surface operations -----------
     void isotropic_remeshing(double target_edge_length, unsigned int nb_iter, bool protect_border);
     void adjust_boundary(const double c);
     void smooth_laplacian(const double c, int iter);
     void smooth_taubin(const size_t nb_iter); 
-    void seperate_close_junctures();
+    void seperate_narrow_gaps();
     std::map<vertex_descriptor,double> seperate_close_surfaces(CGALSurface& other);
 
 
     std::shared_ptr<CGALSlice> mesh_slice(double x1,double x2, double x3 ,double x4) ;
  
+
+    // TODO: 
     std::pair<double,double> span( int direction);  
     void surface_eval( vertex_vector &input);
     
-        // NOTE: Do not expose 
+    // NOTE: Do not expose 
     template<typename InputIterator>   
     void adjusting_boundary_region(InputIterator begin , InputIterator  end, const double c);
 
@@ -417,6 +436,8 @@ class CGALSurface
         // -------------------------------------------------------------------------------------
     vertex_vector get_close_points(CGALSurface &other);
 
+
+    // ------------- point operations ---------------------------
     void reconstruct_surface(const double sm_angle,const double sm_radius,const double sm_distance) ;
     void reconstruct( double sm_angle = 20.0,
                           double sm_radius = 100.0,
@@ -1119,7 +1140,7 @@ void CGALSurface::reconstruct( double sm_angle,
 }
 
 
-void CGALSurface::seperate_close_junctures() // TODO: based on distance to surface
+void CGALSurface::seperate_narrow_gaps() // TODO: based on distance to surface
 {
 
    typedef boost::graph_traits<Mesh>::vertex_descriptor                     Point;
