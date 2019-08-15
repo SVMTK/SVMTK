@@ -4,9 +4,9 @@
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
 
-#include "CGALSlice.h"
-#include "CGALSurface.h"
-#include "CGALMeshCreator.h"
+#include "Slice.h"
+#include "Surface.h"
+#include "Domain.h"
 #include "surface_mesher.h"
 
 
@@ -48,100 +48,100 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("print",  &SubdomainMap::print)
         .def("add", &SubdomainMap::add);
 
-    py::class_<CGALSlice,std::shared_ptr<CGALSlice>>(m, "Slice")
+    py::class_<Slice,std::shared_ptr<Slice>>(m, "Slice")
         .def(py::init<>())
-        .def(py::init<CGALSlice&>())
-        .def("create_mesh", &CGALSlice::create_mesh) 
-        .def("simplify", &CGALSlice::simplify) 
-        .def("keep_component", &CGALSlice::keep_component) 
-        .def("save", &CGALSlice::save)
-        .def("mark_holes", &CGALSlice::find_holes)
-        .def("add_constraints",(void (CGALSlice::*)(CGALSlice&,bool)) &CGALSlice::add_constraints);
+        .def(py::init<Slice&>())
+        .def("create_mesh", &Slice::create_mesh) 
+        .def("simplify", &Slice::simplify) 
+        .def("keep_component", &Slice::keep_component) 
+        .def("save", &Slice::save)
+        .def("mark_holes", &Slice::find_holes)
+        .def("add_constraints",(void (Slice::*)(Slice&,bool)) &Slice::add_constraints);
 
 
 
-    py::class_<CGALSurface,std::shared_ptr<CGALSurface>>(m, "Surface")
+    py::class_<Surface,std::shared_ptr<Surface>>(m, "Surface")
         .def(py::init<std::string &>())                                             
         .def(py::init<>())
 
-        .def("implicit_surface",  &CGALSurface::implicit_surface<Surface_implicit_function> )  
-        .def("triangulate_hole",&CGALSurface::triangulate_hole)
-        .def("clip",&CGALSurface::clip )
-        .def("intersection", &CGALSurface::surface_intersection)
-        .def("union", &CGALSurface::surface_union)
-        .def("difference", &CGALSurface::surface_difference)
-        .def("slice", &CGALSurface::mesh_slice)
-        .def("span", &CGALSurface::span)
+        .def("implicit_surface",  &Surface::implicit_surface<Surface_implicit_function> )  
+        .def("triangulate_hole",&Surface::triangulate_hole)
+        .def("clip",&Surface::clip )
+        .def("intersection", &Surface::surface_intersection)
+        .def("union", &Surface::surface_union)
+        .def("difference", &Surface::surface_difference)
+        .def("slice", &Surface::mesh_slice)
+        .def("span", &Surface::span)
 
-        .def("fill_holes", &CGALSurface::fill_holes)
-        .def("triangulate_faces", &CGALSurface::triangulate_faces)
-        .def("stitch_borders", &CGALSurface::stitch_borders)
-        .def("isotropic_remeshing", &CGALSurface::isotropic_remeshing)
-        .def("adjust_boundary", &CGALSurface::adjust_boundary)
+        .def("fill_holes", &Surface::fill_holes)
+        .def("triangulate_faces", &Surface::triangulate_faces)
+        .def("stitch_borders", &Surface::stitch_borders)
+        .def("isotropic_remeshing", &Surface::isotropic_remeshing)
+        .def("adjust_boundary", &Surface::adjust_boundary)
 
-        .def("smooth_laplacian", &CGALSurface::smooth_laplacian)
-        .def("smooth_taubin", &CGALSurface::smooth_taubin)
+        .def("smooth_laplacian", &Surface::smooth_laplacian)
+        .def("smooth_taubin", &Surface::smooth_taubin)
 
         // Either use these two for operator overloading, or return the vertices
-        //.def("inside", &CGALSurface::inside)
-        //.def("outside", &CGALSurface::outside)
-        .def("make_cube", &CGALSurface::make_cube)
-	.def("make_cone", &CGALSurface::make_cone)
-	.def("make_cylinder", &CGALSurface::make_cylinder)
-        .def("make_sphere", &CGALSurface::make_sphere)
-        .def("num_self_intersections", &CGALSurface::num_self_intersections) 
-        .def("collapse_edges", &CGALSurface::collapse_edges)
-        .def("save", &CGALSurface::save)
-        .def("split_edges", &CGALSurface::split_edges)
+        //.def("inside", &Surface::inside)
+        //.def("outside", &Surface::outside)
+        .def("make_cube", &Surface::make_cube)
+	.def("make_cone", &Surface::make_cone)
+	.def("make_cylinder", &Surface::make_cylinder)
+        .def("make_sphere", &Surface::make_sphere)
+        .def("num_self_intersections", &Surface::num_self_intersections) 
+        .def("collapse_edges", &Surface::collapse_edges)
+        .def("save", &Surface::save)
+        .def("split_edges", &Surface::split_edges)
+        .def("extension", &Surface::cylindric_extension)
+
+        .def("fair", (void (Surface::*)(Surface::vertex_vector)) &Surface::fair)
+        .def("fair", (void (Surface::*)()) &Surface::fair)
+        //.def("load", &Surface::load)//
+        .def("separate_narrow_gaps", &Surface::seperate_narrow_gaps)
+        .def("reconstruct", &Surface::reconstruct)
+
+        .def("num_faces", &Surface::num_faces)
+        .def("num_edges", &Surface::num_edges)
+        .def("num_vertices", &Surface::num_vertices);
+
+    py::class_<Domain,std::shared_ptr<Domain>>(m, "Domain")
+        .def(py::init<Surface &>())
+        .def(py::init<std::vector<Surface>>())
+        .def(py::init<std::vector<Surface>, AbstractMap&>())
+        .def("set_parameters", &Domain::set_parameters) // std::map<std::string, double>
+        .def("set_parameter", &Domain::set_parameter)
+
+        .def("create_mesh", (void (Domain::*)()) &Domain::create_mesh) 
+        .def("create_mesh", (void (Domain::*)(double)) &Domain::create_mesh)
+        .def("refine_mesh", (void (Domain::*)()) &Domain::refine_mesh)
+        .def("refine_mesh", (void (Domain::*)(double)) &Domain::refine_mesh)
+
+        .def("get_boundary", &Domain::get_boundary)
 
 
-        .def("fair", (void (CGALSurface::*)(CGALSurface::vertex_vector)) &CGALSurface::fair)
-        .def("fair", (void (CGALSurface::*)()) &CGALSurface::fair)
-        //.def("load", &CGALSurface::load)//
-        .def("separate_narrow_gaps", &CGALSurface::seperate_narrow_gaps)
-        .def("reconstruct", &CGALSurface::reconstruct)
+        .def("lloyd", &Domain::lloyd)
+        .def("odt", &Domain::odt)
+        .def("exude", &Domain::exude)
+        .def("perturb", &Domain::perturb)
+        .def("add_sharp_border_edges", (void (Domain::*)(Surface&)) &Domain::add_sharp_border_edges)
+        .def("reset_borders", &Domain::reset_borders)
+        .def("remove_subdomain", (void (Domain::*)(std::vector<int>)) &Domain::remove_subdomain)
+        .def("remove_subdomain", (void (Domain::*)(int)) &Domain::remove_subdomain)
 
-        .def("num_faces", &CGALSurface::num_faces)
-        .def("num_edges", &CGALSurface::num_edges)
-        .def("num_vertices", &CGALSurface::num_vertices);
-
-    py::class_<CGALMeshCreator,std::shared_ptr<CGALMeshCreator>>(m, "Domain")
-        .def(py::init<CGALSurface &>())
-        .def(py::init<std::vector<CGALSurface>>())
-        .def(py::init<std::vector<CGALSurface>, AbstractMap&>())
-        .def("set_parameters", &CGALMeshCreator::set_parameters) // std::map<std::string, double>
-        .def("set_parameter", &CGALMeshCreator::set_parameter)
-
-        .def("create_mesh", (void (CGALMeshCreator::*)()) &CGALMeshCreator::create_mesh) 
-        .def("create_mesh", (void (CGALMeshCreator::*)(double)) &CGALMeshCreator::create_mesh)
-        .def("refine_mesh", (void (CGALMeshCreator::*)()) &CGALMeshCreator::refine_mesh)
-        .def("refine_mesh", (void (CGALMeshCreator::*)(double)) &CGALMeshCreator::refine_mesh)
-
-        .def("get_boundary", &CGALMeshCreator::get_boundary)
-
-
-        .def("lloyd", &CGALMeshCreator::lloyd)
-        .def("odt", &CGALMeshCreator::odt)
-        .def("exude", &CGALMeshCreator::exude)
-        .def("perturb", &CGALMeshCreator::perturb)
-        .def("add_sharp_border_edges", (void (CGALMeshCreator::*)(CGALSurface&)) &CGALMeshCreator::add_sharp_border_edges)
-        .def("reset_borders", &CGALMeshCreator::reset_borders)
-        .def("remove_subdomain", (void (CGALMeshCreator::*)(std::vector<int>)) &CGALMeshCreator::remove_subdomain)
-        .def("remove_subdomain", (void (CGALMeshCreator::*)(int)) &CGALMeshCreator::remove_subdomain)
-
-        .def("number_of_cells", &CGALMeshCreator::number_of_cells)
-        .def("set_borders", &CGALMeshCreator::set_borders)
-        .def("set_features", (void(CGALMeshCreator::*)()) &CGALMeshCreator::set_features) 
-        .def("add_feature", &CGALMeshCreator::add_feature) 
-        .def("save", &CGALMeshCreator::save); 
+        .def("number_of_cells", &Domain::number_of_cells)
+        .def("set_borders", &Domain::set_borders)
+        .def("set_features", (void(Domain::*)()) &Domain::set_features) 
+        .def("add_feature", &Domain::add_feature) 
+        .def("save", &Domain::save); 
 
 
 
 
 
-       m.def("separate_surfaces",  py::overload_cast<CGALSurface&,CGALSurface&,CGALSurface&>( &surface_overlapp<CGALSurface> ));
-       m.def("morphological_surface_union", &morphological_surface_union<CGALSurface>); 
-       m.def("separate_surfaces",  py::overload_cast<CGALSurface&,CGALSurface&>( &surface_overlapp<CGALSurface>) );
+       m.def("separate_surfaces",  py::overload_cast<Surface&,Surface&,Surface&>( &surface_overlapp<Surface> ));
+       m.def("morphological_surface_union", &morphological_surface_union<Surface>); 
+       m.def("separate_surfaces",  py::overload_cast<Surface&,Surface&>( &surface_overlapp<Surface>) );
 
 
 }

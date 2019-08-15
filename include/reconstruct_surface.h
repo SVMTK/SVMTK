@@ -17,7 +17,7 @@
 #include <CGAL/compute_average_spacing.h>
 
 // Local
-#include "CGALSurface.h" // why
+#include "Surface.h" // why
 
 #include <deque>
 #include <cstdlib>
@@ -28,7 +28,7 @@
 // Types
 // ----------------------------------------------------------------------------
 
-// kernel -- Moved to CGALSurface
+// kernel -- Moved to Surface
 
 struct Counter {
     std::size_t i, N;
@@ -74,7 +74,7 @@ void poisson_reconstruction(Mesh &mesh,
         typedef ReconstructKernel::Sphere_3 Sphere;
         typedef std::deque<Point_with_normal> PointList;
 
-        // polyhedron -- Moved to CGALSurface
+        // polyhedron -- Moved to Surface
         typedef CGAL::Polyhedron_3<ReconstructKernel> RPolyhedron;
 
         // Poisson implicit function
@@ -222,7 +222,7 @@ void poisson_reconstruction(Mesh &mesh,
 
     // Prints total reconstruction duration
     std::cout << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";
-    //return new CGALSurface(tmp_mesh);
+    //return new Surface(tmp_mesh);
 }
 
 
