@@ -3,11 +3,8 @@
 #define __SURFACE_MESHER_H
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h> 
-
-
 #include <CGAL/Implicit_surface_3.h>
 #include <CGAL/make_surface_mesh.h>
-// CGAL SURFACE MESH
 #include <CGAL/Surface_mesh_traits_generator_3.h>
 #include <CGAL/Surface_mesh_default_criteria_3.h>
 #include <CGAL/Surface_mesh_triangulation_generator_3.h>
@@ -23,8 +20,6 @@
 // needed
 
 #include <CGAL/IO/output_surface_facets_to_polyhedron.h>
-//#include <CGAL/Mesh_polyhedron_3.h>
-
 #include <CGAL/Complex_2_in_triangulation_3.h>
 #include <CGAL/boost/graph/copy_face_graph.h>
 
@@ -75,14 +70,14 @@ void surface_mesher(Mesh& mesh, Implicit_Function func, double& x0 ,double& y0, 
     CGAL::facets_in_complex_2_to_triangle_mesh(c2t3,mesh);
 
 }
-template<typename Mesh , typename Implicit_Function> // Requires origin  
+template<typename Mesh , typename Implicit_Function>
 void surface_mesher(Mesh& mesh, Implicit_Function func,  double bounding_sphere_radius, double angular_bound, double radius_bound, double distance_bound )
 {
     typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
     typedef CGAL::Surface_mesh_triangulation_generator_3<Kernel>::Type Tr;
-    //typedef CGAL::Surface_mesh_default_triangulation_3 Tr; // Surface_mesh_default
+
     typedef CGAL::Complex_2_in_triangulation_3<Tr> C2t3;
-    //typedef Tr::Geom_traits GT;
+    typedef Tr::Geom_traits GT;
     typedef Kernel::Sphere_3 Sphere_3;
     typedef Kernel::Point_3 Point_3;
     typedef Kernel::FT FT;
@@ -92,18 +87,14 @@ void surface_mesher(Mesh& mesh, Implicit_Function func,  double bounding_sphere_
     typedef FT_to_point_function_wrapper<FT, Point_3> Function;
     typedef CGAL::Implicit_surface_3<Kernel, Function> Surface_3;
 
-
     Tr tr;
     C2t3 c2t3 (tr);
-
     Function wrapper(func);
-    //
-
-    if ( bounding_sphere_radius< 1.0)
-    {
-       bounding_sphere_radius = 1.0; // problem with squared < 1
-    }
-    Surface_3 surface(wrapper,Sphere_3(CGAL::ORIGIN, bounding_sphere_radius*bounding_sphere_radius),1.0e-5 ); 
+    GT::Point_3 bounding_sphere_center(CGAL::ORIGIN);
+    GT::FT bounding_sphere_squared_radius = bounding_sphere_radius*bounding_sphere_radius*2;
+    GT::Sphere_3 bounding_sphere(bounding_sphere_center,bounding_sphere_squared_radius);
+    
+    Surface_3 surface(wrapper,bounding_sphere,1.0e-5 ); 
 
     CGAL::Surface_mesh_default_criteria_3<Tr> criteria(angular_bound,radius_bound,distance_bound);
 

@@ -62,8 +62,46 @@
 
 class Surface;
 
+
+
+// TODO: move to new file
+template< typename Kernel>
+struct Minimum_sphere_2
+{
+   
+    typedef typename CGAL::Min_sphere_of_spheres_d_traits_2< Kernel,typename Kernel::FT> Traits;
+    typedef typename CGAL::Min_sphere_of_spheres_d<Traits> Min_sphere;
+    typedef typename Traits::Sphere                    Sphere;
+ 
+    typedef typename std::vector<typename Kernel::Point_2> Polyline_2;
+    typedef typename std::vector<Polyline_2> Polylines_2;  
+  
+    void add_polylines(const Polylines_2 &polylines)
+    {
+         for (auto it=polylines.begin();it != polylines.end(); ++it)
+         {
+             for ( auto pit=it->begin() ; pit!=it->end(); ++pit)
+             { 
+                 S.push_back(Sphere(*pit, 0.0));
+             }
+         }
+     } 
+
+     double get_bounding_sphere_radius()
+     {
+          Min_sphere ms(S.begin(), S.end());
+           return CGAL::to_double(ms.radius());
+     }
+     private:
+         std::vector<Sphere> S;
+};
+
+
+
 class Slice
 {
+    // EXPERIMENTAL CLASS
+    // TODO:CLEANUP
     public :
      
        typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
@@ -128,39 +166,12 @@ class Slice
        void keep_component(int next );
        void add_holes(Polylines_2& closed_polylines );
        // TODO : remove redundant 
-       void find_holes(int min_num_edges);
+       //void find_holes(int min_num_edges);
        void remove_bad_constraints( int min_num_edges);
  
 
 
-
-       struct Minimum_sphere
-       {
-   
-          typedef CGAL::Min_sphere_of_spheres_d_traits_2<Kernel,FT> Traits;
-          typedef CGAL::Min_sphere_of_spheres_d<Traits> Min_sphere;
-          typedef Traits::Sphere                    Sphere;
-
-           void add_polylines(const Polylines_2 &polylines)
-           {
-                for (auto it=polylines.begin();it != polylines.end(); ++it)
-                {
-                    for ( auto pit=it->begin() ; pit!=it->end(); ++pit)
-                    { 
-                         S.push_back(Sphere(*pit, 0.0));
-                    }
-                }
-            } 
-
-           double get_bounding_sphere_radius()
-           {
-               Min_sphere ms(S.begin(), S.end());
-               return CGAL::to_double(ms.radius());
-           }
-           private:
-                 std::vector<Sphere> S;
-       };
-
+       // TODO: move structs to new file ? use template ?  
        struct polyline_endpoints{
 
                   polyline_endpoints( const std::vector<Point_2> & in ) : current(in) {}
@@ -190,7 +201,6 @@ class Slice
                    
        };
        struct search_lens{
-
                        search_lens(const std::vector<Point_2> & b) : current(b) {} 
                        bool operator()(const std::vector<Point_2> & a)
                        { 
@@ -210,7 +220,7 @@ class Slice
                    
        };
     private:
-       Minimum_sphere min_sphere;
+       Minimum_sphere_2<Kernel> min_sphere;
        Polyline_2 seeds;
        Polylines_2 constraints; // polygons_2D ?? 
        Polygon_2 boundary;  
@@ -427,6 +437,7 @@ Slice::Slice(const Polylines_2 &polylines)
 
 std::shared_ptr<Surface> Slice::export_3D() 
 {
+  // FIXME
   /*typedef std::vector<std::size_t> Face ;
   typedef CDT::Vertex_handle Vertex_handle;
 
@@ -454,6 +465,7 @@ std::shared_ptr<Surface> Slice::export_3D()
 
 void Slice::keep_component(int next )
 { 
+    // FIXME
     if ( next ==0)
     {
        constraints.clear();
@@ -475,7 +487,9 @@ void Slice::keep_component(int next )
 
 
 void Slice::add_holes(Polylines_2& closed_polylines )
-{     if ( boundary.is_empty() )
+{   
+    //FIXME  
+    if ( boundary.is_empty() )
          return; 
      for ( auto pol =  closed_polylines.begin(); pol != closed_polylines.end(); ++pol)
      {
@@ -495,8 +509,6 @@ void Slice::add_holes(Polylines_2& closed_polylines )
     
 } 
 
-
-
 void Slice::add_constraints(Slice &slice, bool hole=false) 
 {  
      if (hole)
@@ -509,7 +521,6 @@ void Slice::add_constraints(Slice &slice, bool hole=false)
      }
      add_constraints(slice.get_constraints());
 }
-
 
 
 void Slice::remove_bad_constraints( int min_num_edges)
@@ -538,7 +549,8 @@ void Slice::remove_bad_constraints( int min_num_edges)
 
 } 
 
-void Slice::find_holes( int min_num_edges)
+//TODO: rmeove
+/*void Slice::find_holes( int min_num_edges)
 {
 
      if(constraints.size() < 2)
@@ -577,7 +589,7 @@ void Slice::find_holes( int min_num_edges)
      }
 
    
-}
+}*/
 
 
 void Slice::simplify( double stop_crit )
@@ -603,7 +615,7 @@ void Slice::simplify( double stop_crit )
 
 void Slice::create_mesh(double mesh_resolution) 
 {
-
+    // 
 
     if ( boundary.is_empty() )
          return; 

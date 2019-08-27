@@ -169,10 +169,10 @@ bool load_surface(const std::string file, Mesh& mesh) // new name load polygons 
 template< typename Surface>  // FIXME:
 void surface_overlapp(Surface& surf1 , Surface& surf2 )
 {
-
+    
     typedef typename Surface::vertex_vector vertex_vector;
     typedef typename Surface::vertex_descriptor vertex_descriptor;
-    // distance from other surface
+   
 
     std::map< vertex_descriptor, double> map1;
     std::map< vertex_descriptor, double> map2;
@@ -184,7 +184,6 @@ void surface_overlapp(Surface& surf1 , Surface& surf2 )
     p1  = surf2.inside(surf1,p1);
     p2  = surf1.inside(surf2,p2);
     
-
     int iter =0;
   
     while (  !p2.empty() or  !p1.empty() )
@@ -196,6 +195,7 @@ void surface_overlapp(Surface& surf1 , Surface& surf2 )
 
             surf1.adjusting_boundary_region(map1.begin() ,map1.end());
             surf2.adjusting_boundary_region(map2.begin() ,map2.end());
+
             // After adjusting the boundary smoothing is needed, taubin is least volatile.
             surf1.smooth_taubin_region(p1.begin(), p1.end(),2);   
             surf2.smooth_taubin_region(p2.begin(), p2.end(),2);    
@@ -216,6 +216,7 @@ void surface_overlapp(Surface& surf1 , Surface& surf2 )
 template< typename Surface> 
 void surface_overlapp(Surface& surf1 , Surface& surf2 , Surface& domain)
 {
+    //EXPERIMENTALL
     typedef typename Surface::vertex_vector vertex_vector;
     typedef typename Surface::vertex_descriptor vertex_descriptor;
 
@@ -226,7 +227,6 @@ void surface_overlapp(Surface& surf1 , Surface& surf2 , Surface& domain)
     vertex_vector p1 = surf1.get_vertices();
     vertex_vector p2 = surf2.get_vertices();
 
-    
     p1  = surf2.inside(surf1,p1);
     p2  = surf1.inside(surf2,p2);
     p1  = domain.outside(surf1,p1);
@@ -289,6 +289,7 @@ void surface_overlapp(Surface& surf1 , Surface& surf2 , Surface& domain)
 template< typename Surface> 
 std::shared_ptr<Surface> morphological_surface_union( Surface& surf1 , Surface& surf2 )
 {
+     // EXPERIMENTAL
      typedef typename Surface::vertex_vector vertex_vector;
      typedef typename Surface::vertex_descriptor vertex_descriptor;
 
@@ -327,29 +328,40 @@ std::shared_ptr<Surface> morphological_surface_union( Surface& surf1 , Surface& 
 class Surface
 {
    public:
-  
-    typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel; // Change to exact -> copy face_ graph to inexact ??
+    // Essential
+    typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel; 
     typedef Kernel::Point_3 Point_3;
     typedef CGAL::Surface_mesh<Point_3> Mesh;
     typedef CGAL::Surface_mesh_default_triangulation_3 Tr;
-    // typedef Tr::Geom_traits GT;
+    typedef CGAL::Side_of_triangle_mesh<Mesh,Kernel> Inside; // declear inside implementation ?
+    typedef CGAL::Polyhedron_3<Kernel> Polyhedron;   
+    //  Auxilliary
+   
+    typedef Kernel::FT FT;    
     typedef Kernel::Vector_3 Vector_3;
-
+    // BOOST is regulary used in CGAL examples 
     typedef boost::graph_traits<Mesh>::halfedge_descriptor    halfedge_descriptor;
     typedef boost::graph_traits<Mesh>::face_descriptor        face_descriptor;
-    typedef boost::graph_traits<Mesh>::vertex_descriptor      vertex_descriptor; // 
-    typedef std::vector<vertex_descriptor>                    vertex_vector;
-    typedef CGAL::Side_of_triangle_mesh<Mesh,Kernel> Inside; // declear inside implementation ? 
-    typedef Mesh::Vertex_index Index;
-
-    typedef CGAL::Polyhedron_3<Kernel> Polyhedron; // just for 
-
-    typedef std::pair<Point_3, Vector_3> RPwn;
-    typedef std::vector<Point_3>  Polyline_3; 
-    typedef std::vector<Polyline_3> Polylines; 
-    typedef Kernel::FT FT;
+    typedef boost::graph_traits<Mesh>::vertex_descriptor      vertex_descriptor; //  vertex 
+    typedef boost::graph_traits<Mesh>::vertices_size_type                    size_type;
+    typedef boost::property_map<Mesh,CGAL::vertex_point_t>::type             Vertex_point_pmap; 
     typedef std::vector<std::size_t>  Face;
+    typedef std::vector<vertex_descriptor>                    vertex_vector;   
+    typedef Mesh::Vertex_index Index;
+    typedef CGAL::Vertex_around_target_circulator<Mesh> HV_const_circulator;
 
+    //typedef std::pair<Point_3, Vector_3> RPwn;
+    
+    // Point search typdefs
+    typedef CGAL::Search_traits_3<Kernel>                                                Traits_base;
+    typedef CGAL::Search_traits_adapter<vertex_descriptor,Vertex_point_pmap,Traits_base> Traits;
+    typedef CGAL::Orthogonal_k_neighbor_search<Traits>                                   K_neighbor_search;
+    typedef K_neighbor_search::Tree                                                      Tree;
+    typedef Tree::Splitter                                                               Splitter;
+    typedef K_neighbor_search::Distance                                                  Distance;
+ 
+
+  
     Surface(){} 
     Surface(Polyhedron &polyhedron); 
     Surface(std::vector<Point_3>& points, std::vector<Face>& faces ); 
@@ -375,19 +387,18 @@ class Surface
     int num_vertices() const {return mesh.number_of_vertices();}
     int num_self_intersections();
     void save(const std::string outpath);
-
-    template< typename Polyhedron_3>  // Template to address the different kernels in CGAL TODO: return Polyhedron?
+   
+    template< typename Polyhedron_3>
     void get_polyhedron(Polyhedron_3 &polyhedron_3 ){CGAL::copy_face_graph(mesh,polyhedron_3);}
     // ------------TO BE REMOVED ? -------------------
-    void fair();                                // TODO: Remove fair -> to volatile 
-    void fair(Surface::vertex_vector vector);   // TODO: Remove fair -> to volatile 
-    void stitch_borders();                      // TODO: Proper test   
+
+    
     void triangulate_hole();                    // TODO: Proper test  
     int  fill_holes();                          // TODO: Proper test  
     bool triangulate_faces();                   // TODO: Proper test  
 
 
-    // ------------ Auxillary --------------------
+    // ------------ TODO:Name --------------------
     void split_edges(double  target_edge_length);
     int  collapse_edges(const double stop_ratio);
     
@@ -403,11 +414,12 @@ class Surface
     std::shared_ptr<Slice> mesh_slice(double x1,double x2, double x3 ,double x4) ;
  
 
-    // TODO: 
+    // TODO: rename 
     std::pair<double,double> span(int direction);  
     void surface_eval( vertex_vector &input);
     
     // NOTE: Do not expose 
+    //TODO: do not use template ?
     template<typename InputIterator>   
     void adjusting_boundary_region(InputIterator begin , InputIterator  end, const double c);
     void adjusting_boundary_region(std::map<vertex_descriptor,double>::iterator begin, std::map<vertex_descriptor,double>::iterator end );
@@ -420,8 +432,10 @@ class Surface
     std::map< vertex_descriptor, double> shortest_edge_map(Surface::vertex_vector &vector,double adjustment =-0.5) ;
    
     //-------------Inquries TODO: decide Add query and overload ? ?
-    vertex_vector inside(Surface &other, Surface::vertex_vector &points);
-    vertex_vector outside(Surface &other, Surface::vertex_vector &points);
+    vertex_vector inside(Surface &other, Surface::vertex_vector &vertices);
+    vertex_vector outside(Surface &other, Surface::vertex_vector &vertices);
+
+    // 
     vertex_vector get_vertices();
     vertex_vector get_close_points(Surface &other);
 
@@ -456,17 +470,7 @@ class Surface
 Surface::vertex_descriptor Surface::closest_point(Point_3 p1)
 {
 
-   typedef boost::graph_traits<Mesh>::vertex_descriptor                     Point;
-   typedef boost::graph_traits<Mesh>::vertices_size_type                    size_type;
-   typedef boost::property_map<Mesh,CGAL::vertex_point_t>::type             Vertex_point_pmap;
- 
-   typedef CGAL::Search_traits_3<Kernel>                                    Traits_base;
-   typedef CGAL::Search_traits_adapter<Point,Vertex_point_pmap,Traits_base> Traits;
-   typedef CGAL::Orthogonal_k_neighbor_search<Traits>                       K_neighbor_search;
-   typedef K_neighbor_search::Tree                                          Tree;
-   typedef Tree::Splitter                                                   Splitter;
-   typedef K_neighbor_search::Distance                                      Distance;
- 
+
    std::map<vertex_descriptor,double> results;
    Vertex_point_pmap vppmap = get(CGAL::vertex_point,mesh);
 
@@ -492,12 +496,12 @@ Surface::vertex_descriptor Surface::closest_point(Point_3 p1)
 } 
 
 // double x0, double y0, double  z0,  double x1, double y1, double z1, double radius,  int number_of_segments) 
-void Surface::cylindric_extension(Point_3& p1, double& radius, double length, bool normal  )
+void Surface::cylindric_extension(Point_3& p1, double& radius, double length, bool normal)
 {
    // TODO: assert outside 
-   // TODO: FIX all inside 
+   // TODO: FIXME all inside 
    // TODO: Algorithm  
-   //       1) Handle nearest point on sharp edge:
+   //       1) Handle nearest point on sharp edge, probably with surface segmentation
    //       2) Handle concave surface 
    //       3) adjust boundary in direction -> translation of points 
    //       4) more 
@@ -569,7 +573,7 @@ std::map<Surface::vertex_descriptor, double> Surface::shortest_edge_map(Surface:
    {
 
         Point_3 current = mesh.point(v_it);
-        CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(v_it),mesh), done(vbegin);
+        HV_const_circulator vbegin(mesh.halfedge(v_it),mesh), done(vbegin);
 
         FT min_edge = FT(100);
         do
@@ -613,7 +617,7 @@ void Surface::write_STL(const std::string filename)
 
        file << "facet normal " << n.x() << " " << n.y()   << " " << n.z() <<std::endl;
        file << "outer loop"<< std::endl;
-       CGAL::Vertex_around_face_iterator<Mesh> vbegin, vend;
+       CGAL::Vertex_around_face_iterator<Mesh> vbegin, vend; //?????
        for(boost::tie(vbegin, vend) = vertices_around_face(mesh.halfedge(f), mesh); vbegin != vend; ++vbegin)
        {
           file << "\t" << "vertex " << mesh.point(*vbegin).x() <<" "<< mesh.point(*vbegin).y() <<" "<< mesh.point(*vbegin).z()  << std::endl;  
@@ -640,7 +644,7 @@ void Surface::implicit_surface(Implicit_function implicit_function,
 template<typename InputIterator >
 void Surface::adjusting_boundary_region(InputIterator begin , InputIterator  end, const double c)
 {
-  typedef typename CGAL::Vertex_around_target_circulator<Mesh> HV_const_circulator;
+  
   std::vector<std::pair<vertex_descriptor, Point_3> > smoothed; 
   for ( ; begin != end; ++begin)
   {
@@ -649,7 +653,6 @@ void Surface::adjusting_boundary_region(InputIterator begin , InputIterator  end
       smoothed.push_back(std::make_pair(*begin, p));
   }
 
-  // could be a function
   for (std::pair<vertex_descriptor, Point_3> s : smoothed)
   {
       mesh.point(s.first) = s.second;
@@ -660,7 +663,7 @@ void Surface::adjusting_boundary_region(InputIterator begin , InputIterator  end
 
 void Surface::adjusting_boundary_region(std::map<vertex_descriptor,double>::iterator begin, std::map<vertex_descriptor,double>::iterator end) // map or two vectors
 {
-  typedef typename CGAL::Vertex_around_target_circulator<Mesh> HV_const_circulator;
+
   std::vector<std::pair<vertex_descriptor, Point_3> > smoothed; 
 
   for ( ; begin != end; ++begin)
@@ -682,14 +685,14 @@ void Surface::adjusting_boundary_region(std::map<vertex_descriptor,double>::iter
 template<typename InputIterator >
 void Surface::smooth_laplacian_region(InputIterator begin , InputIterator end ,const double c)
 {
-  typedef typename CGAL::Vertex_around_target_circulator<Mesh> HV_const_circulator;
+ 
   std::vector<std::pair<vertex_descriptor, Point_3> > smoothed;
   for ( ; begin != end; ++begin)
   {
 
       Point_3 current = mesh.point(*begin);
       Vector_3 delta=CGAL::NULL_VECTOR;
-      CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(*begin),mesh), done(vbegin);
+      HV_const_circulator vbegin(mesh.halfedge(*begin),mesh), done(vbegin);
       do
       {
           delta += Vector_3(mesh.point(*vbegin) - current);
@@ -720,12 +723,12 @@ Surface::Surface(Polyhedron &polyhedron) {
 
 Surface::Surface(const std::string  filename1, const std::string  filename2)
 { 
+    // Lazy  
     Mesh mesh1;
     Mesh mesh2; 
     load_surface(filename1,mesh1);
     load_surface(filename2,mesh2);
     CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh1, mesh2,mesh);
-
 }
 
 
@@ -750,7 +753,7 @@ Surface::Surface(std::vector<Point_3>& points, std::vector<Face>& faces)
   }
 
 }
-// Boolean operation FIXME to overloaded operators ?
+// TODO: Boolean operation to overloaded operators ?
 void Surface::surface_intersection( Surface& other)
 {
      CGAL::Polygon_mesh_processing::corefine_and_compute_intersection(mesh, other.get_mesh(),mesh) ;
@@ -774,10 +777,8 @@ void Surface::surface_union( Surface& other)
 /* 
      object: take into account corpus collusom 
 */
-
 void Surface::surface_eval(Surface::vertex_vector &input)
 {
-  typedef typename CGAL::Vertex_around_target_circulator<Mesh> HV_const_circulator;
   int size = input.size();
 
   Vector_3 direction; 
@@ -785,7 +786,7 @@ void Surface::surface_eval(Surface::vertex_vector &input)
   {
       Vector_3 n1 = CGAL::Polygon_mesh_processing::compute_vertex_normal(input[i],mesh); 
       direction+=n1;
-      CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(input[i]),mesh), done(vbegin);
+      HV_const_circulator vbegin(mesh.halfedge(input[i]),mesh), done(vbegin);
       do
       {
           Vector_3 n2= CGAL::Polygon_mesh_processing::compute_vertex_normal(*vbegin,mesh);  
@@ -845,32 +846,30 @@ int Surface::collapse_edges(const double stop_ratio) {
     return r;
 }
 
-std::shared_ptr<Slice> Surface::mesh_slice(double x1,double x2, double x3 ,double x4) // get slice object, simplify, mesh -> new class 
+std::shared_ptr<Slice> Surface::mesh_slice(double x1,double x2, double x3 ,double x4)  
 {
+     // 2D 
      typedef Kernel::Point_2 Point_2;
      typedef std::vector<Point_2> Polyline_2;
+     typedef std::vector<Point_3>  Polyline_3; 
      typedef std::vector<Polyline_2> Polylines_2;
+     typedef std::vector<Polyline_3> Polylines; 
      //-------------------------------------------------------------
      // Intersection Polylines
      //-------------------------------------------------------------
      CGAL::Polygon_mesh_slicer<Mesh, Kernel> slicer(mesh); 
      Polylines polylines_3D;
      Kernel::Plane_3 plane =Kernel::Plane_3(x1, x2, x3, x4);
-
-
-     slicer(Kernel::Plane_3(x1, x2, x3, x4), std::back_inserter(polylines_3D)); // TODO: normalize x1,x2,x3
-
+     slicer(Kernel::Plane_3(x1, x2, x3, x4), std::back_inserter(polylines_3D)); 
      //-------------------------------------------------------------
      // Basis in slice 
      //-------------------------------------------------------------
-     Vector_3 n =  plane.orthogonal_vector(); 
-     
+     Vector_3 n =  plane.orthogonal_vector();  
      Vector_3  e1 = plane.base1();
      Vector_3  e2 = plane.base2();
+     //-------------------------------------------------------------
      // Polylines to 2D 
      //-------------------------------------------------------------
-
-
      std::vector<std::vector<Point_2>> polylines_2;
      for ( auto  pol = polylines_3D.begin(); pol != polylines_3D.end(); ++pol ) 
      {
@@ -878,14 +877,13 @@ std::shared_ptr<Slice> Surface::mesh_slice(double x1,double x2, double x3 ,doubl
          std::vector<Point_2> polyline_2;
          for ( auto pit = pol->begin(); pit != pol->end(); ++pit)
          {
-               //polyline_2.push_back(Point_2( pit->x()*e1.x() + pit->y()*e1.y() + pit->z()*e1.z() , pit->x()*e2.x() + pit->y()*e2.y() + pit->z()*e2.z() ));
                polyline_2.push_back(plane.to_2d(*pit));
          }
          polylines_2.push_back( polyline_2);
      }
      
      std::shared_ptr<Slice> slice(new Slice(polylines_2)); 
-     slice->set_plane(plane); 
+     slice->set_plane(plane); // export to 3D
      return slice;
 }     
 
@@ -906,7 +904,7 @@ void Surface::clip(double x1,double x2, double x3 ,double x4, bool clip){
    CGAL::Polygon_mesh_processing::clip(mesh,  Kernel::Plane_3(x1,x2,x3,x4), CGAL::Polygon_mesh_processing::parameters::clip_volume(clip));
 
 }
-//---------------------------------------------------------------------
+//-----------------  TODO: PERFORM TESTS----------------------------------------------------
 void Surface::triangulate_hole()
 {   
      BOOST_FOREACH(halfedge_descriptor h, halfedges(mesh))
@@ -959,16 +957,13 @@ bool Surface::triangulate_faces()
         std::cerr << "Error: non-triangular face left in mesh." << std::endl;
     return true;
 }
-void Surface::stitch_borders(){
-     CGAL::Polygon_mesh_processing::stitch_borders(mesh);
 
-}
 
 
 Surface::vertex_vector Surface::get_vertices()
 {
-   // CLEANER 
    vertex_vector result;
+   //BOOST_FOREACH(vertex_descriptor v_it, vertices(mesh)
    for ( vertex_descriptor v_it : mesh.vertices())
    {
         result.push_back(v_it);
@@ -977,12 +972,12 @@ Surface::vertex_vector Surface::get_vertices()
 }
 
 
-Surface::vertex_vector Surface::inside(Surface &other, Surface::vertex_vector &points)
+Surface::vertex_vector Surface::inside(Surface &other, Surface::vertex_vector &vertices)
 {
    vertex_vector result;
    Surface::Inside inside_poly2(mesh);
 
-   for ( vertex_descriptor v_it : points )
+   for ( vertex_descriptor v_it : vertices )
    {
       CGAL::Bounded_side res = inside_poly2(other.get_mesh().point(v_it));
       if (res == CGAL::ON_BOUNDED_SIDE or res == CGAL::ON_BOUNDARY)
@@ -994,11 +989,11 @@ Surface::vertex_vector Surface::inside(Surface &other, Surface::vertex_vector &p
    return result;
 }
 
-Surface::vertex_vector Surface::outside(Surface &other,Surface::vertex_vector &points)
+Surface::vertex_vector Surface::outside(Surface &other,Surface::vertex_vector &vertices)
 {
    vertex_vector result;
    Surface::Inside inside_poly2(mesh);
-   for ( vertex_descriptor v_it : points )
+   for ( vertex_descriptor v_it : vertices )
    {
       CGAL::Bounded_side res = inside_poly2(other.get_mesh().point(v_it));
       if (res == CGAL::ON_UNBOUNDED_SIDE){result.push_back(v_it);}
@@ -1006,19 +1001,6 @@ Surface::vertex_vector Surface::outside(Surface &other,Surface::vertex_vector &p
   
    return result;
 }
-/*
-   Points outside mesh-> vector of points  and query 
-   Points in a mesh outside another mesh -> 2 mesh and query, 1 mesh list of points and query  
-   
-
-   options -> get all points of mesh
-
-           -> return all points inside a domain 
-
-
-
-*/
-
 
 
 void Surface::adjust_boundary(const double c)
@@ -1038,7 +1020,7 @@ void Surface::smooth_laplacian(const double c, int iter)
 
 void Surface::make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1) // TODO :allow tilted cubes  vector  
 {
-
+     // implemented directly because of inexact kernel
      assert(x0!=x1);
      assert(y0!=y1);
      assert(z0!=z1);
@@ -1084,10 +1066,7 @@ void Surface::make_cube( double x0, double y0, double  z0,  double x1, double y1
 
 }
 
-/*
-void Surface::make_cylinder(Point_3 p0,  Point_3 p1 , double radius,  int number_of_segments) {  
-     Surface::make_cone( (double)p0.x(), (double)p0.y(), (double)p0.z(), (double)p1.x(), (double)p1.y(), (double)p1.z() radius , radius,  number_of_segments ) ;
-}*/
+
 void Surface::make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1, double radius,  int number_of_segments) {  
      Surface::make_cone( x0, y0,z0, x1,y1, z1, radius , radius,  number_of_segments ) ;
 }
@@ -1096,7 +1075,10 @@ void Surface::make_cylinder( double x0, double y0, double  z0,  double x1, doubl
 
 void Surface::make_cone( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0, double r1,  int number_of_segments) 
 {
-        //TODO: Handle case for r1=0 or r0=0
+        
+     //TODO: Handle case for r1=0 or r0=0
+     assert(r0!=0);
+     assert(y2!=0);
      Mesh m;
 
     
@@ -1210,13 +1192,6 @@ void Surface::save(const std::string outpath)
 
 }
 
-void Surface::fair(Surface::vertex_vector vector){
-     CGAL::Polygon_mesh_processing::fair(mesh,vector);
-}
-
-void Surface::fair(){
-     CGAL::Polygon_mesh_processing::fair(mesh,mesh.vertices());
-}
 
 
 
@@ -1235,11 +1210,11 @@ void Surface::reconstruct( double sm_angle,
 }
 
 
-void Surface::seperate_narrow_gaps() // TODO: based on distance to surface
+void Surface::seperate_narrow_gaps() 
 {
 
    // TODO: CLEAN UP
-   typedef boost::graph_traits<Mesh>::vertex_descriptor                     Point;
+   /*typedef boost::graph_traits<Mesh>::vertex_descriptor                     Point;
    typedef boost::graph_traits<Mesh>::vertices_size_type                    size_type;
    typedef boost::property_map<Mesh,CGAL::vertex_point_t>::type             Vertex_point_pmap;
  
@@ -1248,7 +1223,7 @@ void Surface::seperate_narrow_gaps() // TODO: based on distance to surface
    typedef CGAL::Orthogonal_k_neighbor_search<Traits>                       K_neighbor_search;
    typedef K_neighbor_search::Tree                                          Tree;
    typedef Tree::Splitter                                                   Splitter;
-   typedef K_neighbor_search::Distance                                      Distance;
+   typedef K_neighbor_search::Distance                                      Distance;*/
  
    std::map<vertex_descriptor,double> results;
    Vertex_point_pmap vppmap = get(CGAL::vertex_point,mesh);
@@ -1305,7 +1280,7 @@ Surface::vertex_vector Surface::get_close_points(Surface &other)
 
 
     */
-   typedef boost::graph_traits<Mesh>::vertex_descriptor                     Point;
+   /*typedef boost::graph_traits<Mesh>::vertex_descriptor                     Point;
    typedef boost::graph_traits<Mesh>::vertices_size_type                    size_type;
    typedef boost::property_map<Mesh,CGAL::vertex_point_t>::type             Vertex_point_pmap;
  
@@ -1314,7 +1289,7 @@ Surface::vertex_vector Surface::get_close_points(Surface &other)
    typedef CGAL::Orthogonal_k_neighbor_search<Traits>                       K_neighbor_search;
    typedef K_neighbor_search::Tree                                          Tree;
    typedef Tree::Splitter                                                   Splitter;
-   typedef K_neighbor_search::Distance                                      Distance;
+   typedef K_neighbor_search::Distance                                      Distance;*/
  
    Surface::vertex_vector results;
    Vertex_point_pmap vppmap = get(CGAL::vertex_point,other.get_mesh());  
@@ -1364,18 +1339,9 @@ Surface::vertex_vector Surface::get_close_points(Surface &other)
 
 std::map<Surface::vertex_descriptor,double> Surface::seperate_close_surfaces(Surface& other) // TODO: based on distance to surface
 {
+    //TODO: MOVE TYPEDEFS
+   //typedef boost::graph_traits<Mesh>::vertex_descriptor                     Point;
 
-   typedef boost::graph_traits<Mesh>::vertex_descriptor                     Point;
-   typedef boost::graph_traits<Mesh>::vertices_size_type                    size_type;
-   typedef boost::property_map<Mesh,CGAL::vertex_point_t>::type             Vertex_point_pmap;
- 
-   typedef CGAL::Search_traits_3<Kernel>                                    Traits_base;
-   typedef CGAL::Search_traits_adapter<Point,Vertex_point_pmap,Traits_base> Traits;
-   typedef CGAL::Orthogonal_k_neighbor_search<Traits>                       K_neighbor_search;
-   typedef K_neighbor_search::Tree                                          Tree;
-   typedef Tree::Splitter                                                   Splitter;
-   typedef K_neighbor_search::Distance                                      Distance;
- 
    std::map<vertex_descriptor,double> results;
    Vertex_point_pmap vppmap = get(CGAL::vertex_point,other.get_mesh());
 
@@ -1395,7 +1361,7 @@ std::map<Surface::vertex_descriptor,double> Surface::seperate_close_surfaces(Sur
    {
         flag = true;
     
-        K_neighbor_search search(tree, mesh.point(v_it), 2,0,true,tr_dist); //tree.closest_point(point_query); must be second closest
+        K_neighbor_search search(tree, mesh.point(v_it), 2,0,true,tr_dist); 
         
         closest = mesh.point((search.begin()+1)->first); // The closest point is the query point, therefore choose second point as closest. 
         
@@ -1416,7 +1382,6 @@ std::map<Surface::vertex_descriptor,double> Surface::seperate_close_surfaces(Sur
         if (flag){results[v_it] = -0.2*static_cast<double>(CGAL::sqrt(distance)) ;} // both vertices are affected
    
    }
-
    return  results;
    
 }

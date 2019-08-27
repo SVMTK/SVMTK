@@ -55,7 +55,6 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("simplify", &Slice::simplify) 
         .def("keep_component", &Slice::keep_component) 
         .def("save", &Slice::save)
-        .def("mark_holes", &Slice::find_holes)
         .def("add_constraints",(void (Slice::*)(Slice&,bool)) &Slice::add_constraints);
 
 
@@ -75,7 +74,6 @@ PYBIND11_MODULE(SVMTK, m) {
 
         .def("fill_holes", &Surface::fill_holes)
         .def("triangulate_faces", &Surface::triangulate_faces)
-        .def("stitch_borders", &Surface::stitch_borders)
         .def("isotropic_remeshing", &Surface::isotropic_remeshing)
         .def("adjust_boundary", &Surface::adjust_boundary)
 
@@ -95,8 +93,6 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("split_edges", &Surface::split_edges)
         .def("extension", &Surface::cylindric_extension)
 
-        .def("fair", (void (Surface::*)(Surface::vertex_vector)) &Surface::fair)
-        .def("fair", (void (Surface::*)()) &Surface::fair)
         //.def("load", &Surface::load)//
         .def("separate_narrow_gaps", &Surface::seperate_narrow_gaps)
         .def("reconstruct", &Surface::reconstruct)
@@ -124,12 +120,14 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("odt", &Domain::odt)
         .def("exude", &Domain::exude)
         .def("perturb", &Domain::perturb)
+
         .def("add_sharp_border_edges", (void (Domain::*)(Surface&)) &Domain::add_sharp_border_edges)
         .def("reset_borders", &Domain::reset_borders)
         .def("remove_subdomain", (void (Domain::*)(std::vector<int>)) &Domain::remove_subdomain)
         .def("remove_subdomain", (void (Domain::*)(int)) &Domain::remove_subdomain)
 
         .def("number_of_cells", &Domain::number_of_cells)
+        // add, remove, set 
         .def("set_borders", &Domain::set_borders)
         .def("set_features", (void(Domain::*)()) &Domain::set_features) 
         .def("add_feature", &Domain::add_feature) 
