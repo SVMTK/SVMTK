@@ -1,0 +1,7 @@
+README.md
+setup.py
+source/brainmesh.egg-info/PKG-INFO
+source/brainmesh.egg-info/SOURCES.txt
+source/brainmesh.egg-info/dependency_links.txt
+source/brainmesh.egg-info/entry_points.txt
+source/brainmesh.egg-info/top_level.txt

@@ -30,23 +30,23 @@ namespace CGAL {
         {
             public:
                 // Types
-                typedef int return_type;
+                typedef int return_type;  
 
-                typedef std::vector<Function_*>   Function_vector;
-
+                typedef std::vector<Function_*>   Function_vector; // Polyhedron_mesh_domain_with features -> stores polyhedron
+                // TODO
+                // Polyhedron_mesh_domain_with features  operator() 
+                // similar to Hybrid mesh domain
+                // SubID generator 
+         
                 typedef typename BGT::Point_3       Point_3;
-                typedef typename BGT::Iso_cuboid_3  Iso_cuboid_3;
-                typedef typename BGT::Sphere_3      Sphere_3;
-
-                typedef typename BGT::Segment_3      Segment_3;
-                typedef typename BGT::Line_3      Line_3;
-                typedef typename BGT::Ray_3      Ray_3;
-                typedef typename BGT::Vector_3      Vector_3;
-
+                typedef typename BGT::Segment_3 Segment_3;
+                typedef typename Function_::Index Index;
                 typedef boost::dynamic_bitset<>   Bmask;
                 //typedef typename Function_::FT    FT;
                 typedef typename BGT::FT FT;
-
+                 
+ 
+                //typedef typename Function_::Construct_initial_points Construct_initial_points;
                 //typedef class AABB_const_polyhedron_edge_primitive<BGT, Polyhedron_> AABB_primitive;
                 //typedef class AABB_traits<BGT,AABB_primitive>     AABB_traits;
                 //typedef class AABB_tree<AABB_traits>              AABB_tree;
@@ -80,21 +80,61 @@ namespace CGAL {
 
                     return subdmap->index(bits);
                 }
-
-                void detect_features(FT angle_in_degree = FT(60))  /// NO function
+                template< typename OutputIterator>
+                OutputIterator construct_initial_points(OutputIterator pts, const int nb_points) const
                 {
-                    int nb_func = function_vector_.size(); 
+                   for ( Function_ function : function_vector_ ) 
+                   {
+                       function.construct_initial_points_object()(std::back_inserter(pts),nb_points);
+                                                
+                   }
+                   return pts;
+                }
+                //return_type index_from_surface_patch_index
 
-                    for ( int i = 0 ; i < nb_func ; ++i ) 
-                    {    
-                       function_vector_[i]->detect_features(angle_in_degree) ;
-                    } 
-         
-                }   
-               
-             
+                /*struct Construct_intersection
+                {
+                       Construct_intersection(const Polyhedral_vector_to_labeled_function_wrapper& domain) : r_domain_(domain) {std::cout<< "!he" << std::endl;}
+
+                    private:
+                        const Polyhedral_vector_to_labeled_function_wrapper& r_domain_;
+                }; 
+
+                Construct_intersection construct_intersection_object() const
+                {
+                    std::cout<< "!he" << std::endl;
+                    return Construct_intersection(*this);
+                }
 
 
+
+                return_type operator()(const Segment_3& s) const
+                { 
+                   return this->operator()(s.source(), s.target());
+                }
+                return_type operator()(const Point_3& p1 , const Point_3& p2 ) 
+                {
+                    
+                    // points do not match value 
+                    int nb_func = function_vector_.size();
+                    Bmask bits1(nb_func);
+                    Bmask bits2(nb_func);
+                    for ( int i = 0 ; i < nb_func ; ++i )
+                    {
+                        bits1[i] =(bool)function_vector_[i]->is_in_domain_object()(p1);
+                        bits2[i] =(bool)function_vector_[i]->is_in_domain_object()(p2);
+                    }
+                    //std::cout << bits << std::endl;
+
+                    std::cout<< " get" << std::endl;
+                    //return subdmap->index(bits);
+                    return static_cast<return_type>(bits1^bits2);
+                }
+                return_type surface_patch_index(const Index& index) 
+                {
+                    std::cout<< "!he" << std::endl;
+                    return static_cast<return_type>(1);
+                }*/
 
                 Bbox_3 bbox() const
                 {
@@ -107,7 +147,7 @@ namespace CGAL {
                     }
                     return sum_bbox;
                 }
-
+     
 
 
             private:
@@ -115,4 +155,7 @@ namespace CGAL {
                 AbstractMap* subdmap;
         };
 }
+
+
+
 #endif

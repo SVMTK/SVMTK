@@ -1,10 +1,9 @@
 # This setup is borrowed from https://github.com/pybind/cmake_example
 
 import os
+import re
 import sys
 import subprocess
-
-from pathlib import Path
 
 from setuptools import (
     setup,
@@ -23,8 +22,8 @@ MINOR = 1
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=""):
         Extension.__init__(self, name, sources=[])
-        self.sourcedir = Path(sourcedir).resolve()
-        # self.sourcedir = os.path.abspath(sourcedir)
+        self.sourcedir = os.path.abspath(sourcedir)
+
 
 class CMakeBuild(build_ext):
     def run(self):
@@ -32,16 +31,16 @@ class CMakeBuild(build_ext):
             out = subprocess.check_output(["cmake", "--version"])
         except OSError:
             names = ", ".join(e.name for e in self.extensions)
-            msg = "CMake must be installed to build the following extensions: {names}".format(names=names)
+            msg = "CMake must be installed to build the following extensions: {}".format(names)
             raise RuntimeError(msg)
 
         for ext in self.extensions:
             self.build_extension(ext)
 
     def build_extension(self, ext):
-        extdir = Path(self.get_ext_fullpath(ext.name)).parent.resolve()
+        extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         cmake_args = [
-            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}".format(extdir=extdir),
+            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(extdir),
             "-DPYTHON_EXECUTABLE={}".format(sys.executable)
         ]
 
@@ -53,30 +52,24 @@ class CMakeBuild(build_ext):
             self.distribution.get_version()
         )
 
-        self.build_temp = Path(self.build_temp)
-        self.build_temp.mkdir(exist_ok=True)
-
+        if not os.path.exists(self.build_temp):
+            os.makedirs(self.build_temp)
         subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(["cmake", "--build", "."] + build_args, cwd=self.build_temp)
 
 
 setup(
-    name="svmtk",
+    name="SVMTK",
     version="{0}.{1}".format(MAJOR, MINOR),
     description="A collection of tools for volume and surface meshing",
     long_description="",
-    ext_modules=[CMakeExtension("svmtk")],
+    ext_modules=[CMakeExtension("brainmesh")],
     cmdclass=dict(build_ext=CMakeBuild),
-    packages=["svmtk_utils"],
-    package_dir={"": "src"},
-    install_requires=[
-        "numpy",
-        "meshio",
-        "lxml"      # for meshio
-    ],
+    packages=["source"],
+    # package_dir={"": "source"},
     entry_points={
         "console_scripts": [
-            "svmtk-convert = svmtk_utils.convert:main",
+            "brainmesh-convert = source.convert:main",
         ]
     },
     zip_safe=False
