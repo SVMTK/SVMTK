@@ -37,15 +37,16 @@ namespace CGAL {
                 // Polyhedron_mesh_domain_with features  operator() 
                 // similar to Hybrid mesh domain
                 // SubID generator 
-               
-
+         
                 typedef typename BGT::Point_3       Point_3;
                 typedef typename BGT::Segment_3 Segment_3;
                 typedef typename Function_::Index Index;
                 typedef boost::dynamic_bitset<>   Bmask;
                 //typedef typename Function_::FT    FT;
                 typedef typename BGT::FT FT;
-
+                 
+ 
+                //typedef typename Function_::Construct_initial_points Construct_initial_points;
                 //typedef class AABB_const_polyhedron_edge_primitive<BGT, Polyhedron_> AABB_primitive;
                 //typedef class AABB_traits<BGT,AABB_primitive>     AABB_traits;
                 //typedef class AABB_tree<AABB_traits>              AABB_tree;
@@ -79,7 +80,16 @@ namespace CGAL {
 
                     return subdmap->index(bits);
                 }
-
+                template< typename OutputIterator>
+                OutputIterator construct_initial_points(OutputIterator pts, const int nb_points) const
+                {
+                   for ( Function_ function : function_vector_ ) 
+                   {
+                       function.construct_initial_points_object()(std::back_inserter(pts),nb_points);
+                                                
+                   }
+                   return pts;
+                }
                 //return_type index_from_surface_patch_index
 
                 /*struct Construct_intersection
@@ -137,7 +147,7 @@ namespace CGAL {
                     }
                     return sum_bbox;
                 }
-
+     
 
 
             private:
@@ -145,4 +155,7 @@ namespace CGAL {
                 AbstractMap* subdmap;
         };
 }
+
+
+
 #endif

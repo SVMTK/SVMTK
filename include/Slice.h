@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2019 Lars Magnus Valnes and 
+// Copyright (C) 2018-2019 Lars Magnus Valnes
 //
 // This file is part of Surface Volume Meshing Toolkit (SVM-TK).
 //

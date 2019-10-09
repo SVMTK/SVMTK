@@ -121,25 +121,27 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("exude", &Domain::exude)
         .def("perturb", &Domain::perturb)
 
-        .def("add_sharp_border_edges", (void (Domain::*)(Surface&)) &Domain::add_sharp_border_edges)
+        .def("add_sharp_border_edges", (void (Domain::*)(Surface&,double)) &Domain::add_sharp_border_edges)
         .def("reset_borders", &Domain::reset_borders)
         .def("remove_subdomain", (void (Domain::*)(std::vector<int>)) &Domain::remove_subdomain)
         .def("remove_subdomain", (void (Domain::*)(int)) &Domain::remove_subdomain)
-
+        .def("add_corners",  &Domain::add_corners) 
         .def("number_of_cells", &Domain::number_of_cells)
         // add, remove, set 
         .def("set_borders", &Domain::set_borders)
         .def("set_features", (void(Domain::*)()) &Domain::set_features) 
+        .def("set_features", (void (Domain::*)(Surface&)) &Domain::set_features) 
         .def("add_feature", &Domain::add_feature) 
         .def("save", &Domain::save); 
+       
 
 
 
 
-
-       m.def("separate_surfaces",  py::overload_cast<Surface&,Surface&,Surface&>( &surface_overlapp<Surface> ));
+       m.def("separate_surfaces",  (void (*)(Surface&,Surface&,Surface&)) &surface_overlapp<Surface> );
+       m.def("separate_surfaces",  (void (*)(Surface&,Surface&)) &surface_overlapp<Surface> );
        m.def("morphological_surface_union", &morphological_surface_union<Surface>); 
-       m.def("separate_surfaces",  py::overload_cast<Surface&,Surface&>( &surface_overlapp<Surface>) );
+
 
 
 }

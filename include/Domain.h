@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2019 Lars Magnus Valnes and 
+// Copyright (C) 2018-2019 Lars Magnus Valnes 
 //
 // This file is part of Surface Volume Meshing Toolkit (SVM-TK).
 //
@@ -25,7 +25,7 @@
 #include "Surface.h" 
 #include "SubdomainMap.h" 
 #include "Polyhedral_vector_to_labeled_function_wrapper.h"
-
+//#include "Labeled_mesh_domain_with_features.h"
 // STD 
 #include <list>
 #include <fstream>
@@ -95,6 +95,9 @@ struct Minimum_sphere
                  std::vector<Sphere> S;
 };
 
+
+
+
 class Surface;
 
 class Domain {
@@ -112,14 +115,14 @@ class Domain {
         typedef CGAL::Labeled_mesh_domain_3<Kernel> Labeled_Mesh_Domain;
 
         // Implemented for experimental feature, working with bifurcation exmaple 
-        // Need to perform test to find number of 1-D features before failure.  
+        // Need to perform test to find number of 1-D features before failure. 
         typedef CGAL::Mesh_domain_with_polyline_features_3<Labeled_Mesh_Domain> Mesh_domain; 
 
-       
+ 
         typedef CGAL::Mesh_triangulation_3<Mesh_domain>::type Tr;
 
-        typedef Mesh_domain::Curve_segment_index Curve_index;
-        typedef Mesh_domain::Corner_index Corner_index;
+        typedef int Curve_index;
+        typedef int Corner_index;
 
         // experimental adjustsments to class ; Corner_index and Curve_index
         typedef CGAL::Mesh_complex_3_in_triangulation_3< Tr, Corner_index, Curve_index> C3t3;
@@ -191,13 +194,18 @@ class Domain {
 
         void add_borders(Polyline_3 polyline) { borders.push_back(polyline);} 
       
-        void add_sharp_border_edges(Polyhedron& polyhedron);
+        void add_sharp_border_edges(Polyhedron& polyhedron, double threshold);
 
-        void add_sharp_border_edges(Surface& surface); 
+        void add_sharp_border_edges(Surface& surface, double threshold=60); 
  
+        void add_corners(Surface& surface){  Polyline_3 points  = surface.get_corners(); domain_ptr->add_corners(points.begin(),points.end() );}
+
         void reset_borders(){borders.clear();} // rename
 
         void remove_subdomain(std::vector<int> tags);
+
+        void set_features(Surface& surface){ set_features(surface.get_features() );} 
+
         void set_features(Polylines& polylines){ set_features( polylines.begin() , polylines.end() );} 
 
         template< typename InputIterator> // Wrapping 
@@ -213,8 +221,6 @@ class Domain {
         void exude( double time_limit = 0, double sliver_bound = 0 ){ CGAL::exude_mesh_3(c3t3, sliver_bound=sliver_bound, time_limit=time_limit);} 
         void perturb( double time_limit=0, double sliver_bound=0){CGAL::perturb_mesh_3 ( c3t3, *domain_ptr.get(), time_limit=time_limit, sliver_bound=sliver_bound) ;} 
 
-
-       
 
         void remove_subdomain(int tag);              // tags 
         
@@ -309,7 +315,7 @@ Domain::Domain( std::vector<Surface> surfaces )
     }
     Function_wrapper wrapper(v);
     
-    domain_ptr = std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper,wrapper.bbox()));
+    domain_ptr = std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox()));
     default_parameters();
 }
 
@@ -350,7 +356,7 @@ Domain::Domain(Surface &surface)
 
 
 
-    domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper,wrapper.bbox())); 
+    domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox())); 
     default_parameters();
 
 }
@@ -445,6 +451,28 @@ void Domain::create_mesh(const double mesh_resolution )
 
 void Domain::save(std::string OutPath)
 {
+
+    /*std::cout << c3t3.number_of_corners() << std::endl;
+    Curve_index CI(1);
+    for (auto pol=borders.begin(); pol!=borders.end(); ++pol)
+    {
+        for ( auto pit=pol->begin() ; pit!=pol->end(); ++pit)
+        {
+             std::cout << *pit << std::endl;
+             break;
+        }
+    }
+    std::cout << "CORNERS" << std::endl;
+    Corner_index coi(1);
+    for (auto vit =c3t3.vertices_in_complex_begin(coi); vit!=c3t3.vertices_in_complex_end();++vit)
+    {
+
+        std::cout << vit->point() << std::endl;
+
+    }
+    */
+
+
     // Tesitng still on-going
     // TODO: save internal boundaries as zero 
     std::ofstream  medit_file(OutPath);
@@ -604,14 +632,14 @@ void Domain::remove_subdomain(std::vector<int> tags) //rename
 
 
 //----------------------   Have overloaded functions or just one????????????????
-void Domain::add_sharp_border_edges(Polyhedron& polyhedron) // no need to expose ?  
+void Domain::add_sharp_border_edges(Polyhedron& polyhedron, double threshold) // no need to expose ?  
 { 
 
-  Polylines polylinput; 
-  typedef boost::property_map<Polyhedron, CGAL::edge_is_feature_t>::type EIF_map;
-  EIF_map eif = get(CGAL::edge_is_feature, polyhedron);
+   Polylines polylinput; 
+   typedef boost::property_map<Polyhedron, CGAL::edge_is_feature_t>::type EIF_map;
+   EIF_map eif = get(CGAL::edge_is_feature, polyhedron);
 
-  CGAL::Polygon_mesh_processing::detect_sharp_edges(polyhedron,60, eif); // -> threshold ?? 
+   CGAL::Polygon_mesh_processing::detect_sharp_edges(polyhedron,threshold, eif); 
    for( Polyhedron::Edge_iterator he = polyhedron.edges_begin(); he != polyhedron.edges_end() ; ++he)
    {
       if(he->is_feature_edge() ) 
@@ -622,16 +650,38 @@ void Domain::add_sharp_border_edges(Polyhedron& polyhedron) // no need to expose
          polylinput.push_back(polyline);
       }    
   }   
+  // need to protect internal points of sharp surface
+
   polylines_to_protect(this->borders, polylinput.begin(),  polylinput.end() ); // borders 
 }
 
+/*
+void Domain::mark_borders()
+{
+    // Find facets 
+    for ( auto bit = borders.begin(); bit!=borders.end(); ++bit)
+    {
+        for (auto pit = bit->begin(); pit!=bit->end(); ++pit)
+        { 
+     
 
 
-void Domain::add_sharp_border_edges(Surface& surface) 
+
+        }
+    }
+
+
+
+
+}*/
+
+
+
+void Domain::add_sharp_border_edges(Surface& surface, double threshold) 
 { 
   Polyhedron polyhedron;
   surface.get_polyhedron(polyhedron);
-  add_sharp_border_edges(polyhedron);
+  add_sharp_border_edges(polyhedron, threshold);
 
 }
 
