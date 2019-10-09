@@ -17,10 +17,7 @@ if __name__ == "__main__":
                                                      # The slice object contains X polylines which indicates the cutting of the surface.
 
    slice_.simplify(0.9)                              # simplifies all polylines, input is the stop criteria that (current count / initial count ) <= input
-                                                     # i.e 0.5 removes half of polylines 
-
-   slice_.mark_holes(10)                             # Marks all polylines inside the longest polyline as hole 
-                                                     # also removes polylines outside and spolylines with less than 10 points.
+                                                     # i.e 0.5 removes half of polylines
 
 
    slice_.create_mesh(32)     

@@ -444,8 +444,7 @@ class Surface
     vertex_vector get_close_points(Surface &other);
 
 
-    // -------Point operations ------
-    void reconstruct_surface(const double sm_angle,const double sm_radius,const double sm_distance) ;
+    // -------Point operations -----
     void reconstruct( double sm_angle = 20.0,
                           double sm_radius = 100.0,
                           double sm_distance = 0.25,

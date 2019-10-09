@@ -24,9 +24,7 @@ if __name__ == "__main__":
    #boundary.save("bundary.stl")
 
 
-   boundary = svm.Surface("../data/boundary.stl")
-
-
+   boundary = svm.Surface("../Data/boundary.stl")
 
    zmin, zmax = boundary.span(2) # should be in c++ code
    print(zmin,zmax)
@@ -35,8 +33,7 @@ if __name__ == "__main__":
    for i in z[2:-2]:
      rhslice = boundary.slice(0,0,1,-i)
      rhslice.simplify(0.8)
-     rhslice.mark_holes(0)
-     rhslice.mesh(32.0)
+     rhslice.create_mesh(32.0)
      rhslice.save("axial-slice-{}.off".format(str(i) ) )
 
        
