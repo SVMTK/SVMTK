@@ -36,3 +36,8 @@ Download and install CGAL 4.13 with
 or download the source code manually and
 
 `cd CGAL-4.13 && cmake -DWITH_Eigen3:BOOL=ON . && make``
+
+
+## About
+
+SVMTK is written by Lars Magnus Valnes and Jakob Schreiner
