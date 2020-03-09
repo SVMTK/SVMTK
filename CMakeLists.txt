@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(BrainMesh)
 set(CMAKE_BUILD_TYPE Release)
+
 # CGAL and its components
 find_package(CGAL 4.13 REQUIRED)
 include(${CGAL_USE_FILE})
@@ -24,9 +25,7 @@ add_subdirectory(external/pybind11)
 include_directories(${source_dir}/include)
 # set(PYBIND11_PYTHON_VERSION 3.7)
 
-set( CMAKE_CXX_FLAGS "-fPIC -shared ${CMAKE_CXX_FLAGS} -std=c++17 -frounding-math -lgmpxx -lgmp ")
-
-
+set(CMAKE_CXX_FLAGS "-fPIC -shared ${CMAKE_CXX_FLAGS} -std=c++17 -frounding-math -lgmpxx -lgmp ")
 
 include_directories(include)
 pybind11_add_module(SVMTK python/src/SVMTK.cpp)

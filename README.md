@@ -7,8 +7,12 @@
 
 ## Pybind11
 
-If you did not clone this project using `git clone --recursive`, pull pybind11 by
-`git submodule update --recursive`
+Install pybind and place it in `external`
+
+```
+mkdir external && cd external
+git clone https://github.com/pybind/pybind11.git --branch=v2.4.3
+```
 
 ## Installation
 
