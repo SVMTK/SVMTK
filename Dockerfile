@@ -14,7 +14,8 @@ RUN apt update && apt install -y \
     xz-utils \
     zlib1g-dev \
     git \
-    python3-pip
+    python3-pip \
+    vim
 
 # Istall and compile CGAL
 RUN curl -sL https://github.com/CGAL/cgal/releases/download/releases/CGAL-4.13/CGAL-4.13.tar.xz | tar xpvfJ -
