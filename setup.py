@@ -63,13 +63,13 @@ setup(
     version="{0}.{1}".format(MAJOR, MINOR),
     description="A collection of tools for volume and surface meshing",
     long_description="",
-    ext_modules=[CMakeExtension("brainmesh")],
+    ext_modules=[CMakeExtension("SVMTK")],
     cmdclass=dict(build_ext=CMakeBuild),
     packages=["source"],
     # package_dir={"": "source"},
     entry_points={
         "console_scripts": [
-            "brainmesh-convert = source.convert:main",
+            "SVMTK-convert = source.convert:main",
         ]
     },
     zip_safe=False

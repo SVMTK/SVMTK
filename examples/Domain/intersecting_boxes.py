@@ -9,7 +9,7 @@ if __name__ == "__main__":
    surf3 = svm.Surface() 
   
    surf4 = svm.Surface()
-   surf4.make_cube(-2,-2,-2,2,2,2)
+
 
    surf1.make_cube(-2,-2,-2,0,2,2) 
 
@@ -17,15 +17,18 @@ if __name__ == "__main__":
 
    surf3.make_cube(-1,-1,-1,1,1,1)
 
+   surf4.make_cube(-2,-2,-2,2,2,2)
+
    maker = svm.Domain([surf1,surf2,surf3])
 
-   maker.add_sharp_border_edges(surf4,90)
-   maker.add_sharp_border_edges(surf3,90)
+   maker.add_sharp_border_edges(surf1,70)
+   maker.add_sharp_border_edges(surf2,70)
+   maker.add_sharp_border_edges(surf3,70)
    maker.set_borders()
 
 
 
-   maker.create_mesh(64)
+   maker.create_mesh(14)
 
    maker.save("boxes.mesh")
 

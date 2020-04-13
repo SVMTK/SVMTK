@@ -34,6 +34,7 @@ class AbstractMap
         typedef boost::dynamic_bitset<> Bmask;
 
         virtual return_type index(const Bmask bits) = 0;
+        //virtual return_type surface_patch(const int a, const int b) = 0; TODO: Implement 
         virtual ~AbstractMap() {}
 };
 
@@ -51,6 +52,8 @@ class DefaultMap : virtual public AbstractMap
         {
            return static_cast<return_type>(bits.to_ulong());
         }
+
+
 };
 
 class SubdomainMap :virtual public AbstractMap
@@ -81,6 +84,7 @@ class SubdomainMap :virtual public AbstractMap
               std::cout << it->first << " " << it->second << " " << std::endl;
            }
         }
+      
 };
 
 #endif

@@ -70,6 +70,7 @@
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
 #include <CGAL/Polygon_mesh_processing/clip.h>
 #include <CGAL/Polygon_mesh_slicer.h>
+////
 
 // CGAL accelerated queries
 #include <CGAL/Search_traits_3.h>
@@ -102,6 +103,12 @@
 #include <CGAL/Polygon_mesh_processing/bbox.h>
 #include <CGAL/Kernel/global_functions.h>
 #include <sys/stat.h>
+#include <CGAL/Polygon_mesh_processing/smooth_shape.h>
+///NEW 
+#include <CGAL/Surface_mesh_shortest_path.h>
+#include <CGAL/AABB_tree.h>
+#include <CGAL/AABB_traits.h>
+#include <CGAL/AABB_face_graph_triangle_primitive.h>
 //--------------------------------------------
 //      UTILITY
 //--------------------------------------------
@@ -330,13 +337,14 @@ std::shared_ptr<Surface> morphological_surface_union( Surface& surf1 , Surface& 
 class Surface
 {
    public:
-    // Essential
+    // Essential TODO: CLEAN UP
     typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel; 
     typedef Kernel::Point_3 Point_3;
     typedef CGAL::Surface_mesh<Point_3> Mesh;
     typedef CGAL::Surface_mesh_default_triangulation_3 Tr;
     typedef CGAL::Side_of_triangle_mesh<Mesh,Kernel> Inside; // declear inside implementation ?
     typedef CGAL::Polyhedron_3<Kernel> Polyhedron;   
+    typedef CGAL::Vertex_around_target_circulator<Mesh> HV_const_circulator;
     //  Auxilliary
    
     typedef Kernel::FT FT;    
@@ -345,14 +353,19 @@ class Surface
     typedef boost::graph_traits<Mesh>::edge_descriptor        edge_descriptor;
     typedef boost::graph_traits<Mesh>::halfedge_descriptor    halfedge_descriptor;
     typedef boost::graph_traits<Mesh>::face_descriptor        face_descriptor;
-    typedef boost::graph_traits<Mesh>::vertex_descriptor      vertex_descriptor; //  vertex 
+    typedef boost::graph_traits<Mesh>::vertex_descriptor      vertex_descriptor; //  vertex    
     typedef boost::graph_traits<Mesh>::vertices_size_type                    size_type;
     typedef boost::property_map<Mesh,CGAL::vertex_point_t>::type             Vertex_point_pmap; 
+
+
+    typedef std::vector<Point_3> Polyline;
+    typedef std::vector< std::vector< Point_3> > Polylines;
     typedef std::vector<std::size_t>  Face;
+    typedef std::vector<Surface::Point_3>                   point_vector;
     typedef std::vector<vertex_descriptor>                  vertex_vector;       
     typedef std::vector<face_descriptor>                    face_vector; 
     typedef Mesh::Vertex_index Index;
-    typedef CGAL::Vertex_around_target_circulator<Mesh> HV_const_circulator;
+ 
 
     //typedef std::pair<Point_3, Vector_3> RPwn;
     
@@ -364,8 +377,7 @@ class Surface
     typedef Tree::Splitter                                                               Splitter;
     typedef K_neighbor_search::Distance                                                  Distance;
  
-    typedef std::vector<Point_3> Polyline;
-    typedef std::vector< std::vector< Point_3> > Polylines;
+   
   
     Surface(){} 
     Surface(Polyhedron &polyhedron); 
@@ -375,10 +387,13 @@ class Surface
     ~Surface(){}
 
     // ----CSG-------------------- overload with Point_3 ?? 
-    void make_cone_( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0, int number_of_segments=360) ;
+
+    //void make_cone( Point_3 p0, Point_3 p1, double r0 , double r1 ,int number_of_segments=360 ) {} 
+    void make_cone_(    double x0, double y0, double  z0,  double x1, double y1, double z1, double r0, int number_of_segments=360) ;
     void make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1,       double radius,  int number_of_segments=360) ;
     void make_cone(     double x0, double y0, double  z0,  double x1, double y1, double z1, double r0,double r1,  int number_of_segments=360) ; 
-    void make_cube(     double x0, double y0, double  z0,  double x1, double y1, double z1);
+    void make_cube(     double x0, double y0, double  z0,  double x1, double y1, double z1, int N=10);
+    void make_cube(     double x0, double y0, double  z0,  double x1, double y1, double z1, int Nx , int Ny, int Nz);
     void make_sphere(   double x0, double y0, double  z0,  double r0);
     //-----Boolean operations -----
     void surface_intersection( Surface& other);
@@ -400,7 +415,7 @@ class Surface
     int  fill_holes();                       
     bool triangulate_faces();                   // TODO: Proper test  
     void triangulate_hole();  
-    Polyline& get_corners(){return corners;} 
+    Polyline&  get_corners(){return corners;} 
     Polylines& get_features(){return features;} 
 
     void split_edges(double  target_edge_length);
@@ -415,6 +430,8 @@ class Surface
     void seperate_narrow_gaps();
     void clip(double x1,double x2, double x3 ,double x4, bool clip);
     std::map<vertex_descriptor,double> seperate_close_surfaces(Surface& other);
+
+    // std::shared_ptr<Slice> mesh_slice( Point_3 p, Vector_3 n) ;
     std::shared_ptr<Slice> mesh_slice(double x1,double x2, double x3 ,double x4) ;
  
     //  TODO:rename to 
@@ -422,7 +439,7 @@ class Surface
     // TODO: rename, prupose cluster vertices with same normal as input vertices  
     void surface_eval( vertex_vector &input);
     
-
+    void smooth_shape(double time,int nb_iterations);
 
     void adjusting_boundary_region(std::map<vertex_descriptor,double>::iterator begin, std::map<vertex_descriptor,double>::iterator end );
 
@@ -441,15 +458,21 @@ class Surface
     vertex_vector inside(Surface &other, Surface::vertex_vector &vertices);
     vertex_vector outside(Surface &other, Surface::vertex_vector &vertices);
     vertex_vector get_vertices();
+    point_vector  get_points(); 
     vertex_vector get_close_points(Surface &other);
 
-
+    std::vector<Point_3>  shortest_surface_path(Point_3 source, Point_3 target);
     // -------Point operations -----
     void reconstruct( double sm_angle = 20.0,
                           double sm_radius = 100.0,
                           double sm_distance = 0.25,
                           double approximation_ratio = 0.02,
                           double average_spacing_ratio = 5.0);
+
+
+    std::vector<std::vector<Point_3>> mean_curvature_flow();
+   
+
 
 
     void strictly_inside(Surface& other);
@@ -471,6 +494,33 @@ class Surface
 
 };
 
+std::shared_ptr<Surface> Slice::export_3D() 
+{
+  // FIXME
+  typedef std::vector<std::size_t> Face ;
+  typedef CDT::Vertex_handle Vertex_handle;
+
+  std::vector<Point_3> points ;
+  std::vector<Face> faces;
+  std::map<Vertex_handle, int> index_of_vertex;
+  int i = 0;
+  for(CDT::Point_iterator it = cdt.points_begin() ;  it != cdt.points_end(); ++it, ++i)
+  {
+       points.push_back(plane.to_3d(*it));  
+       index_of_vertex[it.base()] = i;
+  }
+  
+  for(CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
+  {
+       Face temp;
+       temp.push_back( index_of_vertex[fit->vertex(0)] ) ;
+       temp.push_back( index_of_vertex[fit->vertex(1)] ) ;
+       temp.push_back( index_of_vertex[fit->vertex(2)] ) ;
+       faces.push_back(temp);
+  }
+   std::shared_ptr<Surface> surf(new  Surface(points, faces)) ;
+   return surf;  
+}
 
 void Surface::strictly_inside(Surface& other)
 {  
@@ -491,7 +541,7 @@ void Surface::strictly_inside(Surface& other)
             this->adjusting_boundary_region(map1.begin() ,map1.end());
             //this->smooth_taubin_region(points.begin(), points.end(),2);   
             points = other.outside(*this,points);
-            std::cout << points.size() << std::endl;
+
             if (iter++>=300)
             {
               break;
@@ -541,9 +591,6 @@ void Surface::cylindric_extension(Point_3& p1, double& radius, double length, bo
    CGAL::Bounded_side res = inside_poly2(p1);
    assert( res == CGAL::ON_UNBOUNDED_SIDE );
 
-
-
-
    vertex_vector vertices = closest_points(p1,1);
    vertices = closest_points(mesh.point(vertices[0]),8); 
 
@@ -590,7 +637,7 @@ void Surface::cylindric_extension(Point_3& p1, double& radius, double length, bo
    vertex_vector vec1  = cylinder.closest_points(p3,1);
 
    cylinder.surface_eval(vec1);
-   std::cout << vec1.size() << std::endl;
+
    for ( auto vit=vec1.begin(); vit!=vec1.end(); ++vit)
    {
        corners.push_back(mesh.point(*vit));
@@ -607,7 +654,6 @@ std::map<Surface::vertex_descriptor, double> Surface::shortest_edge_map(Surface:
    std::map< vertex_descriptor, double> results;
    for (vertex_descriptor v_it : vector)
    {
-
         Point_3 current = mesh.point(v_it);
         HV_const_circulator vbegin(mesh.halfedge(v_it),mesh), done(vbegin);
 
@@ -759,16 +805,12 @@ Surface::Surface(Polyhedron &polyhedron) {
 
 Surface::Surface(const std::string  filename1, const std::string  filename2)
 { 
-    // Lazy  
+    // implemented for simpler test code   
     Mesh mesh1,mesh2; 
     load_surface(filename1,mesh1);
     load_surface(filename2,mesh2);
     CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh1, mesh2,mesh);
 }
-
-
-
-
 
 Surface::Surface(const std::string filename)
 {
@@ -782,8 +824,7 @@ Surface::Surface(std::vector<Point_3>& points, std::vector<Face>& faces)
 
   if (CGAL::is_closed(mesh) && (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)))
   {
-   std::cout<< "reverse_face_orientation"<< std::endl;
-
+    std::cout<< "reverse_face_orientation"<< std::endl;
     CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
   }
 
@@ -796,12 +837,11 @@ void Surface::surface_intersection( Surface& other)
 void Surface::surface_difference( Surface& other)
 {
      Mesh out_mesh;
-     CGAL::Polygon_mesh_processing::corefine_and_compute_difference(mesh , other.get_mesh(),out_mesh);
-     mesh = out_mesh;
-
+     CGAL::Polygon_mesh_processing::corefine_and_compute_difference(mesh , other.get_mesh(),mesh);
+ 
 }
 
-void Surface::surface_union( Surface& other)
+void Surface::surface_union(Surface& other)
 {
      CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh, other.get_mesh(), mesh);
 }
@@ -883,6 +923,7 @@ int Surface::collapse_edges(const double stop_ratio) {
 std::shared_ptr<Slice> Surface::mesh_slice(double x1,double x2, double x3 ,double x4)  
 {
      // 2D 
+     assert( (x1!=0) or (x2!=0) or (x3!=0) ) ;
      typedef Kernel::Point_2 Point_2;
      typedef std::vector<Point_2> Polyline_2;
      typedef std::vector<Point_3>  Polyline_3; 
@@ -893,14 +934,17 @@ std::shared_ptr<Slice> Surface::mesh_slice(double x1,double x2, double x3 ,doubl
      //-------------------------------------------------------------
      CGAL::Polygon_mesh_slicer<Mesh, Kernel> slicer(mesh); 
      Polylines polylines_3D;
-     Kernel::Plane_3 plane =Kernel::Plane_3(x1, x2, x3, x4);
-     slicer(Kernel::Plane_3(x1, x2, x3, x4), std::back_inserter(polylines_3D)); 
+     Kernel::Plane_3 plane = Kernel::Plane_3(x1, x2, x3, x4);
+
+     slicer(Kernel::Plane_3(x1, x2, x3, x4), std::back_inserter(polylines_3D));
+
+     
      //-------------------------------------------------------------
      // Basis in slice 
      //-------------------------------------------------------------
-     Vector_3 n =  plane.orthogonal_vector();  
-     Vector_3  e1 = plane.base1();
-     Vector_3  e2 = plane.base2();
+     //Vector_3 n =  plane.orthogonal_vector();  
+     //Vector_3  e1 = plane.base1();
+     //Vector_3  e2 = plane.base2();
      //-------------------------------------------------------------
      // Polylines to 2D 
      //-------------------------------------------------------------
@@ -912,14 +956,21 @@ std::shared_ptr<Slice> Surface::mesh_slice(double x1,double x2, double x3 ,doubl
          for ( auto pit = pol->begin(); pit != pol->end(); ++pit)
          {
                polyline_2.push_back(plane.to_2d(*pit));
+
          }
-         polylines_2.push_back( polyline_2);
+         polylines_2.push_back(polyline_2);
      }
-     
+
+
      std::shared_ptr<Slice> slice(new Slice(polylines_2)); 
+     //slice->add_constraints(polylines_2);
      slice->set_plane(plane); // export to 3D
+
      return slice;
 }     
+
+
+
 
 
 void Surface::isotropic_remeshing(double target_edge_length, unsigned int nb_iter, bool protect_border)
@@ -992,7 +1043,18 @@ bool Surface::triangulate_faces()
     return true;
 }
 
+std::vector<Surface::Point_3>  Surface::get_points() 
+{
+   point_vector result;
+   //BOOST_FOREACH(vertex_descriptor v_it, vertices(mesh)
+   for ( vertex_descriptor v_it : mesh.vertices())
+   {
+        result.push_back(mesh.point(v_it) );
+   }
+   return result;
 
+
+} 
 
 Surface::vertex_vector Surface::get_vertices()
 {
@@ -1052,154 +1114,170 @@ void Surface::smooth_laplacian(const double c, int iter)
         Surface::smooth_laplacian_region(vb, ve,c);
     }
 }
-
-void Surface::make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1) // TODO :allow tilted cubes  vector  
+void Surface::smooth_shape(double time,int nb_iterations)
 {
-     // implemented directly because of inexact kernel
+CGAL::Polygon_mesh_processing::smooth_shape(mesh, time, CGAL::Polygon_mesh_processing::parameters::number_of_iterations(nb_iterations));
+}
+
+std::vector<std::vector<Surface::Point_3>> Surface::mean_curvature_flow() 
+{
+    typedef CGAL::Mean_curvature_flow_skeletonization<Surface::Mesh> Skeletonization;
+    typedef Skeletonization::Skeleton                             Skeleton;
+    typedef Skeleton::vertex_descriptor                           Skeleton_vertex;
+    typedef Skeleton::edge_descriptor                             Skeleton_edge;
+
+
+    struct Construct_polylines
+    {   
+       const Skeleton& skeleton;
+       std::vector<Surface::Point_3> polyline_3;
+       std::vector<std::vector<Surface::Point_3>> polylines_3;
+ 
+       Construct_polylines(const Skeleton& skeleton): skeleton(skeleton){}
+       void start_new_polyline()
+       {
+           polyline_3.clear() ;
+       } 
+       void add_node(Skeleton_vertex v)
+       {
+           polyline_3.push_back(skeleton[v].point);
+       }
+       void end_polyline()
+       {
+          polylines_3.push_back(polyline_3);                     
+
+       }
+       std::vector<std::vector<Point_3>>& get_polylines()
+       {
+           return polylines_3;
+       } 
+
+        
+    };
+
+  
+    std::vector<std::vector<Surface::Point_3>> polylines_3;
+    Skeleton skeleton;
+    CGAL::extract_mean_curvature_flow_skeleton(mesh, skeleton);
+    Construct_polylines Visitor(skeleton);
+    CGAL::split_graph_into_polylines(skeleton,Visitor);
+    return Visitor.get_polylines();
+
+}
+
+// TODO : test 
+std::vector<Surface::Point_3>  Surface::shortest_surface_path(Point_3 source, Point_3 target) 
+{ 
+      std::vector<Surface::Point_3> points;
+      // TODO : combine with nearest point projection onto surface
+      typedef CGAL::Surface_mesh_shortest_path_traits<Kernel, Mesh> Traits;
+      typedef CGAL::Surface_mesh_shortest_path<Traits> Surface_mesh_shortest_path;
+      typedef Surface_mesh_shortest_path::Face_location Face_location;
+      typedef CGAL::AABB_face_graph_triangle_primitive<Mesh> Primitive;
+      typedef CGAL::AABB_traits<Kernel, Primitive> AABB_Traits;
+      typedef CGAL::AABB_tree<AABB_Traits> Tree;
+
+     
+      Tree tree(faces(mesh).first, faces(mesh).second, mesh); 
+      Surface_mesh_shortest_path shortest_paths(mesh);
+      
+
+      Face_location source_location = shortest_paths.locate(source,tree);
+      Face_location target_location = shortest_paths.locate(target,tree);
+
+
+      shortest_paths.add_source_point(source_location);
+
+
+      shortest_paths.shortest_path_points_to_source_points(target_location.first,target_location.second , std::back_inserter(points));
+
+
+      return points ;
+} 
+void Surface::make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1, int N ){
+              make_cube( x0,y0,z0,x1,y1,z1, N , N , N );
+}
+
+void Surface::make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1, int Nx , int Ny , int Nz) // TODO :allow tilted cubes  vector  
+{
+     //  ADD mesh resolution error 
      assert(x0!=x1);
      assert(y0!=y1);
      assert(z0!=z1);
 
-     double t1 =0.5*(x1+x0); 
-     double t2 =0.5*(y1+y0);
-     double t3 =0.5*(z1+z0);
 
-     vertex_descriptor v0 = mesh.add_vertex(Point_3(x0,y0,z0));
-     vertex_descriptor v1 = mesh.add_vertex(Point_3(t1,y0,z0));
-     vertex_descriptor v2 = mesh.add_vertex(Point_3(x1,y0,z0));
-     vertex_descriptor v3 = mesh.add_vertex(Point_3(x0,y0,t3));
-     vertex_descriptor v4 = mesh.add_vertex(Point_3(t1,y0,t3));
-     vertex_descriptor v5 = mesh.add_vertex(Point_3(x1,y0,t3));
-     vertex_descriptor v6 = mesh.add_vertex(Point_3(x0,y0,z1));
-     vertex_descriptor v7 = mesh.add_vertex(Point_3(t1,y0,z1));
-     vertex_descriptor v8 = mesh.add_vertex(Point_3(x1,y0,z1));
-
-     vertex_descriptor v9  = mesh.add_vertex(Point_3(x1,t2,z0));
-     vertex_descriptor v10 = mesh.add_vertex(Point_3(x1,y1,z0));
-     vertex_descriptor v11 = mesh.add_vertex(Point_3(x1,t2,t3));
-     vertex_descriptor v12 = mesh.add_vertex(Point_3(x1,y1,t3));
-     vertex_descriptor v13 = mesh.add_vertex(Point_3(x1,t2,z1));
-     vertex_descriptor v14 = mesh.add_vertex(Point_3(x1,y1,z1));
-
-     vertex_descriptor v15 = mesh.add_vertex(Point_3(t1,y1,z0));
-     vertex_descriptor v16 = mesh.add_vertex(Point_3(x0,y1,z0));
-     vertex_descriptor v17 = mesh.add_vertex(Point_3(t1,y1,t3));
-     vertex_descriptor v18 = mesh.add_vertex(Point_3(x0,y1,t3));
-     vertex_descriptor v19 = mesh.add_vertex(Point_3(t1,y1,z1));
-     vertex_descriptor v20 = mesh.add_vertex(Point_3(x0,y1,z1));
-
-     vertex_descriptor v21 = mesh.add_vertex(Point_3(x0,t2,z0));
-     vertex_descriptor v22 = mesh.add_vertex(Point_3(x0,t2,t3));
-     vertex_descriptor v23 = mesh.add_vertex(Point_3(x0,t2,z1));
-    
-     vertex_descriptor v24 = mesh.add_vertex(Point_3(t1,t2,z0));
-     vertex_descriptor v25 = mesh.add_vertex(Point_3(t1,t2,z1));
-
-
-
-
-
-     face_vector s1;  // Side 1
-     s1.push_back(mesh.add_face(v1, v4, v0));
-     s1.push_back(mesh.add_face(v0, v4, v3));
-     s1.push_back(mesh.add_face(v3, v7, v6));
-     s1.push_back(mesh.add_face(v3, v4, v7));
-     s1.push_back(mesh.add_face(v7, v4, v8));
-     s1.push_back(mesh.add_face(v8, v4, v5));
-     s1.push_back(mesh.add_face(v5, v4, v1));
-     s1.push_back(mesh.add_face(v2, v5, v1));
-
-     face_vector s2;     // Side 2
-     s2.push_back(mesh.add_face(v2, v11, v5 ));
-     s2.push_back(mesh.add_face(v5, v11, v13));
-     s2.push_back(mesh.add_face(v5, v13, v8));
-     s2.push_back(mesh.add_face(v13,v11, v14));
-     s2.push_back(mesh.add_face(v14,v11, v12));
-     s2.push_back(mesh.add_face(v12,v11, v9));
-     s2.push_back(mesh.add_face(v10,v12, v9));
-     s2.push_back(mesh.add_face(v9,v11 , v2 ));
-
-     face_vector s3;        // Side 3 
-     s3.push_back(mesh.add_face(v10, v17, v12));
-     s3.push_back(mesh.add_face(v12, v17, v19));
-     s3.push_back(mesh.add_face(v12, v19, v14));
-     s3.push_back(mesh.add_face(v19, v17, v20));
-     s3.push_back(mesh.add_face(v20, v17, v18));
-     s3.push_back(mesh.add_face(v18, v17, v15));
-     s3.push_back(mesh.add_face(v16, v18, v15));
-     s3.push_back(mesh.add_face(v15, v17, v10));
-
-
-     face_vector s4;        // Side 4
-     s4.push_back(mesh.add_face(v0, v3, v21));
-     s4.push_back(mesh.add_face(v3, v22, v21));
-     s4.push_back(mesh.add_face(v21,v22, v16));
-     s4.push_back(mesh.add_face(v16,v22, v18));
-     s4.push_back(mesh.add_face(v18,v22, v23));
-     s4.push_back(mesh.add_face(v18,v23, v20));
-     s4.push_back(mesh.add_face(v6,v22, v3));
-     s4.push_back(mesh.add_face(v23, v22, v6));
-
-     face_vector s5;   // Side 5 
-     s5.push_back(mesh.add_face(v0, v24, v1));
-     s5.push_back(mesh.add_face(v21, v24, v0));
-     s5.push_back(mesh.add_face(v15, v21, v16));
-     s5.push_back(mesh.add_face(v15, v24, v21));
-     s5.push_back(mesh.add_face(v10, v24, v15));
-     s5.push_back(mesh.add_face(v9, v24, v10));
-     s5.push_back(mesh.add_face(v1, v24, v9));
-     s5.push_back(mesh.add_face(v1, v9, v2));
-
-     face_vector s6; // Side 6 
-     s6.push_back(mesh.add_face(v7, v25, v6));
-     s6.push_back(mesh.add_face(v6, v25, v23));
-     s6.push_back(mesh.add_face(v23, v25, v19));
-     s6.push_back(mesh.add_face(v20, v23, v19));
-     s6.push_back(mesh.add_face(v19, v25, v14));
-     s6.push_back(mesh.add_face(v14, v25, v13));
-     s6.push_back(mesh.add_face(v13, v25, v7));
-     s6.push_back(mesh.add_face(v13, v7, v8));
+     double dx =(x1-x0);  
+     double dy =(y1-y0);
+     double dz =(z1-z0);
+ 
+     
 
      
-/*     double edge_length = std::min((x1-x0),std::min((y1-y0),(z1-z0)))/10.0; 
-     std::cout << edge_length << std::endl;
+     int map[Nx+1][Ny+1][Nz+1]; 
+     int index =0;
+     for ( int i = 0 ; i< Nx+1 ; ++i)
+     {
+         for (int j=0 ; j < Ny+1 ; ++j )
+         { 
+              for (int k=0 ; k < Nz+1 ; ++k )
+              {
+                     mesh.add_vertex(
+                     Point_3(x0+ static_cast<double>(i)*dx/static_cast<double>(Nx),
+                             y0+ static_cast<double>(j)*dy/static_cast<double>(Ny),
+                             z0+ static_cast<double>(k)*dz/static_cast<double>(Nz) ) ) ;
+                     map[i][j][k] = index++;         
+              }
+         }    
+     }
 
 
-     CGAL::Polygon_mesh_processing::isotropic_remeshing(s1,
-                              edge_length,
-                              mesh,
-                              CGAL::Polygon_mesh_processing::parameters::number_of_iterations(5)
-                              .protect_constraints(true));
-    CGAL::Polygon_mesh_processing::isotropic_remeshing(s2,
-                              edge_length,
-                              mesh,
-                              CGAL::Polygon_mesh_processing::parameters::number_of_iterations(5)
-                              .protect_constraints(true));
-    CGAL::Polygon_mesh_processing::isotropic_remeshing(s3,
-                              edge_length,
-                              mesh,
-                              CGAL::Polygon_mesh_processing::parameters::number_of_iterations(5)
-                              .protect_constraints(true));
-    CGAL::Polygon_mesh_processing::isotropic_remeshing(s4,
-                              edge_length,
-                              mesh,
-                              CGAL::Polygon_mesh_processing::parameters::number_of_iterations(5)
-                              .protect_constraints(true));
+     
+
+     face_vector s1;
+     face_vector s2;
+     // x0 and x1 
+     for (int j=0 ; j < Ny ; ++j )
+     { 
+              for (int k=0 ; k < Nz ; ++k )
+              {
+                   s1.push_back(mesh.add_face(Index(map[0][j][k])  , Index(map[0][j+1][k+1]),Index(map[0][j+1][k])   ));
+                   s1.push_back(mesh.add_face(Index(map[0][j][k]), Index(map[0][j][k+1]) , Index(map[0][j+1][k+1])      ));
+                   s2.push_back(mesh.add_face(Index(map[Nx][j][k]) , Index(map[Nx][j+1][k]) , Index(map[Nx][j][k+1])  ));
+                   s2.push_back(mesh.add_face(Index(map[Nx][j+1][k]), Index(map[Nx][j+1][k+1]) , Index(map[Nx][j][k+1])   ));
+              }
+     }
+
+     face_vector s3;
+     face_vector s4;
+     // y0 and y1 
+     for (int i=0 ; i < Nx ; ++i )
+     { 
+              for (int k=0 ; k < Nz ; ++k )
+              {
+                   s3.push_back(mesh.add_face(Index(map[i][0][k]) , Index(map[i+1][0][k])  ,Index( map[i][0][k+1])      ));
+                   s3.push_back(mesh.add_face(Index(map[i+1][0][k]),Index( map[i+1][0][k+1])  , Index(map[i][0][k+1])       ));
+                   s4.push_back(mesh.add_face(Index(map[i][Ny][k])  , Index(map[i][Ny][k+1]) , Index(map[i+1][Ny][k+1])   ));
+                   s4.push_back(mesh.add_face(Index(map[i+1][Ny][k]), Index(map[i][Ny][k]) , Index(map[i+1][Ny][k+1]) ));
+              } 
+     }
+
+     face_vector s5;
+     face_vector s6;
+     // z0 and z1 
+     for (int i=0 ; i < Nx ; ++i )
+     { 
+              for (int j=0 ; j < Ny ; ++j )
+              {
+                   s5.push_back(mesh.add_face(Index(map[i][j][0] ), Index(map[i][j+1][0]) , Index(map[i+1][j+1][0]   ) ));
+                   s5.push_back(mesh.add_face(Index(map[i][j][0] ), Index(map[i+1][j+1][0])  , Index(map[i+1][j][0] )  ));
+                   s6.push_back(mesh.add_face(Index(map[i][j][Nz]), Index(map[i+1][j][Nz]), Index(map[i+1][j+1][Nz]  ) ));
+                   s6.push_back(mesh.add_face(Index(map[i][j][Nz]), Index(map[i+1][j+1][Nz]), Index(map[i][j+1][Nz])   ));
+              } 
+     }
  
-    CGAL::Polygon_mesh_processing::isotropic_remeshing(s5,
-                              edge_length,
-                              mesh,
-                              CGAL::Polygon_mesh_processing::parameters::number_of_iterations(5)
-                              .protect_constraints(true));
-    CGAL::Polygon_mesh_processing:: isotropic_remeshing(s6,
-                              edge_length,
-                              mesh,
-                              CGAL::Polygon_mesh_processing::parameters::number_of_iterations(5)
-                              .protect_constraints(true));
- */
+     return;
+
 }
-
-
 void Surface::make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1, double radius,  int number_of_segments) {  
      Surface::make_cone( x0, y0,z0, x1,y1, z1, radius , radius,  number_of_segments ) ;
 
@@ -1353,9 +1431,6 @@ void Surface::make_cone( double x0, double y0, double  z0,  double x1, double y1
 }
 
 
-
-
-
 struct sphere_wrapper{
         
      public:
@@ -1375,14 +1450,13 @@ double sphere_wrapper::z0 = 0;
 
 void Surface::make_sphere( double x0, double y0, double  z0,double r0) 
 {
-
+  // TODO:: Add resolution/ edge size 
   sphere_wrapper sphere;
    
   sphere.radius = r0;
   sphere.x0=x0;
   sphere.y0=y0;
   sphere.z0=z0;
-
   surface_mesher(mesh,sphere.function,x0,y0,z0,r0,30,r0/5,r0/5);   
 
 }
@@ -1407,7 +1481,6 @@ void Surface::save(const std::string outpath)
      {
        write_STL(outpath);
      }
-
 
 }
 
@@ -1480,8 +1553,6 @@ void Surface::seperate_narrow_gaps()
 }
 Surface::vertex_vector Surface::get_close_points(Surface &other) 
 {
-
- 
    Surface::vertex_vector results;
    Vertex_point_pmap vppmap = get(CGAL::vertex_point,other.get_mesh());  
 
@@ -1490,9 +1561,7 @@ Surface::vertex_vector Surface::get_close_points(Surface &other)
             Splitter(),
             Traits(vppmap)
    );
-
    Distance tr_dist(vppmap);
-
    FT distance, edgeL;
    Point_3 closest;
    bool flag;
@@ -1520,7 +1589,6 @@ Surface::vertex_vector Surface::get_close_points(Surface &other)
         }while(vbegin!=done);
     
         if (flag){ results.push_back(v_it) ;} // both vertices are affected
-   
    }
  
    return results;

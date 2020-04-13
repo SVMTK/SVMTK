@@ -90,6 +90,20 @@ namespace CGAL {
                    }
                    return pts;
                 }
+                //Surface_patch_index make_surface_index(const Subdomain_index i, const Subdomain_index j) const
+                //{
+                    //   cstr_s_p_index(i, j);
+ 
+                //   return subdmap->suface_index(Subdomain_index i,Subdomain_index j)
+                //}
+                //return_type operator()(const Point_3& a, const Point_3& b) const
+                //{
+                //    return subdmap->surface_patch(this->operator()(a),this->operator()(b));
+                //}
+
+
+
+
                 //return_type index_from_surface_patch_index
 
                 /*struct Construct_intersection

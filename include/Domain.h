@@ -23,6 +23,7 @@
 
 // LOCAL
 #include "Surface.h" 
+#include "Slice.h" 
 #include "SubdomainMap.h" 
 #include "Polyhedral_vector_to_labeled_function_wrapper.h"
 //#include "Labeled_mesh_domain_with_features.h"
@@ -60,13 +61,83 @@
 #include <CGAL/Min_sphere_of_spheres_d_traits_3.h>
 #include <CGAL/internal/Mesh_3/Boundary_of_subdomain_of_complex_3_in_triangulation_3_to_off.h>
 
-
-
-
-
 // CURRENT PLAN :
 // TODO: Consider void remove_isolated_vertices() as stand alone function or class function
 // TODO: Clean up header files
+
+template<class C3T3, class PointContainer, class FaceContainer>
+void facets_in_complex_3_to_triangle_soup_(const C3T3& c3t3,
+                                          const typename C3T3::Surface_patch_index sf_index,
+                                          PointContainer& points,
+                                          FaceContainer& faces,
+                                          const bool normals_point_outside_of_the_subdomain = true,
+                                          const bool export_all_facets = false)
+                                       
+{
+  typedef typename PointContainer::value_type                            Point_3;
+  typedef typename FaceContainer::value_type                             Face;
+
+  typedef typename C3T3::Triangulation                                   Tr;
+
+  typedef typename Tr::Vertex_handle                                     Vertex_handle;
+  typedef typename Tr::Cell_handle                                       Cell_handle;
+  typedef typename Tr::Weighted_point                                    Weighted_point;
+
+  typedef typename C3T3::Facets_in_complex_iterator                      Ficit;
+
+  typedef CGAL::Hash_handles_with_or_without_timestamps                  Hash_fct;
+  typedef boost::unordered_map<Vertex_handle, std::size_t, Hash_fct>     VHmap;
+
+  typedef typename C3T3::size_type                                       size_type;
+
+  size_type nf = c3t3.number_of_facets_in_complex();
+  faces.reserve(faces.size() + nf);
+  points.reserve(points.size() + nf/2); // approximating Euler
+
+  VHmap vh_to_ids;
+  std::size_t inum = 0;
+  int df =0;
+  for(Ficit fit = c3t3.facets_in_complex_begin(sf_index),
+            end = c3t3.facets_in_complex_end(sf_index); fit != end; ++fit)
+  {
+    Cell_handle c = fit->first;
+    int s = fit->second;
+    Face f;
+    CGAL::Mesh_3::internal::resize(f, 3);
+
+    typename C3T3::Subdomain_index cell_sdi = c3t3.subdomain_index(c);
+    typename C3T3::Subdomain_index opp_sdi = c3t3.subdomain_index(c->neighbor(s));
+
+    //if(cell_sdi != sf_index.second or opp_sdi != sf_index.first)
+    //   continue;
+    
+    for(std::size_t i=1; i<4; ++i)
+    {
+      typename VHmap::iterator map_entry;
+      bool is_new;
+      Vertex_handle v = c->vertex((s+i)&3);
+      CGAL_assertion(v != Vertex_handle() && !c3t3.triangulation().is_infinite(v));
+
+      boost::tie(map_entry, is_new) = vh_to_ids.insert(std::make_pair(v, inum));
+      if(is_new)
+      {
+        const Weighted_point& p = c3t3.triangulation().point(c, (s+i)&3);
+        const Point_3 bp = Point_3(CGAL::to_double(p.x()),
+                                   CGAL::to_double(p.y()),
+                                   CGAL::to_double(p.z()));
+        points.push_back(bp);
+        ++inum;
+      }
+
+      f[i-1] = map_entry->second;
+    }
+
+
+    faces.push_back(f);
+  }
+  
+}
+
 
 template <class C3T3,
           class Vertex_index_property_map,
@@ -79,7 +150,8 @@ void output_to_medit_(std::ostream& os,
                 const Facet_index_property_map& facet_pmap,
                 const Cell_index_property_map& cell_pmap,
                 const Facet_index_property_map_twice& facet_twice_pmap = Facet_index_property_map_twice(),
-                const bool print_each_facet_twice = false)
+                const bool print_each_facet_twice = false,
+                const bool save_edges = false)
 {
   // Based on CGAL output_to_medit, but writes all facets to file.
   // i.e. boundary factes and internal facets 
@@ -90,6 +162,7 @@ void output_to_medit_(std::ostream& os,
   typedef typename Tr::Finite_vertices_iterator Finite_vertices_iterator;
   typedef typename Tr::Vertex_handle Vertex_handle;
   typedef typename Tr::Weighted_point Weighted_point;
+  typedef typename Tr::Cell_circulator Cell_circulator;
 
   const Tr& tr = c3t3.triangulation();
 
@@ -125,6 +198,68 @@ void output_to_medit_(std::ostream& os,
   }
 
   //-------------------------------------------------------
+  // Edges
+  //-------------------------------------------------------
+  if ( save_edges) 
+  {
+     bool flag=false;
+     int number_of_edges=0;
+     
+     for ( auto eit = tr.edges_begin() ; eit != tr.edges_end(); ++eit) 
+     {       
+         flag=false; //TODO: use break or continue??
+         //std::vector<int> vec{0,1,2,3};
+         //vec.erase(std::remove(vec.begin(), vec.end(), eit->second), vec.end());
+         //vec.erase(std::remove(vec.begin(), vec.end(), eit->third), vec.end());
+         // if ( c3t3.is_in_complex(eit->first) or c3t3.is_in_complex(eit->first->neighbor(vec[0]) ) or c3t3.is_in_complex(eit->first->neighbor(vec[1]) )  ) // !tr.is_infinite(*eit) and
+
+
+         Cell_circulator ccir = tr.incident_cells(*eit);
+         Cell_circulator cdone = ccir;
+         do 
+         {
+             if ( c3t3.is_in_complex(ccir) )
+             { 
+                flag=true; 
+
+             }
+         *ccir++;
+         }while(ccir!=cdone and flag==false);          
+
+         if( flag ) 
+         {
+            number_of_edges++;
+         }
+     }
+     
+     os << "Edges\n" 
+     << number_of_edges << '\n';
+     for( auto eit = tr.finite_edges_begin(); eit != tr.finite_edges_end(); ++eit) 
+     {
+         flag=false;
+         Cell_circulator ccir = tr.incident_cells(*eit);
+         Cell_circulator cdone = ccir;
+         do 
+         {
+             if ( c3t3.is_in_complex(ccir) )
+             { 
+                flag=true; 
+
+             }
+         *ccir++;
+         }while(ccir!=cdone and flag==false);          
+
+         if( flag ) 
+         {         
+            Vertex_handle vh1 = eit->first->vertex(eit->second);
+            Vertex_handle vh2 = eit->first->vertex(eit->third);
+            os << V[vh1] << " " << V[vh2]  <<" " << c3t3.curve_index(*eit) << std::endl;
+         }
+     }
+
+  }
+
+  //-------------------------------------------------------
   // Facets
   //-------------------------------------------------------
   int number_of_triangles=0;
@@ -134,7 +269,6 @@ void output_to_medit_(std::ostream& os,
       number_of_triangles++;
   }
 
-  
   os << "Triangles\n" 
      << number_of_triangles << '\n';
 
@@ -162,9 +296,18 @@ void output_to_medit_(std::ostream& os,
     if (c3t3.is_in_complex(fit->first) or  c3t3.is_in_complex(fit->first->neighbor(fit->second) ) )  {
 
     os << V[vh1] << ' ' << V[vh2] << ' ' << V[vh3] << ' '; 
-    os << get(facet_pmap, *fit) << '\n';
+    if (get(facet_pmap, *fit)<0)
+    {
+      os << 0 << '\n'; // adjust -1 -> 0
     }
-    // Print triangle again if needed, with opposite orientation
+    else 
+    {
+      os << get(facet_pmap, *fit) << '\n'; // adjust -1 -> 0
+
+    } 
+
+    }
+
 
   }
 
@@ -220,6 +363,8 @@ struct Minimum_sphere
 
 
 class Surface;
+class Slice; 
+ 
 
 class Domain {
     public :
@@ -228,7 +373,7 @@ class Domain {
         typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
         typedef Kernel::Point_3 Point_3;
         typedef CGAL::Mesh_polyhedron_3<Kernel>::type Polyhedron; 
-        // Used with_features for experimental testing, currently no imporved usage of this class  
+        // Used with_features for experimental testing, currently no improved usage of this class  
         typedef CGAL::Polyhedral_mesh_domain_with_features_3<Kernel, Polyhedron> Polyhedral_mesh_domain_3; 
         typedef CGAL::Polyhedral_vector_to_labeled_function_wrapper<Polyhedral_mesh_domain_3, Kernel  > Function_wrapper; 
 
@@ -242,32 +387,38 @@ class Domain {
  
         typedef CGAL::Mesh_triangulation_3<Mesh_domain>::type Tr;
 
-        typedef int Curve_index;
-        typedef int Corner_index;
+        typedef int Curve_index; // FIXME  ?
+        typedef int Corner_index; //FIXME ?
 
         // experimental adjustsments to class ; Corner_index and Curve_index
         typedef CGAL::Mesh_complex_3_in_triangulation_3< Tr, Corner_index, Curve_index> C3t3;
 
-        typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
 
-
-        // ------ Auxiliary, also  experimental----------------
-        typedef Tr::Finite_vertices_iterator Finite_vertices_iterator;
-        typedef Tr::Locate_type Locate_type;
-        typedef Tr::Facet Facet;
-        typedef std::vector<Point_3>  Polyline_3;
-        typedef std::vector<Polyline_3> Polylines;
-        typedef Tr::Weighted_point Weighted_point;
-
+        //
         typedef C3t3::Subdomain_index Subdomain_index;
         typedef C3t3::Cell_handle Cell_handle;
         typedef C3t3::Vertex_handle Vertex_handle;
         typedef C3t3::Surface_patch_index Surface_patch_index;
         typedef C3t3::Cells_in_complex_iterator Cell_iterator;
         typedef C3t3::Facets_in_complex_iterator Facet_iterator;
-        typedef std::map<std::string, double> Parameters;
+        typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
         typedef CGAL::Triple<Cell_handle, int, int> Edge; 
+
+
+        // ------ Auxiliary, also  experimental----------------
+        typedef Tr::Finite_vertices_iterator Finite_vertices_iterator;
+        typedef Tr::Locate_type Locate_type;
+        typedef Tr::Weighted_point Weighted_point;
+        typedef Tr::Facet Facet;
+
+        typedef std::vector<Point_3>  Polyline_3;
+        typedef std::vector<Polyline_3> Polylines;
+        typedef std::map<std::string, double> Parameters;
+       
         typedef std::vector<std::size_t>  Face;
+
+
+     
 
         // --------Constructors---------------------
         Domain(Surface& surface);
@@ -276,7 +427,7 @@ class Domain {
         // -----------------------------------------
         ~Domain() {}
 
-
+        void add_surface_points(Surface &surface);
         // --------CGAL mesh criteria---------
         void set_parameters(std::map<std::string, double> &new_parameters); // py::dict? 
         void set_parameter(std::string key, double value);
@@ -297,36 +448,29 @@ class Domain {
             parameters["edge_size"] = 0.1;
         }
 
-
-
         void save(std::string OutPath, bool save_1Dfeatures); 
 
         Polylines& get_features() {return features; }  
 
-        void add_feature(Polyline_3 polyline) { features.push_back(polyline);} // Check 
-
-        void set_features();
-
-
+        void add_feature(Polyline_3 polyline) { features.push_back(polyline);}  
 
         Polylines& get_borders() {return borders; }
 
         void set_borders(){domain_ptr.get()->add_features(get_borders().begin(), get_borders().end());} // -> TODO: integrate or REOMVE 
-
         void add_borders(Polyline_3 polyline) { borders.push_back(polyline);} 
       
         void add_sharp_border_edges(Polyhedron& polyhedron, double threshold);
-
-        void add_sharp_border_edges(Surface& surface, double threshold=60); // default values 
+        void add_sharp_border_edges(Surface& surface, double threshold=60); 
  
         void add_corners(Surface& surface){  Polyline_3 points  = surface.get_corners(); domain_ptr->add_corners(points.begin(),points.end() );}
 
-        void reset_borders(){borders.clear();} // rename
+        void clear_borders(){borders.clear();} // rename
 
         void remove_subdomain(std::vector<int> tags);
+        void remove_subdomain(int tag);              // tags 
 
         void set_features(Surface& surface){ set_features(surface.get_features() );} 
-
+        void set_features();
         void set_features(Polylines& polylines){ set_features( polylines.begin() , polylines.end() );} 
 
         template< typename InputIterator> // Wrapping 
@@ -343,10 +487,12 @@ class Domain {
         void perturb( double time_limit=0, double sliver_bound=0){CGAL::perturb_mesh_3 ( c3t3, *domain_ptr.get(), time_limit=time_limit, sliver_bound=sliver_bound) ;} // default values
 
 
-        void remove_subdomain(int tag);              // tags 
+
         void rebind_facets();
         int number_of_cells(){return c3t3.number_of_cells();}
         std::set<int>  number_of_subdomains();
+        C3t3& get_mesh(){return c3t3;}
+ 
 
     private :
         std::unique_ptr<Mesh_domain> domain_ptr;
@@ -361,19 +507,17 @@ class Domain {
 
 
 
-template<typename C3T3>
+template<typename C3T3> // TODO: mesh function 
 int remove_isolated_vertices(C3T3& c3t3, bool remove_domain=false)
 { 
   //FIXME : CLEANUP
   typedef typename C3T3::Triangulation Tr;
   typedef typename C3T3::Cells_in_complex_iterator Cell_iterator;
   typedef typename C3T3::Cell_handle Cell_handle;
-
   typedef typename Tr::Finite_vertices_iterator Finite_vertices_iterator;
   typedef typename Tr::Vertex_handle Vertex_handle;
 
   std::map<Vertex_handle, bool> vertex_map;
-
 
   for( Finite_vertices_iterator vit = c3t3.triangulation().finite_vertices_begin();vit != c3t3.triangulation().finite_vertices_end();++vit)
   { 
@@ -384,7 +528,6 @@ int remove_isolated_vertices(C3T3& c3t3, bool remove_domain=false)
   {
     for (std::size_t i = 0; i < 4; ++i) // 
     {
-
         vertex_map[cit->vertex(i)] = true;
     }
   }
@@ -402,8 +545,6 @@ int remove_isolated_vertices(C3T3& c3t3, bool remove_domain=false)
 
   int after = c3t3.triangulation().number_of_vertices() ; 
 
-
-
   std::cout<<"Number of isolated vertices removed: "<< before - after << std::endl;
   if ((before - after) > 10 and !remove_domain)   
   {
@@ -418,13 +559,49 @@ int remove_isolated_vertices(C3T3& c3t3, bool remove_domain=false)
 
 }
 
+
+void Slice::add_subdomains(Domain& domain)
+{
+
+     typedef  Domain::C3t3  C3t3;
+     typedef  Domain::Point_3 Point_3; 
+     typedef  Domain::Tr Tr; 
+     typedef  Domain::Cell_handle Cell_handle;
+     typedef  Domain::Weighted_point Weighted_point;
+
+
+     Domain::C3t3 c3t3 = domain.get_mesh(); 
+     Tr tr= c3t3.triangulation();
+
+     for(CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
+     {
+        Point_2 center2 =  CGAL::centroid(fit->vertex(0)->point() ,fit->vertex(1)->point(),fit->vertex(2)->point());  
+        Point_3 center3 = this->plane.to_3d(center2);
+        Weighted_point wp = Weighted_point(center3,1.0) ;
+        Cell_handle cell = tr.inexact_locate(wp);
+        int temp = static_cast<int>(c3t3.subdomain_index(cell));
+        if( temp==0 )
+        {
+           cdt.delete_face(fit);
+        }  
+        else 
+        {
+           fit->info() = temp ;
+        }
+ 
+     } 
+
+
+} 
 // --------------------------------
-//  Constructor for Surfaces
+//  Constructor for Surfaces  
+//  TODO: smart pointer error : 
+//  python3: ../nptl/pthread_mutex_lock.c:352: __pthread_mutex_lock_full: Assertion `INTERNAL_SYSCALL_ERRNO (e, __err) != ESRCH || !robust' failed
 // --------------------------------
 Domain::Domain( std::vector<Surface> surfaces )
 {
     Function_vector v;
-
+    std::cout << 111 << std::endl;
     for(std::vector<Surface>::iterator sit= surfaces.begin() ;sit!= surfaces.end();sit++)
     {
        Polyhedron *polyhedron = new Polyhedron();
@@ -434,8 +611,9 @@ Domain::Domain( std::vector<Surface> surfaces )
        Polyhedral_mesh_domain_3 *polyhedral_domain = new Polyhedral_mesh_domain_3(*polyhedron);
        v.push_back(polyhedral_domain);
     }
+    std::cout << 111 << std::endl;
     Function_wrapper wrapper(v);
-    
+    std::cout << 111 << std::endl;
     domain_ptr = std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox()));
     default_parameters();
 }
@@ -443,7 +621,7 @@ Domain::Domain( std::vector<Surface> surfaces )
 Domain::Domain( std::vector<Surface> surfaces , AbstractMap& map )
 {
     Function_vector v;
-
+    
     for(std::vector<Surface>::iterator sit= surfaces.begin() ;sit!= surfaces.end();sit++)
     {
        Polyhedron *polyhedron = new Polyhedron();
@@ -459,9 +637,6 @@ Domain::Domain( std::vector<Surface> surfaces , AbstractMap& map )
     default_parameters();
 }
 
-
-
-
 Domain::Domain(Surface &surface) 
 {
     Function_vector v;
@@ -475,8 +650,6 @@ Domain::Domain(Surface &surface)
     v.push_back(polyhedral_domain);
     Function_wrapper wrapper(v);
 
-
-
     domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox())); 
     default_parameters();
 
@@ -488,18 +661,8 @@ Domain::Domain(Surface &surface)
 
 std::shared_ptr<Surface> Domain::get_boundary(int tag=0)
 {
-  // Experimental 
-  // TODO: CHANGE
-
    std::vector<Face> faces;
    Polyline_3 points;
-
-   typedef CGAL::Hash_handles_with_or_without_timestamps Hash_fct;
-   typedef boost::unordered_map<Vertex_handle, std::size_t, Hash_fct> VHmap;
-   VHmap::iterator map_entry;
-   VHmap vh_to_ids;
-   int inum=0;
-   bool is_new;
     
    Subdomain_index useless = Subdomain_index(tag);
    facets_in_complex_3_to_triangle_soup(c3t3, useless, points, faces, true, false);  
@@ -507,6 +670,7 @@ std::shared_ptr<Surface> Domain::get_boundary(int tag=0)
    std::shared_ptr<Surface> surf(new  Surface(points, faces)) ;
    return surf;
 }
+
 
 // ---------- CGAL mesh criteria --------------------
 void Domain::set_parameters(std::map<std::string, double> &new_parameters)
@@ -563,72 +727,28 @@ void Domain::create_mesh(const double mesh_resolution )
   
 }
 
-// direct cell_size argument ?
-/*void Domain::create_mesh(const double cell_size )
-{
-
-    Mesh_criteria criteria(CGAL::parameters::edge_size = cell_size,
-                                       CGAL::parameters::facet_angle = 30.0,
-                                       CGAL::parameters::facet_size = cell_size,
-                                       CGAL::parameters::facet_distance = cell_size/10.0, 
-                                       CGAL::parameters::cell_radius_edge_ratio = 3.0,
-                                       CGAL::parameters::cell_size = cell_size);
-
-    c3t3 = CGAL::make_mesh_3<C3t3>(*domain_ptr.get(), criteria);
-
-
-    while ( remove_isolated_vertices(c3t3) >0 )
-            c3t3.rescan_after_load_of_triangulation();
-  
-}*/
-
-
 void Domain::save(std::string OutPath,bool save_1Dfeatures)
 {
     
- 
-     // Hack, due to update in FEniCS
     std::ofstream  medit_file(OutPath);
-    // Experimental
+
+
     typedef CGAL::Mesh_3::Medit_pmap_generator<C3t3,false,false> Generator;
     typedef typename Generator::Cell_pmap Cell_pmap;
     typedef typename Generator::Facet_pmap Facet_pmap;
     typedef typename Generator::Facet_pmap_twice Facet_pmap_twice;
     typedef typename Generator::Vertex_pmap Vertex_pmap;
 
-    //Default_vertex_pmap vertex_pmap(c3t3,cell_pmap,facet_map);
-
     Cell_pmap cell_pmap(c3t3);
     Facet_pmap facet_pmap(c3t3, cell_pmap);
     Facet_pmap_twice  facet_twice_pmap(c3t3,cell_pmap);
     Vertex_pmap vertex_pmap(c3t3, cell_pmap,facet_pmap);
     //output_to_medit(medit_file,c3t3, vertex_pmap, facet_pmap, cell_pmap, facet_twice_pmap , false) ;
-
-    output_to_medit_(medit_file,c3t3, vertex_pmap, facet_pmap, cell_pmap, facet_twice_pmap , false) ;
     //c3t3.output_to_medit(medit_file,true,true);
 
+    output_to_medit_(medit_file,c3t3, vertex_pmap, facet_pmap, cell_pmap, facet_twice_pmap , false, save_1Dfeatures) ;
 
     medit_file.close();
-   
-    if (save_1Dfeatures)
-    {
-       boost::unordered_map<Vertex_handle, int> V;
-       int inum = 0;
-       for( Finite_vertices_iterator vit =  c3t3.triangulation().finite_vertices_begin();vit !=  c3t3.triangulation().finite_vertices_end();++vit)
-       {
-          V[vit] = inum++;
-       }
-       std::ofstream  textfile("1D_features.txt");
-
-       for(C3t3::Edges_in_complex_iterator eit = c3t3.edges_in_complex_begin();eit != c3t3.edges_in_complex_end(); ++eit)
-       {
-         Cell_handle c = eit->first;
-         Vertex_handle vh1 = c->vertex(eit->second);
-         Vertex_handle vh2 = c->vertex(eit->third);
-         textfile << V[vh1] << " " << V[vh2]  <<" " << c3t3.curve_index(*eit) << std::endl;
-       }
-       textfile.close();
-    }
 }
 
 
@@ -664,16 +784,30 @@ void Domain::refine_mesh(const double mesh_resolution )
        c3t3.rescan_after_load_of_triangulation();
 
 }
+void Domain::add_surface_points(Surface &surface) 
+{ 
 
+   typedef Tr::Bare_point Bare_point;
+   typedef std::vector<std::pair<Bare_point, int> > Initial_points_vector;
+   typedef Surface::Index SM_Index;
+   std::vector<Point_3> points;  
+   std::vector<SM_Index> indicies; 
+   Initial_points_vector points_vector;
+   points = surface.get_points() ; 
+   indicies = surface.get_vertices(); 
+   for(int i = 0; i<points.size(); i++)
+   {
+      points_vector.push_back(      std::make_pair<Bare_point,int>(Bare_point(points[i]), indicies[i] )    ) ;
+   }
+   c3t3.insert_surface_points(points_vector.begin(), points_vector.end());
+}
 
 
 void Domain::remove_subdomain(int tag) //rename
 { 
-
    std::vector<int> temp;
    temp.push_back(tag);
    remove_subdomain(temp);
-
 }
 
 
@@ -681,7 +815,9 @@ void Domain::remove_subdomain(int tag) //rename
 
 void Domain::remove_subdomain(std::vector<int> tags) //rename
 {
-  // TODO: simplify
+  // Notes: 
+  // remove all subdomains at the same time. This will avoid 
+  // rebinding errors 
   int before = c3t3.number_of_cells();
 
   std::map<Cell_handle,int> cell_map;
@@ -710,7 +846,7 @@ void Domain::remove_subdomain(std::vector<int> tags) //rename
     }
   }
      
-  std::cout << rebind.size() << std::endl;
+  //std::cout << rebind.size() << std::endl;
 
   for(std::vector<int>::iterator j = tags.begin(); j!=tags.end(); ++j)
   {
@@ -719,7 +855,7 @@ void Domain::remove_subdomain(std::vector<int> tags) //rename
           c3t3.remove_from_complex(cit); 
       }     
   }
-  std::cout << cell_map.size() << std::endl;
+  //std::cout << cell_map.size() << std::endl;
 
 
   c3t3.rescan_after_load_of_triangulation(); 
@@ -791,12 +927,12 @@ void Domain::add_sharp_border_edges(Polyhedron& polyhedron, double threshold) //
          Polyline_3 polyline;
          polyline.push_back(he->vertex()->point());
          polyline.push_back(he->opposite()->vertex()->point());     
-         polylinput.push_back(polyline);
+         borders.push_back(polyline);
       }    
   }   
   // need to protect internal points of sharp surface
 
-  polylines_to_protect(this->borders, polylinput.begin(),  polylinput.end() ); // borders 
+//  polylines_to_protect(this->borders, polylinput.begin(),  polylinput.end() ); // borders 
 }
 
 void Domain::add_sharp_border_edges(Surface& surface, double threshold) 
@@ -818,33 +954,58 @@ std::set<int>  Domain::number_of_subdomains()
    return sd_indices;
 }
 
+
+//TODO: overload 
 std::shared_ptr<Slice> Domain::mesh_slice(double x1,double x2, double x3 ,double x4) 
 { 
    //Experimental 
-   Polyline_3 points;
+
+   Kernel::Plane_3 plane = Kernel::Plane_3(x1, x2, x3, x4);
+   typedef Tr::Weighted_point                                    Weighted_point;
+
+   int num=1;
+   const Tr& tr = c3t3.triangulation();
+
+   std::shared_ptr<Slice> slice(new  Slice()) ;
+
+   slice->set_plane(plane);
+   std::map<Vertex_handle, int> vertex_map;
+
+   std::vector<Point_3> points;
    std::vector<Face> faces;
-
-   std::shared_ptr<Slice > slice(new  Slice()) ;
-
-   for( auto index =  number_of_subdomains().begin() ; index != number_of_subdomains().end() ;++index) 
+   std::set<int> temp = number_of_subdomains( );
+   temp.insert(0);
+   int df;
+   for ( auto it :    number_of_subdomains( ) )
    {
-        points.clear();
-        faces.clear();
-        facets_in_complex_3_to_triangle_soup(c3t3,  Subdomain_index(*index) , points,faces);
-        Surface* surf  = new Surface(points,faces); // implemented for this purpose
-        std::shared_ptr<Slice > temp = surf->mesh_slice(x1,x2,x3 ,x4);     // new object ?? 
+         for ( auto et : temp )
+         {
+             points.clear(); 
+             faces.clear();
+ 
+             if ( it>et) 
+             {
+                 facets_in_complex_3_to_triangle_soup_(c3t3,Surface_patch_index(et,it),points,faces);
+                 
+                 if (!faces.empty()) 
+                 {
+                     std::shared_ptr<Surface> surf( new Surface(points,faces)); 
 
-        //temp operations 1
-        slice->keep_component(0);
-        slice->add_constraints(*temp.get());                     // add tag to constraint?         
+                     std::shared_ptr<Slice> temp = surf->mesh_slice(x1,x2,x3,x4);     // nerror here   
+
+                     slice->add_constraints(*temp.get(),false); 
+
+                 }
+             }
+         }
+
    }
+
    return slice;
 }
 
 void Domain::rebind_facets()
 {
-
-
 
 
 }

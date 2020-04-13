@@ -1,4 +1,4 @@
-import brainmesh
-print(brainmesh.__file__)
+import SVMTK as svm
+print(svm.__file__)
 
-bs = brainmesh.BrainSurface("skin_surface.off")
+bs = svm.BrainSurface("skin_surface.off")

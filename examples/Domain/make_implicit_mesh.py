@@ -23,6 +23,6 @@ if __name__ == "__main__":
 
    maker = svm.Domain(surf)
 
-   maker.create_mesh()
+   maker.create_mesh(10)
 
    maker.save("chair.mesh")

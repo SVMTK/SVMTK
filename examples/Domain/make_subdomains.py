@@ -6,7 +6,7 @@ if __name__ == "__main__":
  
    sf= svm.SubdomainMap() 
    s = []
-   for i in range(4):
+   for i in range(2):
       print(i)
       s.append(svm.Surface())
       s[-1].make_sphere(0,0,0,25.-3.*i)
@@ -19,10 +19,10 @@ if __name__ == "__main__":
    sf.add("1110",3) 
    sf.add("1111",4) 
    sf.print()
-   maker = svm.Domain(s,sf)
+   maker = svm.Domain(s)
 
    
-   maker.create_mesh(32)
+   maker.create_mesh(10)
 
    maker.save("subdomains.mesh")
    boundary = maker.get_boundary(0)
