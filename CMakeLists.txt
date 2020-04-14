@@ -12,7 +12,7 @@ set(CMAKE_BUILD_TYPE Release)
 
 #include_directories(BEFORE CGAL)
 # CGAL and its components
-find_package(CGAL REQUIRED COMPONENTS Core GMP MPFR libCGAL_Qt5 )
+find_package(CGAL REQUIRED COMPONENTS Core GMP MPFR)
 include(${CGAL_USE_FILE})
 set(CMAKE_BUILD_TYPE Release)
 
