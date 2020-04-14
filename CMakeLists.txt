@@ -1,10 +1,22 @@
-cmake_minimum_required(VERSION 2.8.12)
-project(BrainMesh)
+cmake_minimum_required(VERSION 3.5)
+project(SVMTK)
+set(SVMTK_VERSION_RELEASE 0)
+set(SVMKT_VERSION_MAJOR "2020")
+set(SVMTK_VERSION_MINOR "1")
+set(SVMTK_VERSION_MICRO "0")
+set(SVMTK_VERSION "${SVMTK_VERSION_MAJOR}.${SVMTK_VERSION_MINOR}.${SVMTK_VERSION_MICRO}")
+set(CMAKE_BUILD_TYPE Release)
+
+
+#add_subdirectory(CGAL)
+
+#include_directories(BEFORE CGAL)
+# CGAL and its components
+find_package(CGAL REQUIRED COMPONENTS Core GMP MPFR libCGAL_Qt5 )
+include(${CGAL_USE_FILE})
 set(CMAKE_BUILD_TYPE Release)
 
 # CGAL and its components
-find_package(CGAL 4.13 REQUIRED)
-include(${CGAL_USE_FILE})
 
 # Boost and its components
 find_package(Boost REQUIRED )
