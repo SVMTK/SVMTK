@@ -12,7 +12,7 @@
 #include "Domain.h"
 #include "surface_mesher.h"
 #include "Slice.h"
-
+// TODO clean upp overloads
 namespace py = pybind11;
 
 template <typename... Args>
@@ -25,15 +25,17 @@ public:
 };
 
 typedef std::function<double(double,double,double)> Surface_implicit_function;
-
-
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 typedef Kernel::Point_3 Point_3;
 typedef Kernel::Point_2 Point_2;
-
+typedef Kernel::Plane_3 Plane_3;
+typedef Kernel::Vector_3 Vector_3;
 // We want to construct Polyline in Python then let polyline translate into cgal Point in c++
 // 
-
+Vector_3 Wrapper_vector_3(double x,double y,double z)
+{
+       return Vector_3(x,y,z);
+}
 Point_3 Wrapper_point_3(double x,double y,double z)
 {
        return Point_3(x,y,z);
@@ -42,10 +44,27 @@ Point_2 Wrapper_point_2(double x,double y)
 {
        return Point_2(x,y);
 }
-
+Plane_3 Wrapper_plane_3(double x1, double x2 , double x3 , double x4)
+{
+      return Plane_3(x1,x2,x3,x4);
+}
 //TODO: set default arguments
 
 PYBIND11_MODULE(SVMTK, m) {
+
+   py::class_<Plane_3>(m, "Plane_3")
+       .def(py::init<double,double,double,double>())
+       .def("__repr__",[](Plane_3 const & self)   
+        {
+           std::ostringstream os;
+           os << "(" << self.a() <<", "<< self.b()<<", "<< self.c() << "," << self.d() <<")";
+           return os.str();
+
+        })
+       .def("a", &Plane_3::a)
+       .def("b", &Plane_3::b)
+       .def("d", &Plane_3::d)
+       .def("c", &Plane_3::c);
 
     py::class_<Point_3>(m, "Point_3")
        .def(py::init<double,double,double>())
@@ -82,11 +101,17 @@ PYBIND11_MODULE(SVMTK, m) {
     py::class_<Slice,std::shared_ptr<Slice>>(m, "Slice")
         .def(py::init<>())
         .def(py::init<Slice&>())
+        .def(py::init<Plane_3>())
         .def("create_mesh", &Slice::create_mesh) 
         .def("simplify", &Slice::simplify) 
         .def("save", &Slice::save)
         .def("add_constraint", &Slice::add_constraint )
         .def("add_subdomains", &Slice::add_subdomains)
+        .def("slice_surfaces", &Slice::slice_surfaces ) 
+
+        .def("add_surface_domains", py::overload_cast<std::vector<Surface>, AbstractMap&>( &Slice::add_surface_domains) ) 
+        .def("add_surface_domains", py::overload_cast<std::vector<Surface>>( &Slice::add_surface_domains) ) 
+
         .def("add_constraints",(void (Slice::*)(Slice&,bool)) &Slice::add_constraints);
 
 
@@ -102,7 +127,7 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("intersection", &Surface::surface_intersection)
         .def("union", &Surface::surface_union)
         .def("difference", &Surface::surface_difference)
-        .def("slice", &Surface::mesh_slice)
+        .def("slice", py::overload_cast<double , double, double , double>(&Surface::mesh_slice))
         .def("span", &Surface::span)
 
         .def("fill_holes", &Surface::fill_holes)
@@ -153,7 +178,7 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("refine_mesh", (void (Domain::*)()) &Domain::refine_mesh)
         .def("refine_mesh", (void (Domain::*)(double)) &Domain::refine_mesh)
 
-        .def("get_boundary", &Domain::get_boundary)
+        .def("get_boundary", &Domain::get_boundary,py::arg("tag")=0)
         .def("mesh_slice", &Domain::mesh_slice)
         .def("lloyd", &Domain::lloyd,     py::arg("time_limit")=0, py::arg("max_iteration_number")=0, py::arg("convergence")=0.02, py::arg("freeze_bound")=0.01,py::arg("do_freeze")=true)
         .def("odt", &Domain::odt,         py::arg("time_limit")=0, py::arg("max_iteration_number")=0, py::arg("convergence")=0.02, py::arg("freeze_bound")=0.01,py::arg("do_freeze")=true)
@@ -165,14 +190,12 @@ PYBIND11_MODULE(SVMTK, m) {
 
         .def("clear_borders", &Domain::clear_borders)
         .def("remove_subdomain", (void (Domain::*)(std::vector<int>)) &Domain::remove_subdomain)
-        .def("remove_subdomain", (void (Domain::*)(int)) &Domain::remove_subdomain)
-        .def("add_corners",  &Domain::add_corners) 
+        .def("remove_subdomain", (void (Domain::*)(int)) &Domain::remove_subdomain) 
         .def("number_of_cells", &Domain::number_of_cells)
         // add, remove, set 
         .def("set_borders", &Domain::set_borders)
         .def("set_features", (void(Domain::*)()) &Domain::set_features) 
         .def("set_features", (void(Domain::*)(std::vector<std::vector<Point_3>>& )) &Domain::set_features) 
-        .def("set_features", (void(Domain::*)(Surface&)) &Domain::set_features) 
         .def("add_feature", &Domain::add_feature) 
         .def("save", &Domain::save, py::arg("OutPath"), py::arg("save_1Dfeatures")=true); 
        

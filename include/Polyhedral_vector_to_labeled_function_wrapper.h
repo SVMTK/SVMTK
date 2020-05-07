@@ -57,7 +57,7 @@ namespace CGAL {
 
                 Polyhedral_vector_to_labeled_function_wrapper(std::vector<Function_*>& v) : function_vector_(v) 
                 {
-                    DefaultMap* map = new DefaultMap();
+                    DefaultMap* map = new DefaultMap(); // TODO:Check and FIX
                     subdmap =map ;
                 }
                 
