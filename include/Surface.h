@@ -89,6 +89,7 @@
 // CGAL
 #include <CGAL/Point_with_normal_3.h>
 #include <CGAL/poisson_surface_reconstruction.h>
+#include <CGAL/convex_hull_3.h>
 
 // CGAL IO
 #include <CGAL/IO/OFF_reader.h>
@@ -421,8 +422,8 @@ class Surface
     std::pair<double,double> span(int direction);
     // TODO: rename, prupose cluster vertices with same normal as input vertices  
     void surface_eval( vertex_vector &input);
-    
 
+    std::shared_ptr< Surface > convex_hull();
 
     void adjusting_boundary_region(std::map<vertex_descriptor,double>::iterator begin, std::map<vertex_descriptor,double>::iterator end );
 
@@ -1450,5 +1451,21 @@ std::map<Surface::vertex_descriptor,double> Surface::seperate_close_surfaces(Sur
    return  results;
    
 }
+
+
+std::shared_ptr< Surface > Surface::convex_hull()
+{
+    Polyhedron poly;
+    auto point_vector = std::vector< Point_3 >(mesh.num_vertices());
+    for (auto vit: vertices(mesh))
+    {
+        point_vector.emplace_back(mesh.point(vit));
+    }
+
+    CGAL::convex_hull_3(point_vector.begin(), point_vector.end(), poly);
+    auto result = std::make_shared< Surface >(Surface(poly));
+    return result;
+}
+
 
 #endif

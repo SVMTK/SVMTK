@@ -84,8 +84,8 @@ PYBIND11_MODULE(SVMTK, m) {
         //.def("inside", &Surface::inside)
         //.def("outside", &Surface::outside)
         .def("make_cube", &Surface::make_cube)
-	.def("make_cone", &Surface::make_cone)
-	.def("make_cylinder", &Surface::make_cylinder)
+        .def("make_cone", &Surface::make_cone)
+        .def("make_cylinder", &Surface::make_cylinder)
         .def("make_sphere", &Surface::make_sphere)
         .def("num_self_intersections", &Surface::num_self_intersections) 
         .def("collapse_edges", &Surface::collapse_edges)
@@ -96,6 +96,7 @@ PYBIND11_MODULE(SVMTK, m) {
         //.def("load", &Surface::load)//
         .def("separate_narrow_gaps", &Surface::seperate_narrow_gaps)
         .def("reconstruct", &Surface::reconstruct)
+        .def("convex_hull", &Surface::convex_hull)
 
         .def("num_faces", &Surface::num_faces)
         .def("num_edges", &Surface::num_edges)
