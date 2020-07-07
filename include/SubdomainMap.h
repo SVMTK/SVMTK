@@ -20,8 +20,8 @@
 #define SubdomainMap_H
 
 #include <boost/dynamic_bitset.hpp>
-#include <boost/type_traits/remove_reference.hpp>
-#include <boost/type_traits/remove_cv.hpp>
+//#include <boost/type_traits/remove_reference.hpp> // ?
+//#include <boost/type_traits/remove_cv.hpp> // ? 
 #include <map>
 #include <string>
 #include <vector>
@@ -34,7 +34,6 @@ class AbstractMap
         typedef boost::dynamic_bitset<> Bmask;
 
         virtual return_type index(const Bmask bits) = 0;
-        //virtual return_type surface_patch(const int a, const int b) = 0; TODO: Implement 
         virtual ~AbstractMap() {}
 };
 
@@ -86,5 +85,7 @@ class SubdomainMap :virtual public AbstractMap
         }
       
 };
+
+
 
 #endif

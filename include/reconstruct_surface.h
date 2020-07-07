@@ -2,7 +2,7 @@
 #define ReconstructSurface_H
 
 // CGAL
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h> // +
 #include <CGAL/Point_with_normal_3.h>
 #include <CGAL/Polyhedron_3.h>
 
@@ -10,15 +10,14 @@
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
 #include <CGAL/make_surface_mesh.h>
 #include <CGAL/Poisson_reconstruction_function.h>
-/* #include <CGAL/Poisson_implicit_surface_3.h> */
-#include <CGAL/Implicit_surface_3.h>
+#include <CGAL/Implicit_surface_3.h> // + 
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
-#include <CGAL/IO/output_surface_facets_to_polyhedron.h>
+#include <CGAL/IO/output_surface_facets_to_polyhedron.h> // +
 #include <CGAL/compute_average_spacing.h>
 
 // Local
-#include "Surface.h" // why
-
+//#include "Surface.h" // why
+// TODO:surface_construction.h include surface_mesher and reconstruct surface. 
 #include <deque>
 #include <cstdlib>
 #include <fstream>

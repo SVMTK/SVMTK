@@ -3,17 +3,17 @@
 #define __Polyhedral_vector_to_labeled_function_wrapper_H
 
 
+#include "SubdomainMap.h" // is comipled before this safegaurd capture 
+//s#include <boost/dynamic_bitset.hpp>
 
-#include <boost/dynamic_bitset.hpp>
+
+//#include <list>
+//#include <string>
+//#include <iostream>
+//#include <fstream>
 
 
-#include <list>
-#include <string>
-#include <iostream>
-#include <fstream>
-#include "SubdomainMap.h"
-
-#include "CGAL/Polyhedral_mesh_domain_3.h"
+//#include "CGAL/Polyhedral_mesh_domain_3.h" ??
 
 //#include <CGAL/AABB_tree.h>
 //#include <CGAL/AABB_traits.h>
@@ -45,23 +45,8 @@ namespace CGAL {
                 //typedef typename Function_::FT    FT;
                 typedef typename BGT::FT FT;
                  
- 
-                //typedef typename Function_::Construct_initial_points Construct_initial_points;
-                //typedef class AABB_const_polyhedron_edge_primitive<BGT, Polyhedron_> AABB_primitive;
-                //typedef class AABB_traits<BGT,AABB_primitive>     AABB_traits;
-                //typedef class AABB_tree<AABB_traits>              AABB_tree;
 
-                //tree_(new AABB_tree(p.edges_begin(), p.edges_end()))
-
-
-
-                Polyhedral_vector_to_labeled_function_wrapper(std::vector<Function_*>& v) : function_vector_(v) 
-                {
-                    DefaultMap* map = new DefaultMap(); // TODO:Check and FIX
-                    subdmap =map ;
-                }
-                
-                Polyhedral_vector_to_labeled_function_wrapper(std::vector<Function_*>& v, AbstractMap& map) : function_vector_(v)
+                Polyhedral_vector_to_labeled_function_wrapper(const std::vector<Function_*>& v, AbstractMap& map) : function_vector_(v)
                 {
                     subdmap =&map;
 
@@ -80,75 +65,19 @@ namespace CGAL {
 
                     return subdmap->index(bits);
                 }
-                template< typename OutputIterator>
-                OutputIterator construct_initial_points(OutputIterator pts, const int nb_points) const
+                return_type operator()(const Segment_3& segment) const
                 {
-                   for ( Function_ function : function_vector_ ) 
-                   {
-                       function.construct_initial_points_object()(std::back_inserter(pts),nb_points);
-                                                
-                   }
-                   return pts;
-                }
-                //Surface_patch_index make_surface_index(const Subdomain_index i, const Subdomain_index j) const
-                //{
-                    //   cstr_s_p_index(i, j);
- 
-                //   return subdmap->suface_index(Subdomain_index i,Subdomain_index j)
-                //}
-                //return_type operator()(const Point_3& a, const Point_3& b) const
-                //{
-                //    return subdmap->surface_patch(this->operator()(a),this->operator()(b));
-                //}
-
-
-
-
-                //return_type index_from_surface_patch_index
-
-                /*struct Construct_intersection
-                {
-                       Construct_intersection(const Polyhedral_vector_to_labeled_function_wrapper& domain) : r_domain_(domain) {std::cout<< "!he" << std::endl;}
-
-                    private:
-                        const Polyhedral_vector_to_labeled_function_wrapper& r_domain_;
-                }; 
-
-                Construct_intersection construct_intersection_object() const
-                {
-                    std::cout<< "!he" << std::endl;
-                    return Construct_intersection(*this);
-                }
-
-
-
-                return_type operator()(const Segment_3& s) const
-                { 
-                   return this->operator()(s.source(), s.target());
-                }
-                return_type operator()(const Point_3& p1 , const Point_3& p2 ) 
-                {
-                    
-                    // points do not match value 
                     int nb_func = function_vector_.size();
-                    Bmask bits1(nb_func);
-                    Bmask bits2(nb_func);
+                    Bmask bits(nb_func);
+                    std::cout << " XXX " << std::endl; 
                     for ( int i = 0 ; i < nb_func ; ++i )
                     {
-                        bits1[i] =(bool)function_vector_[i]->is_in_domain_object()(p1);
-                        bits2[i] =(bool)function_vector_[i]->is_in_domain_object()(p2);
+                        bits[i] =(bool)function_vector_[i]->do_intersect_surface_object()(segment);
                     }
-                    //std::cout << bits << std::endl;
 
-                    std::cout<< " get" << std::endl;
-                    //return subdmap->index(bits);
-                    return static_cast<return_type>(bits1^bits2);
+                    return subdmap->index(bits);
                 }
-                return_type surface_patch_index(const Index& index) 
-                {
-                    std::cout<< "!he" << std::endl;
-                    return static_cast<return_type>(1);
-                }*/
+
 
                 Bbox_3 bbox() const
                 {

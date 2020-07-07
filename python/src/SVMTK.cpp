@@ -106,12 +106,13 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("simplify", &Slice::simplify) 
         .def("save", &Slice::save)
         .def("add_constraint", &Slice::add_constraint )
-        .def("add_subdomains", &Slice::add_subdomains)
+        //.def("add_subdomains", &Slice::add_subdomains)
         .def("slice_surfaces", &Slice::slice_surfaces ) 
-
+        .def("as_surface", &Slice::as_surface ) 
         .def("add_surface_domains", py::overload_cast<std::vector<Surface>, AbstractMap&>( &Slice::add_surface_domains) ) 
         .def("add_surface_domains", py::overload_cast<std::vector<Surface>>( &Slice::add_surface_domains) ) 
-
+        .def("connected_components",&Slice::connected_components) 
+        .def("keep_largest_connected_component",&Slice::keep_largest_connected_component)
         .def("add_constraints",(void (Slice::*)(Slice&,bool)) &Slice::add_constraints);
 
 
@@ -138,10 +139,7 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("smooth_laplacian", &Surface::smooth_laplacian)
         .def("smooth_taubin", &Surface::smooth_taubin)
         .def("smooth_shape", &Surface::smooth_shape)
-
-        // Either use these two for operator overloading, or return the vertices
-        //.def("inside", &Surface::inside)
-        //.def("outside", &Surface::outside)
+        .def("clear" , &Surface::clear) 
         .def("make_cube", ( void (Surface::*)(double,double,double,double,double,double,int,int,int) ) &Surface::make_cube)
         .def("make_cube", ( void (Surface::*)(double,double,double,double,double,double,int) ) &Surface::make_cube,py::arg("x0"),py::arg("y0"),py::arg("z0"),py::arg("x1"),py::arg("y1"),py::arg("z1"),  py::arg("N")=10)
 
@@ -179,7 +177,7 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("refine_mesh", (void (Domain::*)(double)) &Domain::refine_mesh)
 
         .def("get_boundary", &Domain::get_boundary,py::arg("tag")=0)
-        .def("mesh_slice", &Domain::mesh_slice)
+        //  .def("mesh_slice", &Domain::mesh_slice)
         .def("lloyd", &Domain::lloyd,     py::arg("time_limit")=0, py::arg("max_iteration_number")=0, py::arg("convergence")=0.02, py::arg("freeze_bound")=0.01,py::arg("do_freeze")=true)
         .def("odt", &Domain::odt,         py::arg("time_limit")=0, py::arg("max_iteration_number")=0, py::arg("convergence")=0.02, py::arg("freeze_bound")=0.01,py::arg("do_freeze")=true)
         .def("exude", &Domain::exude,     py::arg("time_limit")=0, py::arg("sliver_bound")=0)
@@ -187,7 +185,8 @@ PYBIND11_MODULE(SVMTK, m) {
 
         .def("add_sharp_border_edges", (void (Domain::*)(Surface&,double)) &Domain::add_sharp_border_edges, py::arg("surface") , py::arg("threshold")=60 ) 
         //.def("add_sharp_border_edges", overload_cast_<Surface&,double>()(&Domain::add_sharp_border_edges) ) 
-
+        //.def("add_field", &Domain::add_field)
+        //.def("mesh_sizing_field", &Domain::mesh_sizing_field)
         .def("clear_borders", &Domain::clear_borders)
         .def("remove_subdomain", (void (Domain::*)(std::vector<int>)) &Domain::remove_subdomain)
         .def("remove_subdomain", (void (Domain::*)(int)) &Domain::remove_subdomain) 
@@ -198,7 +197,7 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("set_features", (void(Domain::*)(std::vector<std::vector<Point_3>>& )) &Domain::set_features) 
         .def("add_feature", &Domain::add_feature) 
         .def("save", &Domain::save, py::arg("OutPath"), py::arg("save_1Dfeatures")=true); 
-       
+        
 
 
 

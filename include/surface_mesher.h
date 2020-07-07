@@ -9,7 +9,7 @@
 #include <CGAL/Surface_mesh_default_criteria_3.h>
 #include <CGAL/Surface_mesh_triangulation_generator_3.h>
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
-#include <CGAL/IO/Complex_2_in_triangulation_3_file_writer.h>
+//#include <CGAL/IO/Complex_2_in_triangulation_3_file_writer.h>
 
 #include <functional>
 
@@ -40,7 +40,7 @@ public:
 
 
 template<typename Mesh , typename Implicit_Function> // Implicit function -> return coordiantes x0,y0,z0-> make center 
-void surface_mesher(Mesh& mesh, Implicit_Function func, double& x0 ,double& y0, double& z0 , double bounding_sphere_radius, double angular_bound, double radius_bound, double distance_bound ) // remove implivit anf center use CEnter
+void surface_mesher(Mesh& mesh, Implicit_Function func, double& x0 ,double& y0, double& z0 , double bounding_sphere_radius, double angular_bound, double radius_bound, double distance_bound ) 
 {
     typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
     typedef CGAL::Surface_mesh_triangulation_generator_3<Kernel>::Type Tr;
@@ -101,8 +101,6 @@ void surface_mesher(Mesh& mesh, Implicit_Function func,  double bounding_sphere_
 
 //    CGAL::make_surface_mesh(c2t3, surface, criteria,CGAL::Manifold_with_boundary_tag());
     CGAL::make_surface_mesh(c2t3, surface, criteria, CGAL::Non_manifold_tag());
-
-
     CGAL::facets_in_complex_2_to_triangle_mesh(c2t3,mesh);
 
 }

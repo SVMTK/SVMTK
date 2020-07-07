@@ -13,13 +13,13 @@ set(CMAKE_BUILD_TYPE Release)
 
 #include_directories(BEFORE CGAL)
 # CGAL and its components
-find_package(CGAL REQUIRED COMPONENTS Core GMP MPFR)
+find_package(CGAL 5 REQUIRED COMPONENTS Core GMP MPFR)
 include(${CGAL_USE_FILE})
 #add_subdirectory(cgal/Installation)
 # Boost and its components
 find_package(Boost REQUIRED  )
 include_directories(${BOOST_USE_FILES})
-
+message( ${CGAL_MAJOR_VERSION})
 # Eigen3.2 and its components
 find_package(Eigen3 REQUIRED)  # Requires 3.2.0 or greater
 include(${EIGEN3_USE_FILE})
@@ -52,3 +52,13 @@ get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTO
 #else()
 #    target_link_libraries(${exe_name} ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} )
 #endif()
+
+
+#enable_testing()
+
+#ENABLE_TESTING()
+#ADD_SUBDIRECTORY( tests/cpp )
+
+#add_test (NAME python-tests
+#  COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}
+#  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/mypyspac
