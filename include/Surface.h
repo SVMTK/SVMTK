@@ -14,19 +14,16 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with SVM-Tk.  If not, see <http://www.gnu.org/licenses/>.
+
 #ifndef Surface_H
-
-
 #define Surface_H
 
 #ifndef BOOST_PARAMETER_MAX_ARITY
 # define BOOST_PARAMETER_MAX_ARITY 12
 #endif
- 
-
 
 // Local
-#include "Slice.h" 
+#include "Slice.h"
 #include "read_polygons_STL.h"
 #include "surface_mesher.h"
 #include "reconstruct_surface.h"
@@ -35,8 +32,8 @@
 #include <boost/foreach.hpp>
 #include <CGAL/boost/graph/copy_face_graph.h>
 
-//  STL
-#include <assert.h>  
+// STL
+#include <assert.h>
 #include <iterator>
 #include <vector>
 #include <CGAL/IO/STL_reader.h>
@@ -54,7 +51,7 @@
 #include <CGAL/Delaunay_mesh_face_base_2.h>
 #include <CGAL/Delaunay_mesh_size_criteria_2.h>
 #include <CGAL/Polyline_simplification_2/Squared_distance_cost.h>
-#include <CGAL/Polyline_simplification_2/simplify.h> 
+#include <CGAL/Polyline_simplification_2/simplify.h>
 
 //---------------------------------------------------------
 // CGAL- Polygon_mesh_processing polygon_mesh_processing.h
@@ -116,7 +113,7 @@
 template< typename Mesh> // seperate because -> typedef mesh in Surface
 bool load_surface(const std::string file, Mesh& mesh) // new name load polygons if load fails
 {
-   
+
   std::ifstream input(file);
 
   std::string extension = file.substr(file.find_last_of(".")+1);//TODO: FIX boost linking problem
@@ -127,8 +124,8 @@ bool load_surface(const std::string file, Mesh& mesh) // new name load polygons 
   }
 
   typedef typename Mesh::Point Point_3;
-  
-  
+
+
   std::vector<Point_3> points;
   std::vector< std::vector<std::size_t> > polygons;
 
@@ -1310,146 +1307,145 @@ void Surface::reconstruct( double sm_angle,
 
 void Surface::seperate_narrow_gaps() 
 {
+    std::map<vertex_descriptor, double> results;
+    Vertex_point_pmap vppmap = get(CGAL::vertex_point,mesh);
 
-   std::map<vertex_descriptor,double> results;
-   Vertex_point_pmap vppmap = get(CGAL::vertex_point,mesh);
+    Tree tree(vertices(mesh).begin(),
+             vertices(mesh).end(),
+             Splitter(),
+             Traits(vppmap)
+    );
 
-   Tree tree(vertices(mesh).begin(),
-            vertices(mesh).end(),
-            Splitter(),
-            Traits(vppmap)
-   );
+    Distance tr_dist(vppmap);
 
-   Distance tr_dist(vppmap);
+    FT distance, edgeL;
+    Point_3 closest;
+    bool flag;
 
-   FT distance, edgeL;
-   Point_3 closest;
-   bool flag;
-
-   for (vertex_descriptor v_it : mesh.vertices())
-   {
+    for (vertex_descriptor v_it : mesh.vertices())
+    {
         flag = true;
-    
+
         K_neighbor_search search(tree, mesh.point(v_it), 2,0,true,tr_dist); //tree.closest_point(point_query); must be second closest
-        
+
         closest = mesh.point((search.begin()+1)->first); // The closest point is the query point, therefore choose second point as closest. 
-        
+
         Point_3 current = mesh.point(v_it);
         distance = CGAL::squared_distance(current, closest );
         CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(v_it),mesh), done(vbegin);
         do
         {
-           edgeL = CGAL::squared_distance(current, mesh.point(*vbegin) ); 
-           if ( distance >= edgeL ) 
-           {
-              flag=false;
-            break;
-           }
-         *vbegin++;
-        }while(vbegin!=done);
-    
+            edgeL = CGAL::squared_distance(current, mesh.point(*vbegin));
+            if ( distance >= edgeL )
+            {
+                flag = false;
+                break;
+            }
+            *vbegin++;
+        } while (vbegin != done);
+
         if (flag){results[v_it] = -0.2*static_cast<double>(CGAL::sqrt(distance)) ;} // both vertices are affected changes, used 0.5
-   
-   }
 
-   adjusting_boundary_region(results.begin(),results.end());
-   
-   smooth_taubin(2);
-   
+    }
+
+    adjusting_boundary_region(results.begin(),results.end());
+    smooth_taubin(2);
+
 }
-Surface::vertex_vector Surface::get_close_points(Surface &other) 
+
+
+Surface::vertex_vector Surface::get_close_points(Surface &other)
 {
+    Surface::vertex_vector results;
+    Vertex_point_pmap vppmap = get(CGAL::vertex_point,other.get_mesh());
 
- 
-   Surface::vertex_vector results;
-   Vertex_point_pmap vppmap = get(CGAL::vertex_point,other.get_mesh());  
+    Tree tree(vertices(other.get_mesh()).begin(),
+              vertices(other.get_mesh()).end(),
+              Splitter(),
+              Traits(vppmap)
+    );
 
-   Tree tree(vertices(other.get_mesh()).begin(),
-            vertices(other.get_mesh()).end(),
-            Splitter(),
-            Traits(vppmap)
-   );
+    Distance tr_dist(vppmap);
 
-   Distance tr_dist(vppmap);
-
-   FT distance, edgeL;
-   Point_3 closest;
-   bool flag;
-   for (vertex_descriptor v_it : mesh.vertices())
-   {
+    FT distance, edgeL;
+    Point_3 closest;
+    bool flag;
+    for (vertex_descriptor v_it : mesh.vertices())
+    {
         flag = true;
-         
+
         // every point as a close point 
-        K_neighbor_search search(tree, mesh.point(v_it), 2,0,true,tr_dist); 
-        
+        K_neighbor_search search(tree, mesh.point(v_it), 2, 0, true, tr_dist);
+
         closest = other.get_mesh().point((search.begin())->first);
-        
+
         Point_3 current = mesh.point(v_it);
-        distance = CGAL::squared_distance(current, closest );
-        CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(v_it),mesh), done(vbegin);
+        distance = CGAL::squared_distance(current, closest);
+        CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(v_it), mesh), done(vbegin);
         do
         {
-           edgeL = CGAL::squared_distance(current, mesh.point(*vbegin) ); 
-           if ( distance >= edgeL ) 
-           {
-              flag=false;
-            break;
-           }
-         *vbegin++;
-        }while(vbegin!=done);
-    
-        if (flag){ results.push_back(v_it) ;} // both vertices are affected
-   
-   }
- 
+            edgeL = CGAL::squared_distance(current, mesh.point(*vbegin));
+            if ( distance >= edgeL )
+            {
+                flag = false;
+                break;
+            }
+            *vbegin++;
+        } while (vbegin != done);
+
+        if (flag)
+            results.push_back(v_it); // both vertices are affected
+    }
+
    return results;
-   
 }
 
-std::map<Surface::vertex_descriptor,double> Surface::seperate_close_surfaces(Surface& other) // TODO: based on distance to surface
+std::map<Surface::vertex_descriptor, double> Surface::seperate_close_surfaces(Surface& other) // TODO: based on distance to surface
 {
 
-   std::map<vertex_descriptor,double> results;
-   Vertex_point_pmap vppmap = get(CGAL::vertex_point,other.get_mesh());
+    std::map<vertex_descriptor,double> results;
+    Vertex_point_pmap vppmap = get(CGAL::vertex_point,other.get_mesh());
 
-   Tree tree(vertices(other.get_mesh()).begin(),
+    Tree tree(vertices(other.get_mesh()).begin(),
             vertices(other.get_mesh()).end(),
             Splitter(),
             Traits(vppmap)
-   );
+    );
 
-   Distance tr_dist(vppmap);
+    Distance tr_dist(vppmap);
 
-   FT distance,edgeL;
-   Point_3 closest;
-   bool flag;
-   for (vertex_descriptor v_it : mesh.vertices())
-   {
+    FT distance,edgeL;
+    Point_3 closest;
+    bool flag;
+    for (vertex_descriptor v_it : mesh.vertices())
+    {
         flag = true;
-    
-        K_neighbor_search search(tree, mesh.point(v_it), 2,0,true,tr_dist); 
-        
+
+        K_neighbor_search search(tree, mesh.point(v_it), 2, 0, true, tr_dist);
+
         closest = mesh.point((search.begin()+1)->first); // The closest point is the query point, therefore choose second point as closest. 
-        
+
         Point_3 current = mesh.point(v_it);
-        distance = CGAL::squared_distance(current, closest );
-        CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(v_it),mesh), done(vbegin);
+        distance = CGAL::squared_distance(current, closest);
+        CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(v_it), mesh), done(vbegin);
         do
         {
-           edgeL = CGAL::squared_distance(current, mesh.point(*vbegin) ); 
-           if ( distance >= edgeL ) 
-           {
-              flag=false;
-            break;
-           }
-         *vbegin++;
-        }while(vbegin!=done);
-    
-        if (flag){results[v_it] = -0.2*static_cast<double>(CGAL::sqrt(distance)) ;} // both vertices are affected
-   
-   }
-   return  results;
-   
+            edgeL = CGAL::squared_distance(current, mesh.point(*vbegin));
+            if ( distance >= edgeL )
+            {
+                flag=false;
+                break;
+            }
+            *vbegin++;
+        } while(vbegin!=done);
+
+    if (flag) {
+        // both vertices are affected
+        results[v_it] = -0.2*static_cast<double>(CGAL::sqrt(distance));
+    }
+
+    }
+    return  results;
 }
 
 
@@ -1457,10 +1453,10 @@ std::shared_ptr< Surface > Surface::convex_hull()
 {
     Polyhedron poly;
     auto point_vector = std::vector< Point_3 >(mesh.num_vertices());
+
+    size_t point_vector_counter = 0;
     for (auto vit: vertices(mesh))
-    {
-        point_vector.emplace_back(mesh.point(vit));
-    }
+        point_vector[point_vector_counter++] = mesh.point(vit);
 
     CGAL::convex_hull_3(point_vector.begin(), point_vector.end(), poly);
     auto result = std::make_shared< Surface >(Surface(poly));
