@@ -35,6 +35,7 @@ class AbstractMap
 
         virtual return_type index(const Bmask bits) = 0;
         virtual ~AbstractMap() {}
+
 };
 
 
@@ -82,6 +83,12 @@ class SubdomainMap :virtual public AbstractMap
            {
               std::cout << it->first << " " << it->second << " " << std::endl;
            }
+        }
+        int number_of_domains()
+        {
+           return subdmap.size() ; 
+
+
         }
       
 };

@@ -3,26 +3,7 @@
 #define __Polyhedral_vector_to_labeled_function_wrapper_H
 
 
-#include "SubdomainMap.h" // is comipled before this safegaurd capture 
-//s#include <boost/dynamic_bitset.hpp>
-
-
-//#include <list>
-//#include <string>
-//#include <iostream>
-//#include <fstream>
-
-
-//#include "CGAL/Polyhedral_mesh_domain_3.h" ??
-
-//#include <CGAL/AABB_tree.h>
-//#include <CGAL/AABB_traits.h>
-//#include <CGAL/AABB_polyhedron_triangle_primitive.h>
-//#include <CGAL/AABB_polyhedron_segment_primitive.h>
-
-//#include <CGAL/point_generators_3.h>
-
-
+#include "SubdomainMap.h" // safegaurd capture 
 
 namespace CGAL {
         template<class Function_, class BGT>
@@ -33,10 +14,7 @@ namespace CGAL {
                 typedef int return_type;  
 
                 typedef std::vector<Function_*>   Function_vector; // Polyhedron_mesh_domain_with features -> stores polyhedron
-                // TODO
-                // Polyhedron_mesh_domain_with features  operator() 
-                // similar to Hybrid mesh domain
-                // SubID generator 
+
          
                 typedef typename BGT::Point_3       Point_3;
                 typedef typename BGT::Segment_3 Segment_3;

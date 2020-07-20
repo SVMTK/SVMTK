@@ -185,9 +185,11 @@ class Slice
 
        void set_plane(Plane_3 inplane){ this->plane = inplane;}
        Plane_3& get_plane(){return this->plane;}
-
+       template<typename Surface> 
        void add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map) ; //todo rename
+       template<typename Surface> 
        void add_surface_domains(std::vector<Surface> surfaces) ; //todo rename
+       template< typename Surface> 
        void slice_surfaces(std::vector<Surface> surfaces) ;
 
        void remove_subdomain(std::vector<int> tags); 
@@ -208,14 +210,16 @@ class Slice
        void repair_polylines(Polylines_2& polylines_bad) ;
 
        void clear_costraints(){ constraints.clear(); return; } 
-       int  num_constraints() { return constraints.size();}
+       int  number_of_constraints() { return constraints.size();}
+       int number_of_faces(){return cdt.number_of_faces();} 
        void set_constraints() ;
        void repair_costraints() { Polylines_2 temp = constraints; clear_costraints() ;std::sort( temp.begin(), temp.end(), sort_vectors_by_size() ); repair_polylines(temp);}
 
 
        std::map<Edge,int>& get_edges(){this->edges;}  
        Polylines_2& get_constraints() { return constraints;}
-
+        
+       template<typename Surface> 
        std::shared_ptr<Surface> as_surface(); //Forward called
        void save(std::string outpath);
        void output_slice_to_medit_(std::ostream& os);
@@ -396,6 +400,130 @@ void Slice::create_mesh(double mesh_resolution)
      }
 
 
+}
+template<typename Surface> 
+void Slice::slice_surfaces(std::vector<Surface> surfaces) // TODO : DECIDE return slice or member function 
+{
+   
+   for ( auto surf : surfaces ) 
+   {
+         std::shared_ptr<Slice> temp = surf.mesh_slice(this->plane);     
+         this->add_constraints(*temp.get()); 
+   }
+
+
+}  
+template<typename Surface> 
+std::shared_ptr<Surface> Slice::as_surface() 
+{
+  // TODO: why ?? FIXME
+  typedef std::vector<std::size_t> Face ;
+  typedef CDT::Vertex_handle Vertex_handle;
+
+  std::vector<Point_3> points ;
+  std::vector<Face> faces;
+  std::map<Vertex_handle, int> index_of_vertex;
+  int i = 0;
+  for(CDT::Point_iterator it = cdt.points_begin() ;  it != cdt.points_end(); ++it, ++i)
+  {
+       points.push_back(plane.to_3d(*it));  
+       index_of_vertex[it.base()] = i;
+  }
+  for(CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
+  {
+       Face temp;
+       temp.push_back( index_of_vertex[fit->vertex(0)] ) ;
+       temp.push_back( index_of_vertex[fit->vertex(1)] ) ;
+       temp.push_back( index_of_vertex[fit->vertex(2)] ) ;
+       faces.push_back(temp);
+  }
+   std::shared_ptr<Surface> surf(new  Surface(points, faces)) ; // FIXME: use make_shared instead
+   return surf;  
+}
+template<typename Surface> 
+void Slice::add_surface_domains(std::vector<Surface> surfaces)
+{
+   if ( this->cdt.number_of_faces()==0)
+   {
+      std::cout<<"create mesh first"<< std::endl; 
+      return;
+   }
+   DefaultMap map =DefaultMap();
+   add_surface_domains(surfaces,map);
+
+}
+
+template<typename Surface> 
+void Slice::add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map) //TODO:RENAME
+{
+   if ( this->cdt.number_of_faces()==0)
+   {
+      std::cout<<"create mesh first"<< std::endl; 
+      return;
+   }
+   typedef boost::dynamic_bitset<>   Bmask;
+   typedef std::pair<int,int>  Pid; // patch id 
+   typedef std::map<Pid,int> Pid_map;
+   int fn,fi;
+   
+   Pid_map pid_map_;
+   Pid spp;
+   std::map<Face_handle,Bmask> masks;
+   int index_counter=1;
+   for ( auto surf :  surfaces) 
+   {
+       typename Surface::Inside inside(surf.get_mesh());
+       for(CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
+       {
+          Point_2 p2 =  CGAL::centroid(fit->vertex(0)->point() ,fit->vertex(1)->point(),fit->vertex(2)->point());  
+          Point_3 p3 =  this->plane.to_3d(p2);
+          CGAL::Bounded_side res = inside(p3);
+          if (res == CGAL::ON_BOUNDED_SIDE)
+             masks[fit].push_back(1);
+          else
+             masks[fit].push_back(0);
+       }
+
+   } 
+   for (auto bit : masks)
+   {
+       bit.first->info()=map.index(bit.second);
+       if (bit.first->info()==0)
+          cdt.delete_face(bit.first);
+   
+   }
+   Edge ei;
+   for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
+   {
+      fi = fit->info(); 
+      for( int i =0 ;i<3;++i)
+      {
+         Edge ei(fit,i); 
+         if (fit->neighbor(i)->is_in_domain())
+            fn= fit->neighbor(i)->info();
+         else 
+            fn=0;             
+            if (fn!=fi)
+            {     
+               if (fn>fi)
+                  spp={fn,fi};
+               else
+                  spp={fi,fn};
+               std ::pair<Pid_map::iterator, bool> is_insert_successful = pid_map_.insert(std::make_pair(spp,index_counter));
+               if(is_insert_successful.second)
+               { 
+                 index_counter++;
+                 std::cout <<  spp.first << "\t" << spp.second << index_counter<< std::endl;
+               }
+               this->edges[ei] = pid_map_[spp];    
+            }
+            else
+            {
+               this->edges[ei] =  0;
+            }          
+         }
+     }
+        
 }
 
 

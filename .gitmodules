@@ -4,3 +4,6 @@
 [submodule "external/cgal"]
 	path = external/cgal
 	url = https://github.com/CGAL/cgal.git
+[submodule "external/Catch2"]
+	path = external/Catch2
+	url = https://github.com/catchorg/Catch2.git
