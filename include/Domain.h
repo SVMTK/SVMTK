@@ -374,10 +374,9 @@ int remove_isolated_vertices(C3T3& c3t3, bool remove_domain=false)
   std::cout<<"Number of isolated vertices removed: "<< before - after << std::endl;
   if ((before - after) > 10 and !remove_domain)   
   {
-       // FIXME : Better 
-       std::cout<<"The number of removed vertices are substantial."<< std::endl;  
-       std::cout<<"This can cause the mesh to be horrid."<< std::endl;  
-       std::cout<<"Try isotropic remeshing or increase the mesh resolution."<< std::endl;  
+       std::cout<<"There were a substantial number of isolated vertices, and the user should inspect the mesh."<< std::endl;  
+       std::cout<<"Try: 1.isotropic remeshing, 2.increase the mesh resolution or \n 3. specific mesh parameters to decrease number of isolated vertices."<< std::endl;  
+
   }
 
   return (before - after);
@@ -450,76 +449,52 @@ class Domain {
         Domain(std::vector<Surface> surfaces, AbstractMap& map);
         // -----------------------------------------
         ~Domain() { for( auto vit : this->v){delete vit;}v.clear();}        
-        // --------CGAL mesh criteria---------
-        //void set_parameters(std::map<std::string, double> &new_parameters); // py::dict? 
-        //void set_parameter(std::string key, double value);
-        int number_of_surfaces(){return v.size();}
-        // ------- Mesh Creation and Refinement
+
         void create_mesh(const double mesh_resolution );
         void create_mesh(double cell_size, double facet_size,double facet_angle,  double facet_distance,double cell_radius_edge_ratio);
-        //void refine_mesh(const double mesh_resolution );
-        //void refine_mesh();
-        // --------CGAL mesh critera settings
-        /*void default_parameters() {
-            parameters["mesh_resolution"]=64.0;
-            parameters["facet_angle"]    = 25.0;
-            parameters["facet_size"]     = 0.1;
-            parameters["facet_distance"] =  0.1;
-            parameters["cell_radius_edge_ratio"] = 3.0;
-            parameters["cell_size"] = 0.1;
-            parameters["edge_size"] = 0.1;
-        }*/
-        // ----  IO Funtions
+
         void save(std::string OutPath, bool save_1Dfeatures); 
 
+        double get_bounding_sphere_radius(){ return min_sphere.get_bounding_sphere_radius(); }
 
-
-        void add_surface_points(Surface &surface);
         void add_sharp_border_edges(Polyhedron& polyhedron, double threshold);
         void add_sharp_border_edges(Surface& surface, double threshold=60); 
- 
-        Polylines& get_features() {return features; }  
-        Polylines& get_borders() {return borders; }
-        
-        void set_borders(){domain_ptr.get()->add_features(get_borders().begin(), get_borders().end());} // -> TODO: integrate or REOMVE 
-        void add_borders(Polyline_3 polyline) { borders.push_back(polyline);} 
-        void clear_borders(){borders.clear();}
-   
-        std::vector<std::shared_ptr<Surface> > get_patches();
+        void add_surface_points(Surface &surface); // FIXME operator ?? 
+
+        void set_borders();
+        void set_features();
+
+        void clear_borders(){this->borders.clear();}
+        void clear_features(){this->features.clear();}
+
+        std::vector<std::shared_ptr<Surface> > get_boundaries();
         std::shared_ptr<Surface> get_boundary(int tag); 
 
-        std::set<std::pair<int,int>> number_of_patches();
-        std::set<int>  number_of_subdomains(); // TODO: rename to subdomain tags, and write number of subdomains with retrun int 
-        std::set<int> number_of_curves();
+        std::set<std::pair<int,int>> get_patches();
+        std::set<int>  get_subdomains(); // TODO: rename to subdomain tags, and write number of subdomains with retrun int 
+        std::set<int> get_curves();
+
+        Polylines& get_features() {return features; }  
+        Polylines& get_borders() {return borders; }
+
+        int number_of_subdomains(){return get_subdomains().size() ;}
+        int number_of_curves(){return get_curves().size() ;}
+        int number_of_patches(){return get_patches().size() ;} 
+        int number_of_cells(){return c3t3.number_of_cells();}
+        int number_of_surfaces(){return v.size();}
+
         void remove_subdomain(std::vector<int> tags);
         void remove_subdomain(int tag);              // tags 
 
+        void add_border(Polyline_3 polyline) { borders.push_back(polyline);} 
+        void add_feature(Polyline_3 polyline){ features.push_back(polyline);} 
 
-
-        void add_feature(Polyline_3 polyline) { features.push_back(polyline);} 
-        void set_features();
-        void set_features(Polylines& polylines){ set_features( polylines.begin() , polylines.end() );} 
-        
-
-        template< typename InputIterator> // Wrapping 
-        void set_features(InputIterator begin, InputIterator end){domain_ptr->add_features(begin, end);} 
-
-        
-        // # subdomainindex TODO: RENAME
-
-
-        // -----Mesh optimization ->Direct wrapping of CGAL funcions
         void lloyd(double time_limit= 0, int max_iteration_number = 0, double convergence = 0.02,double freeze_bound = 0.01, bool do_freeze = true);// default values
         void odt(double time_limit= 0, int max_iteration_number = 0, double convergence = 0.02,double freeze_bound = 0.01, bool do_freeze = true);  // default values
         void exude( double time_limit = 0, double sliver_bound = 0 ){ CGAL::exude_mesh_3(c3t3, sliver_bound=sliver_bound, time_limit=time_limit);}  // default values
         void perturb( double time_limit=0, double sliver_bound=0){CGAL::perturb_mesh_3 ( c3t3, *domain_ptr.get(), time_limit=time_limit, sliver_bound=sliver_bound) ;} // default values
 
 
-
-        //void rebind_facets();
-        int number_of_cells(){return c3t3.number_of_cells();}
-
-        C3t3& get_mesh(){return c3t3;}
 
     private :
         Function_vector v; // 
@@ -532,7 +507,22 @@ class Domain {
 
 };
 
-std::set<int> Domain::number_of_curves()
+void Domain::set_borders()
+{
+  if (this->borders.size()>0)
+  { 
+     domain_ptr.get()->add_features(this->borders.begin(), this->borders.end());
+  }
+}
+void Domain::set_features()
+{
+  if (this->borders.size()>0)
+  { 
+     domain_ptr.get()->add_features(this->features.begin(), this->features.end());
+  }
+}
+
+std::set<int> Domain::get_curves()
 {
     const Tr& tr = c3t3.triangulation();
     std::set<int> result;
@@ -562,7 +552,7 @@ Domain::Domain( std::vector<Surface> surfaces )
 
     Function_wrapper wrapper(this->v, *map_ptr.get());
     domain_ptr = std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox()));
-    //default_parameters();
+
 }
 
 Domain::Domain( std::vector<Surface> surfaces , AbstractMap& map )
@@ -579,7 +569,7 @@ Domain::Domain( std::vector<Surface> surfaces , AbstractMap& map )
 
     Function_wrapper wrapper(this->v,map);
     domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox()));
-    //default_parameters();
+
 }
 
 Domain::Domain(Surface &surface) 
@@ -597,25 +587,20 @@ Domain::Domain(Surface &surface)
     Function_wrapper wrapper(this->v, *map_ptr.get());
 
     domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox())); 
-    //default_parameters();
+
 
 }
-// ---------- CGAL mesh criteria --------------------
-/*void Domain::set_parameters(std::map<std::string, double> &new_parameters)
-{
-    for (std::map<std::string, double>::iterator pit= new_parameters.begin(); pit!=new_parameters.end(); ++pit )
-    {
-        parameters[pit->first] = static_cast<double>(pit->second);
-    }
-}
-void Domain::set_parameter(std::string key , double value )
-{
-   parameters[key] = value;
-}*/
 
 void Domain::create_mesh(double cell_size, double facet_size,double facet_angle,  double facet_distance,double cell_radius_edge_ratio)
 {
+
+    set_borders();
+    set_features();
+
     std::cout << "Start meshing" << std::endl;
+
+
+
 
     Mesh_criteria criteria(CGAL::parameters::facet_angle=facet_angle ,
                            CGAL::parameters::facet_size =facet_size,
@@ -624,7 +609,7 @@ void Domain::create_mesh(double cell_size, double facet_size,double facet_angle,
                            CGAL::parameters::cell_size=cell_size );
 
 
-    c3t3 = CGAL::make_mesh_3<C3t3>(*domain_ptr.get(), criteria);
+    c3t3 = CGAL::make_mesh_3<C3t3>(*domain_ptr.get(), criteria,CGAL::parameters::no_exude()); //NOTE: 
 
 
     while ( remove_isolated_vertices(c3t3) >0 )
@@ -638,7 +623,8 @@ void Domain::create_mesh(double cell_size, double facet_size,double facet_angle,
 void Domain::create_mesh(const double mesh_resolution )
 {
     
-    
+    set_borders();
+    set_features();
 
     double r = min_sphere.get_bounding_sphere_radius(); 
     const double cell_size = r/mesh_resolution;
@@ -652,7 +638,7 @@ void Domain::create_mesh(const double mesh_resolution )
                                        CGAL::parameters::cell_size = cell_size);
 
     std::cout << "Start meshing" << std::endl;
-    c3t3 = CGAL::make_mesh_3<C3t3>(*domain_ptr.get(), criteria);
+    c3t3 = CGAL::make_mesh_3<C3t3>(*domain_ptr.get(), criteria,CGAL::parameters::no_exude());
    
 
     while ( remove_isolated_vertices(c3t3) >0 )
@@ -678,39 +664,7 @@ void Domain::save(std::string OutPath,bool save_1Dfeatures)
     medit_file.close();
 }
 
-/*
-void Domain::refine_mesh()
-{
-    Mesh_criteria criteria(CGAL::parameters::facet_angle=parameters["facet_angle"],
-                           CGAL::parameters::facet_size =parameters["facet_size"],
-                           CGAL::parameters::facet_distance=parameters["facet_distance"],
-                           CGAL::parameters::cell_radius_edge_ratio=parameters["cell_radius_edge_ratio"],
-                           CGAL::parameters::cell_size=parameters["cell_size"] );
 
-   refine_mesh_3(c3t3, *domain_ptr.get(), criteria,CGAL::parameters::no_reset_c3t3());
-
-    while ( remove_isolated_vertices(c3t3) >0 )
-            c3t3.rescan_after_load_of_triangulation();
-
-}
-void Domain::refine_mesh(const double mesh_resolution )
-{
-    double r = min_sphere.get_bounding_sphere_radius(); 
-    const double cell_size = r/mesh_resolution;
-
-    Mesh_criteria criteria(CGAL::parameters::edge_size = cell_size,
-                                       CGAL::parameters::facet_angle = 30.0,
-                                       CGAL::parameters::facet_size = cell_size,
-                                       CGAL::parameters::facet_distance = cell_size/10.0, 
-                                       CGAL::parameters::cell_radius_edge_ratio = 3.0,
-                                       CGAL::parameters::cell_size = cell_size);
-
-   refine_mesh_3(c3t3, *domain_ptr.get(), criteria);
-
-   if ( remove_isolated_vertices(c3t3) > 0)
-       c3t3.rescan_after_load_of_triangulation();
-
-}*/
 void Domain::add_surface_points(Surface &surface) 
 { 
 
@@ -746,16 +700,7 @@ void Domain::remove_subdomain(std::vector<int> tags) //rename
   int before = c3t3.number_of_cells();
   assert(before!=0);
  
-   // TODO : CLEAN UP 
-
-
-  //std::map<Cell_handle,int> cell_map;
   std::vector<std::tuple<Cell_handle,int,int>> rebind;
-
-  /*for(C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();cit != c3t3.cells_in_complex_end(); ++cit)
-  { 
-     cell_map[cit]=static_cast<int>( c3t3.subdomain_index(cit) );
-  }*/
 
   for( auto j = tags.begin(); j!=tags.end(); ++j)
   {
@@ -832,7 +777,6 @@ void Domain::remove_subdomain(std::vector<int> tags) //rename
 
 void Domain::add_sharp_border_edges(Polyhedron& polyhedron, double threshold)
 { 
- //Polylines polylinput; 
  typedef boost::property_map<Polyhedron, CGAL::edge_is_feature_t>::type EIF_map;
  EIF_map eif = get(CGAL::edge_is_feature, polyhedron);
 
@@ -856,7 +800,7 @@ void Domain::add_sharp_border_edges(Surface& surface, double threshold)
   add_sharp_border_edges(polyhedron, threshold);
 }
 
-std::set<int>  Domain::number_of_subdomains()
+std::set<int>  Domain::get_subdomains()
 {
    std::set<int> sd_indices;
    for(Cell_iterator cit = c3t3.cells_in_complex_begin();cit != c3t3.cells_in_complex_end(); ++cit)
@@ -865,7 +809,7 @@ std::set<int>  Domain::number_of_subdomains()
    }
    return sd_indices;
 }
-std::set<std::pair<int,int>>  Domain::number_of_patches()
+std::set<std::pair<int,int>>  Domain::get_patches()
 {
    std::set<std::pair<int,int>> sf_indices;
    for(Cell_iterator cit = c3t3.cells_in_complex_begin();cit != c3t3.cells_in_complex_end(); ++cit)
@@ -889,12 +833,12 @@ std::shared_ptr<Surface> Domain::get_boundary(int tag=0)
    return surf;
 }
 
-std::vector<std::shared_ptr<Surface>> Domain::get_patches() // TODO: FIX 
+std::vector<std::shared_ptr<Surface>> Domain::get_boundaries() 
 { 
    std::vector<Point_3> points;
    std::vector<Face> faces;
    std::vector<std::shared_ptr<Surface>> patches;
-   for ( auto i : number_of_patches() ) 
+   for ( auto i : get_patches() ) 
    {
       points.clear(); 
       faces.clear();
@@ -908,8 +852,6 @@ std::vector<std::shared_ptr<Surface>> Domain::get_patches() // TODO: FIX
 
    return patches;
 }
-
-void Domain::set_features(){set_features(features.begin() , features.end() );}
 
 void Domain::lloyd(double time_limit, int max_iteration_number, double convergence,double freeze_bound, bool do_freeze )
 {CGAL::lloyd_optimize_mesh_3(c3t3, *domain_ptr.get(), time_limit=time_limit, max_iteration_number=max_iteration_number,convergence=convergence, freeze_bound  = freeze_bound, do_freeze = do_freeze); } 

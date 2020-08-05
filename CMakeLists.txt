@@ -22,21 +22,14 @@ include(${CGAL_USE_FILE})
 find_package(Boost REQUIRED  )
 include_directories(${BOOST_USE_FILES})
 
+
+# 
 if (${CGAL_MAJOR_VERSION} GREATER 4)
   message(STATUS "CGAL version ${CGAL_MAJOR_VERSION}")
   add_definitions(-DSVMTK_INSTALL_CGAL_5)
 else()
   message(STATUS "CGAL version ${CGAL_MAJOR_VERSION}")
-  #add_definitions(-DSVMTK_INSTALL_CGAL_5)
 endif()
-
-
-SET(TEST_DIR "tests")
-SET(TESTS ${SOURCES}
-"${TEST_DIR}/test_main.cpp")
-# Generate a test executable
-include_directories(external/Catch2/include)
-add_executable("${PROJECT_NAME}_test" ${TESTS})
 
 
 add_subdirectory(external/pybind11)
@@ -46,16 +39,25 @@ set( CMAKE_CXX_FLAGS "-fPIC  -shared ${CMAKE_CXX_FLAGS} -std=c++17 -frounding-ma
 
 include_directories(include)
 pybind11_add_module(SVMTK python/src/SVMTK.cpp)
-target_link_libraries(SVMTK PRIVATE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${GMP_LIBRARIES}
+target_link_libraries(SVMTK INTERFACE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${GMP_LIBRARIES}
                             ${MPFR_LIBRARIES} ${OpenMesh} ${Eigen3} ${Boost})
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 
 
-include_directories(external/catch/include)
+#SET(TEST_DIR "tests")
+#SET(TESTS
+    "${TEST_DIR}/test_main.cpp"
+    "${TEST_DIR}/test_Domain.cpp")
+
+#include_directories(lib/catch/include)
+#add_executable("${PROJECT_NAME}_test" ${TESTS})
 #option(ENABLE_TESTS "Enable testing" On)
 #message(STATUS "Tests are ${ENABLE_TESTS}")
 
-#  enable_testing()
+#enable_testing()
+#add_subdirectory(tests EXCLUDE_FROM_ALL)
+
+
 #  add_subdirectory(tests)
 #  message(STATUS "Testing Enabled")
 

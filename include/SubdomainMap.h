@@ -20,8 +20,6 @@
 #define SubdomainMap_H
 
 #include <boost/dynamic_bitset.hpp>
-//#include <boost/type_traits/remove_reference.hpp> // ?
-//#include <boost/type_traits/remove_cv.hpp> // ? 
 #include <map>
 #include <string>
 #include <vector>
@@ -58,8 +56,6 @@ class DefaultMap : virtual public AbstractMap
 
 class SubdomainMap :virtual public AbstractMap
 {
-   private:
-        std::map<boost::dynamic_bitset<>,int> subdmap;
 
    public:
         typedef int return_type;
@@ -90,6 +86,8 @@ class SubdomainMap :virtual public AbstractMap
 
 
         }
+   private:
+        std::map<boost::dynamic_bitset<>,int> subdmap;
       
 };
 

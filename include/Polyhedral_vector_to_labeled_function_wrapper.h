@@ -10,18 +10,12 @@ namespace CGAL {
         class Polyhedral_vector_to_labeled_function_wrapper
         {
             public:
-                // Types
+
                 typedef int return_type;  
-
-                typedef std::vector<Function_*>   Function_vector; // Polyhedron_mesh_domain_with features -> stores polyhedron
-
-         
+                typedef std::vector<Function_*>   Function_vector;
                 typedef typename BGT::Point_3       Point_3;
-                typedef typename BGT::Segment_3 Segment_3;
-                typedef typename Function_::Index Index;
                 typedef boost::dynamic_bitset<>   Bmask;
-                //typedef typename Function_::FT    FT;
-                typedef typename BGT::FT FT;
+            
                  
 
                 Polyhedral_vector_to_labeled_function_wrapper(const std::vector<Function_*>& v, AbstractMap& map) : function_vector_(v)
@@ -43,20 +37,6 @@ namespace CGAL {
 
                     return subdmap->index(bits);
                 }
-                return_type operator()(const Segment_3& segment) const
-                {
-                    int nb_func = function_vector_.size();
-                    Bmask bits(nb_func);
-                    std::cout << " XXX " << std::endl; 
-                    for ( int i = 0 ; i < nb_func ; ++i )
-                    {
-                        bits[i] =(bool)function_vector_[i]->do_intersect_surface_object()(segment);
-                    }
-
-                    return subdmap->index(bits);
-                }
-
-
                 Bbox_3 bbox() const
                 {
                     int nb_func = function_vector_.size();

@@ -93,8 +93,16 @@ PYBIND11_MODULE(SVMTK, m) {
            std::ostringstream os;
            os << "(" << self.x() <<", "<< self.y()<<", "<< self.z() <<")";
            return os.str();
-
         })
+       .def("__eq__",[](Point_3 const & self, Point_3 const & other)
+        {
+           return (self.x()==other.x() and self.y()==other.y() and self.z()==other.z()) ; 
+        }  ,py::is_operator() ) 
+       .def("__ne__",[](Point_3 const & self, Point_3 const & other)
+        {
+           return (self.x()!=other.x() and self.y()!=other.y() and self.z()!=other.z())   ; 
+        }  ,py::is_operator() ) 
+
        .def("x", &Point_3::x)
        .def("y", &Point_3::y)
        .def("z", &Point_3::z);
@@ -126,17 +134,19 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("create_mesh", &Slice::create_mesh) 
         .def("simplify", &Slice::simplify) 
         .def("save", &Slice::save)
-        .def("add_constraint", &Slice::add_constraint )
-        //.def("add_subdomains", &Slice::add_subdomains)
         .def("slice_surfaces", &Slice::slice_surfaces<Surface> ) 
         .def("as_surface", &Slice::as_surface<Surface>  ) 
         .def("add_surface_domains", py::overload_cast<std::vector<Surface>, AbstractMap&>( &Slice::add_surface_domains<Surface> ) ) 
         .def("add_surface_domains", py::overload_cast<std::vector<Surface>>( &Slice::add_surface_domains<Surface> ) ) 
-        .def("connected_components",&Slice::connected_components) 
         .def("number_of_constraints",&Slice::number_of_constraints)
+        .def("number_of_subdomains",&Slice::number_of_subdomains)
         .def("number_of_faces",&Slice::number_of_faces)
+        .def("connected_components",&Slice::connected_components) 
         .def("keep_largest_connected_component",&Slice::keep_largest_connected_component)
-        .def("add_constraints",(void (Slice::*)(Slice&,bool)) &Slice::add_constraints);
+        .def("remove_subdomains", py::overload_cast<int> ( &Slice::remove_subdomains)) 
+        .def("remove_subdomains", py::overload_cast<std::vector<int>> ( &Slice::remove_subdomains)) 
+        .def("add_constraint", &Slice::add_constraint )
+        .def("add_constraints",(void (Slice::*)(Slice&)) &Slice::add_constraints);
 
 
 
@@ -144,19 +154,18 @@ PYBIND11_MODULE(SVMTK, m) {
     py::class_<Surface,std::shared_ptr<Surface>>(m, "Surface")
         .def(py::init<std::string &>())                                             
         .def(py::init<>())
-
-        .def("implicit_surface",  &Surface::implicit_surface<Surface_implicit_function> )  
-        .def("triangulate_hole",&Surface::triangulate_hole)
-        .def("clip",&Surface::clip , py::arg("x0"),py::arg("x1"),py::arg("x2"),py::arg("x3"),py::arg("clip")=true ) // TODO : check
+        .def("implicit_surface",  &Surface::implicit_surface<Surface_implicit_function>, py::arg("implicit_function") ,py::arg("bounding_sphere_radius"),
+                                                             py::arg("angular_bound")=30,py::arg("radius_bound")=0.1,py::arg("distance_bound")=0.1)  
+        .def("clip",&Surface::clip , py::arg("x0"),py::arg("x1"),py::arg("x2"),py::arg("x3"),py::arg("clip")=true ) 
         .def("intersection", &Surface::surface_intersection)
         .def("union", &Surface::surface_union)
         .def("difference", &Surface::surface_difference)
         .def("slice", py::overload_cast<double , double, double , double>(&Surface::mesh_slice)) // TODO: overlad more
         .def("span", &Surface::span) // TODO overload wiht pyarg "x" osv 
-
+        .def("save", &Surface::save)
         .def("fill_holes", &Surface::fill_holes)
         .def("triangulate_faces", &Surface::triangulate_faces)
-        .def("isotropic_remeshing", &Surface::isotropic_remeshing)
+        .def("isotropic_remeshing", py::overload_cast<double , unsigned int , bool>(&Surface::isotropic_remeshing))
         .def("adjust_boundary", &Surface::adjust_boundary)
 
         .def("smooth_laplacian", &Surface::smooth_laplacian)
@@ -174,64 +183,68 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("mean_curvature_flow", &Surface::mean_curvature_flow)
         .def("shortest_surface_path", py::overload_cast<double , double, double , double,double,double>( &Surface::shortest_surface_path) )
         .def("shortest_surface_path", py::overload_cast<Point_3,Point_3>( &Surface::shortest_surface_path) )
-        .def("num_self_intersections", &Surface::num_self_intersections) 
-        .def("collapse_edges", &Surface::collapse_edges)
-        .def("save", &Surface::save)
+
+
+        .def("collapse_edges", py::overload_cast<const double >( &Surface::collapse_edges))
+        .def("collapse_edges", py::overload_cast<>(&Surface::collapse_edges))
         .def("split_edges", &Surface::split_edges)
-        .def("extension", &Surface::cylindric_extension)
-        .def("strictly_inside", &Surface::strictly_inside )
-        //.def("load", &Surface::load)//
+
+        .def("extension", ( void (Surface::*)(double , double, double , double,double,bool)) &Surface::cylindric_extension )
+        .def("extension", ( void (Surface::*)(const Point_3&, double,double,bool)) &Surface::cylindric_extension )
+
         .def("separate_narrow_gaps", &Surface::seperate_narrow_gaps)
+
         .def("reconstruct", &Surface::reconstruct)
         .def("convex_hull", &Surface::convex_hull)
 
         .def("num_faces", &Surface::num_faces)
         .def("num_edges", &Surface::num_edges)
+        .def("num_self_intersections", &Surface::num_self_intersections) 
         .def("num_vertices", &Surface::num_vertices);
 
     py::class_<Domain,std::shared_ptr<Domain>>(m, "Domain")
         .def(py::init<Surface &>())
         .def(py::init<std::vector<Surface>>())
         .def(py::init<std::vector<Surface>, AbstractMap&>())
-        //.def("set_parameters", &Domain::set_parameters) // std::map<std::string, double>
-        //.def("set_parameter", &Domain::set_parameter)
-        //.def("add_surface_points" , &Domain::add_surface_points ) 
         .def("create_mesh", (void (Domain::*)(double,double,double,double,double)) &Domain::create_mesh) 
         .def("create_mesh", (void (Domain::*)(double)) &Domain::create_mesh)
-       // .def("refine_mesh", (void (Domain::*)()) &Domain::refine_mesh)
-       //  .def("refine_mesh", (void (Domain::*)(double)) &Domain::refine_mesh)
-        .def("number_of_surfaces", &Domain::number_of_surfaces)
+
         .def("get_boundary", &Domain::get_boundary,py::arg("tag")=0)
-        //  .def("mesh_slice", &Domain::mesh_slice)
+        .def("get_boundaries", &Domain::get_boundaries)
+        .def("get_curves", &Domain::get_curves)
+        .def("get_patches", &Domain::get_patches)
+        .def("get_subdomains", &Domain::get_subdomains)
+
         .def("lloyd", &Domain::lloyd,     py::arg("time_limit")=0, py::arg("max_iteration_number")=0, py::arg("convergence")=0.02, py::arg("freeze_bound")=0.01,py::arg("do_freeze")=true)
         .def("odt", &Domain::odt,         py::arg("time_limit")=0, py::arg("max_iteration_number")=0, py::arg("convergence")=0.02, py::arg("freeze_bound")=0.01,py::arg("do_freeze")=true)
         .def("exude", &Domain::exude,     py::arg("time_limit")=0, py::arg("sliver_bound")=0)
         .def("perturb", &Domain::perturb, py::arg("time_limit")=0, py::arg("sliver_bound")=0)
 
         .def("add_sharp_border_edges", (void (Domain::*)(Surface&,double)) &Domain::add_sharp_border_edges, py::arg("surface") , py::arg("threshold")=60 ) 
-        //.def("add_sharp_border_edges", py::overload_cast_<Surface&,double>()(&Domain::add_sharp_border_edges) ) 
-        //.def("add_field", &Domain::add_field)
-        //.def("mesh_sizing_field", &Domain::mesh_sizing_field)
         .def("clear_borders", &Domain::clear_borders)
         .def("remove_subdomain", (void (Domain::*)(std::vector<int>)) &Domain::remove_subdomain)
         .def("remove_subdomain", (void (Domain::*)(int)) &Domain::remove_subdomain) 
+
         .def("number_of_cells", &Domain::number_of_cells)
         .def("number_of_subdomains", &Domain::number_of_subdomains) 
         .def("number_of_curves", &Domain::number_of_subdomains)
-        // add, remove, set 
-        .def("set_borders", &Domain::set_borders)
-        .def("set_features", (void(Domain::*)()) &Domain::set_features) 
-        .def("set_features", (void(Domain::*)(std::vector<std::vector<Point_3>>& )) &Domain::set_features) 
+        .def("number_of_patches", &Domain::number_of_patches)
+        .def("number_of_surfaces", &Domain::number_of_surfaces)
+
         .def("add_feature", &Domain::add_feature) 
+        .def("add_border", &Domain::add_border)
         .def("save", &Domain::save, py::arg("OutPath"), py::arg("save_1Dfeatures")=true); 
         
 
 
 
 
-       m.def("separate_surfaces",  (void (*)(Surface&,Surface&,Surface&)) &surface_overlapp<Surface> );
-       m.def("separate_surfaces",  (void (*)(Surface&,Surface&)) &surface_overlapp<Surface> );
-       m.def("morphological_surface_union", &morphological_surface_union<Surface>); 
+       m.def("separate_overlapping_surfaces",  (bool (*)(Surface&,Surface&,Surface&,double,double)) &seperate_surface_overlapp<Surface> ,  
+                                   py::arg("surf1"), py::arg("surf2"), py::arg("other"), py::arg("edge_movement")=-0.25 , py::arg("smoothing")=0.3 );
+       m.def("separate_overlapping_surfaces",  (bool (*)(Surface&,Surface&,double,double)) &seperate_surface_overlapp<Surface> ,
+                                   py::arg("surf1"), py::arg("surf2"), py::arg("edge_movement")=-0.25 , py::arg("smoothing")=0.3 );
+       m.def("union_partially_overlapping_surfaces", &union_partially_overlapping_surfaces<Surface>,
+                                   py::arg("surf1"), py::arg("surf2"), py::arg("clusterth")=0.8 ,py::arg("edge_movement")=0.25 , py::arg("smoothing")=0.3 ); 
 
 
 

@@ -142,40 +142,42 @@ class Slice
     public :
      
        typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
-       typedef Kernel::Point_2 Point_2;
-       typedef Kernel::Line_2 Line_2;
-       typedef Kernel::Point_3 Point_3;
-       typedef Kernel::Segment_2 Segment;
 
-       typedef CGAL::Triangulation_vertex_base_with_info_2<int,Kernel> Vb;
-       typedef CGAL::Triangulation_face_base_with_info_2<int,Kernel> Fb_w_i;
+       //typedef Kernel::FT        FT;
+       typedef Kernel::Plane_3   Plane_3;
+       typedef Kernel::Point_2   Point_2;
+       typedef Kernel::Line_2    Line_2;
+       typedef Kernel::Point_3   Point_3;
+       //typedef Kernel::Segment_2 Segment;
+
+       typedef CGAL::Triangulation_vertex_base_with_info_2<int,Kernel>    Vb;
+       typedef CGAL::Triangulation_face_base_with_info_2<int,Kernel>      Fb_w_i;
+
        typedef CGAL::Constrained_triangulation_face_base_2<Kernel,Fb_w_i> C_fb_w_i;
 
        typedef CGAL::Delaunay_mesh_face_base_2<Kernel,C_fb_w_i> Fb;
 
        typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
-       typedef Tds::Vertex_circulator Vertex_circulator;
+
        typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, Tds,CGAL::Exact_predicates_tag> CDT1; //??
        typedef CGAL::Constrained_triangulation_plus_2<CDT1> CDT;
        
        typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
        typedef CGAL::Delaunay_mesher_2<CDT, Criteria> Mesher;
-       typedef Kernel::FT FT;
-       typedef std::vector<Point_2> Polyline_2;
-       typedef std::vector<Polyline_2> Polylines_2;      
 
-       typedef Kernel::Plane_3 Plane_3; 
-       typedef CGAL::Polygon_2<Kernel> Polygon_2;
-       typedef CGAL::Polygon_with_holes_2<Kernel> Polygon_wh2;
-       typedef std::vector<Polygon_2> Polygons_2;
-       //typedef CGAL::Polyline_simplification_2::Stop_above_cost_threshold Stop;
        typedef CGAL::Polyline_simplification_2::Stop_below_count_ratio_threshold Stop;
        typedef CGAL::Polyline_simplification_2::Squared_distance_cost Cost;
-       typedef CDT::Face_handle Face_handle ;
-       typedef CDT::Vertex_handle Vertex_handle ;
+
+
+       typedef CDT::Face_handle     Face_handle ;
+       typedef CDT::Vertex_handle   Vertex_handle ;
        typedef CDT::Vertex_iterator Vertex_iterator;
-       typedef CDT::Face_iterator Face_iterator;
-       typedef CDT::Edge Edge;
+       typedef CDT::Face_iterator   Face_iterator;
+       typedef CDT::Edge            Edge;
+
+       typedef std::vector<Point_2> Polyline_2;
+       typedef std::vector<Polyline_2> Polylines_2;   
+
        // TODO: prequisit of slice = Plane_3
        Slice(Plane_3 plane ,Polylines_2 &polylines) ;
        Slice(Plane_3 plane_3) : plane(plane_3) {};
@@ -192,39 +194,45 @@ class Slice
        template< typename Surface> 
        void slice_surfaces(std::vector<Surface> surfaces) ;
 
-       void remove_subdomain(std::vector<int> tags); 
-       void create_mesh(double mesh_resolution);               
-       void simplify(double stop_crit); 
-       
-    
+       void remove_subdomains(std::vector<int> tags); 
+       void remove_subdomains(int tag);
 
+
+       void create_mesh(double mesh_resolution);  
+ 
+  
+       void simplify( const double point_density=0.4 );
        int connected_components(); 
        void keep_largest_connected_component(); 
 
-       void add_constraints(Polylines_2 &polylines, bool hole=false); 
-       void add_constraints(Slice &slice, bool hole=false);
-       void add_constraint(Polyline_2 &polyline, bool hole=false);
+       void add_constraints(Polylines_2 &polylines); 
+       void add_constraints(Slice &slice);
+       void add_constraint(Polyline_2 &polyline);
 
 
-
-       void repair_polylines(Polylines_2& polylines_bad) ;
+       Polylines_2& get_constraints() { return constraints;}
 
        void clear_costraints(){ constraints.clear(); return; } 
+       void set_constraints();
+
+       int  number_of_subdomains(){return get_subdomains().size();} 
        int  number_of_constraints() { return constraints.size();}
-       int number_of_faces(){return cdt.number_of_faces();} 
-       void set_constraints() ;
-       void repair_costraints() { Polylines_2 temp = constraints; clear_costraints() ;std::sort( temp.begin(), temp.end(), sort_vectors_by_size() ); repair_polylines(temp);}
+       int  number_of_faces(){return cdt.number_of_faces();} 
 
-
+       std::set<int> get_subdomains();
        std::map<Edge,int>& get_edges(){this->edges;}  
-       Polylines_2& get_constraints() { return constraints;}
+
         
        template<typename Surface> 
-       std::shared_ptr<Surface> as_surface(); //Forward called
+       std::shared_ptr<Surface> as_surface();
+
+
+ 
        void save(std::string outpath);
        void output_slice_to_medit_(std::ostream& os);
        void write_STL(const std::string filename);
-       void simplify_polylines(Polylines_2& polylines, double point_density=0.4 );
+
+
        // Structs 
        struct sort_vectors_by_size {
                   template<typename T>
@@ -232,16 +240,35 @@ class Slice
                        { return a.size() > b.size(); }
                    
        };
+
     private:
        Minimum_sphere_2<Kernel> min_sphere;
        Polylines_2 constraints;
        CDT cdt;
        Plane_3 plane;
-       std::map<Edge,int> edges; // after failing to use info.
+       std::map<Edge,int> edges; 
 
 };
 
-void Slice::remove_subdomain(std::vector<int> tags) 
+std::set<int> Slice::get_subdomains()
+{
+   std::set<int> result;
+   for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
+   {
+       result.insert( static_cast<int>(fit->info()));
+
+   }
+   return result ;
+}
+
+void Slice::remove_subdomains(int tag) 
+{
+    std::vector<int> tags; 
+    tags.push_back(tag);
+    remove_subdomains(tags);
+}
+
+void Slice::remove_subdomains(std::vector<int> tags) 
 {
     for(CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
     {
@@ -313,73 +340,40 @@ void Slice::output_slice_to_medit_(std::ostream& os)
 Slice::Slice(Plane_3 plane_3,Polylines_2 &polylines) : plane(plane_3)
 {
     min_sphere.add_polylines(polylines);
-    simplify_polylines(polylines);
+
+    //simplify_polylines(polylines);
     constraints.insert( constraints.end(),polylines.begin(),polylines.end());
 }
 
 
 
-void Slice::add_constraints(Slice &slice, bool hole) 
+void Slice::add_constraints(Slice &slice) 
 {  
-  add_constraints(slice.get_constraints(), hole);
+  add_constraints(slice.get_constraints());
 }
 
 
-void Slice::add_constraint(Polyline_2 &polyline, bool hole) 
+void Slice::add_constraint(Polyline_2 &polyline) 
 {  
      min_sphere.add_polyline(polyline);
-     if (hole)
-     {
-        if  ( static_cast<int>(CGAL::orientation_2(polyline.begin(),polyline.end()))== -1) 
-        {
-           std::reverse(polyline.begin(),polyline.end());
-        }
-        Point_2 c2 = CGAL::centroid(polyline.begin(), polyline.end(), CGAL::Dimension_tag<0>());
-        
-        constraints.push_back(polyline);
-                     
-     }
-     else 
-     {
-         constraints.push_back( polyline );
-     }
+     constraints.push_back( polyline );
 }
-void Slice::add_constraints(Polylines_2 &polylines, bool hole) 
+void Slice::add_constraints(Polylines_2 &polylines) 
 {  
      min_sphere.add_polylines(polylines);
      constraints.insert( constraints.end(),polylines.begin(),polylines.end());
 }
 
-void Slice::simplify( double stop_crit )
-{
-     if(constraints.size() < 1 or constraints[0].size() < 10)
-     {
-       return;
-     }
-
-     Polylines_2 temp;
-     for ( auto  pol = constraints.begin(); pol != constraints.end(); ++pol ) 
-     {
-         Polyline_2 result;
-         CGAL::Polyline_simplification_2::simplify(pol->begin(), pol->end(), Cost() , Stop(stop_crit), std::back_inserter(result));
-         temp.push_back(result);
-  
-     }
-     constraints = temp;
-}
-
 void Slice::set_constraints() 
-{    for (auto pol: constraints){cdt.insert_constraint(pol.begin(), pol.end());}
+{    
+     for (auto pol: constraints){cdt.insert_constraint(pol.begin(), pol.end());}
 }
 
 void Slice::create_mesh(double mesh_resolution) 
 {
-     
      set_constraints(); 
-
      double r = min_sphere.get_bounding_sphere_radius();
      double longest_edge = r/mesh_resolution;
-     
      Mesher mesher(cdt);    
      
 
@@ -402,21 +396,19 @@ void Slice::create_mesh(double mesh_resolution)
 
 }
 template<typename Surface> 
-void Slice::slice_surfaces(std::vector<Surface> surfaces) // TODO : DECIDE return slice or member function 
+void Slice::slice_surfaces(std::vector<Surface> surfaces) 
 {
-   
    for ( auto surf : surfaces ) 
    {
          std::shared_ptr<Slice> temp = surf.mesh_slice(this->plane);     
+
          this->add_constraints(*temp.get()); 
    }
-
-
 }  
 template<typename Surface> 
 std::shared_ptr<Surface> Slice::as_surface() 
 {
-  // TODO: why ?? FIXME
+ 
   typedef std::vector<std::size_t> Face ;
   typedef CDT::Vertex_handle Vertex_handle;
 
@@ -462,7 +454,7 @@ void Slice::add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map)
       return;
    }
    typedef boost::dynamic_bitset<>   Bmask;
-   typedef std::pair<int,int>  Pid; // patch id 
+   typedef std::pair<int,int>  Pid; 
    typedef std::map<Pid,int> Pid_map;
    int fn,fi;
    
@@ -513,7 +505,6 @@ void Slice::add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map)
                if(is_insert_successful.second)
                { 
                  index_counter++;
-                 std::cout <<  spp.first << "\t" << spp.second << index_counter<< std::endl;
                }
                this->edges[ei] = pid_map_[spp];    
             }
@@ -527,14 +518,10 @@ void Slice::add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map)
 }
 
 
-void Slice::simplify_polylines(Polylines_2& polylines, double point_density )
-{
-   // ----------------------------------------
-   // In general, we want the that the density points/length to be less than 0.5, which gives 
-   // the edge size of 10 point to be greater than 50 length units
-   // -----------------------------------------             
+void Slice::simplify(const double point_density )
+{       
     Polylines_2 result;
-    for ( auto c = polylines.begin(); c !=polylines.end() ; ++c ) 
+    for ( auto c = this->constraints.begin(); c !=this->constraints.end() ; ++c ) 
     {
           Polyline_2 temp; 
           double length = length_polyline(c->begin(),c->end()) ; 
@@ -542,8 +529,8 @@ void Slice::simplify_polylines(Polylines_2& polylines, double point_density )
           CGAL::Polyline_simplification_2::simplify(c->begin(), c->end(), Cost() , Stop(adjustment), std::back_inserter(temp));
           result.push_back( temp ) ; 
     }
-    polylines.clear();
-    polylines=result;
+    this->constraints.clear();
+    this->constraints=result;
 
 
 }

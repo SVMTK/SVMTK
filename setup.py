@@ -14,6 +14,9 @@ from setuptools import (
 from setuptools.command.build_ext import build_ext
 
 from setuptools.command.test import test as TestCommand
+
+
+
 class CatchTestCommand(TestCommand):
       def distutils_dir_name(self, dname):
           dir_name = "{dirname}.{platform}-{version[0]}.{version[1]}"
@@ -30,8 +33,8 @@ class CatchTestCommand(TestCommand):
 
 
 # Version number
-MAJOR = 0
-MINOR = 1
+MAJOR = 1
+MINOR = 0
 
 
 class CMakeExtension(Extension):

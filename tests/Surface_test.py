@@ -3,18 +3,20 @@ import SVMTK
 def ellipsoid_function( x, y, z):
   return x*x + 4.*y*y +4.*z*z-1.;
 
+
+def torus_function(x,y,z):
+     return ((x**2+y**2)**0.5 - 1)**2 + z**2 -4  
+ 
 class Surface_Test(unittest.TestCase):
-
-
 
     def test_surface_io(self):
         surface =SVMTK.Surface()  
         surface.make_cube(0.,0.,0.,1.,1.,1.,1) 
-        surface.save("cube.off")
-        surface.save("cube.stl")
-        surface= SVMTK.Surface("cube.off")
+        surface.save("tests/Data/cube.off")
+        surface.save("tests/Data/cube.stl")
+        surface= SVMTK.Surface("tests/Data/cube.off")
         self.assertTrue(surface.num_vertices()==8 and surface.num_faces()==12 and surface.num_edges()==18) 
-        surface= SVMTK.Surface("cube.stl") 
+        surface= SVMTK.Surface("tests/Data/cube.stl") 
         self.assertTrue(surface.num_vertices()==8 and surface.num_faces()==12 and surface.num_edges()==18)
 
 
@@ -79,12 +81,17 @@ class Surface_Test(unittest.TestCase):
         self.assertEqual(surface.span(1),(0.,1))
         self.assertEqual(surface.span(2),(0.,3))
 
-    def test_fill_holes(self):   
-        """ To Be Implemented"""
+    def test_fill_holes(self):          
+        mech_shark = SVMTK.Surface("tests/Data/mech-holes-shark.off")
+        nb_holes = mech_shark.fill_holes()
+        self.assertEqual(nb_holes,4)
+        nb_holes = mech_shark.fill_holes()
+        self.assertEqual(nb_holes,0)
+
     def test_triangulate_faces(self):
-        """ To Be Implemented"""
-    def test_triangulate_hole(self): 
-        """ To Be Implemented"""
+        p = SVMTK.Surface("tests/Data/P.off")
+        self.assertTrue(p.triangulate_faces())
+
     def test_surface_clip(self):
         surface =SVMTK.Surface()   
         surface.make_cube(-1.,-1.,-1.,1.,1.,1.,1) 
@@ -113,13 +120,16 @@ class Surface_Test(unittest.TestCase):
         surface.smooth_taubin(2) 
 
     def test_mean_curvature_flow(self):
-        """ To Be Implemented"""
+        surface = SVMTK.Surface();
+        surface.implicit_surface(torus_function,6)        
+        l1 =surface.mean_curvature_flow()
+        self.assertTrue( l1[0]==l1[-1])
         
     def test_shortest_surface_path(self):      
         surface =SVMTK.Surface()   
         surface.make_cube(-1.,-1.,-1.,1.,1.,1.,1)         
         a = surface.shortest_surface_path(SVMTK.Point_3(-1,-1,1), SVMTK.Point_3(1,-1,1))
-        #self.assertTrue( a[0]==SVMTK.Point_3(-1,-1,1) and a[1]==SVMTK.Point_3(1,-1,1))
+        self.assertTrue( a[1]==SVMTK.Point_3(-1,-1,1) and a[0]==SVMTK.Point_3(1,-1,1))
 
     def test_collapse_and_split_edges(self): 
         surface =SVMTK.Surface()  
@@ -127,26 +137,32 @@ class Surface_Test(unittest.TestCase):
         self.assertTrue(surface.num_vertices()==8 and surface.num_faces()==12 and surface.num_edges()==18) 
         surface.split_edges(0.5)
         self.assertEqual(surface.num_edges(),108) 
-        surface.collapse_edges(10)
-        self.assertEqual(surface.num_edges(),108) 
+        surface.collapse_edges(0.4)
+        self.assertEqual(surface.num_edges(),45) 
+        surface.split_edges(0.5)
+        surface.collapse_edges()
+        self.assertEqual(surface.num_edges(),45) 
 
     def test_extension(self):
-        """ To Be Implemented"""
+        surface=SVMTK.Surface()   
+        surface.make_cube(-1.,-1.,-1.,1.,1.,1.,1) 
+        surface.extension(SVMTK.Point_3(0,0,2),1,1,True)
+        self.assertTrue(surface.num_edges(),108) 
 
+    def test_seperate_narrow_gaps(self):
+         """ To be Implemented"""
     def test_reconstruct(self):
-        """ To Be Implemented"""
+         """ To be Implemented"""
+         #pig = SVMTK.Surface("tests/Data/blobby.off")
+         #self_intersecting = pig.num_self_intersections()
+         #pig.reconstruct(20.,10,0.25,0.02,3.0)
+         #self_intersecting = pig.num_self_intersections()
 
     def test_convex_hull(self):
-        """ To Be Implemented"""
-
-    def test_strictly_inside(self):
         surface1=SVMTK.Surface()   
         surface1.make_cube(-1.,-1.,-1.,1.,1.,1.,1) 
-        surface2=SVMTK.Surface()   
-        surface2.make_cube(-2.,-2.,-2.,2.,2.,2.,1) 
-
-
-
+        surface2 =surface1.convex_hull()
+        self.assertEqual(surface2.num_vertices(),8)
 
     def test_seperate_narrow_gaps(self):
         surface=SVMTK.Surface()   
@@ -156,5 +172,8 @@ class Surface_Test(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    import os 
+    print(os.path.dirname(__file__))
+
     unittest.main()
 
