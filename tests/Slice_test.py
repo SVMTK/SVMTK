@@ -22,10 +22,10 @@ class Slice_Test(unittest.TestCase):
         self.assertTrue( slice_.number_of_constraints() > 0)
         slice_.create_mesh(1.) 
         self.assertTrue( slice_.number_of_faces() > 0) 
-        slice_.save("Data/slice.vtu")
-        slice_.save("Data/slice.stl")
-        slice_.save("Data/slice.off")
-        slice_.save("Data/slice.mesh")
+        slice_.save("tests/Data/slice.vtu")
+        slice_.save("tests/Data/slice.stl")
+        slice_.save("tests/Data/slice.off")
+        slice_.save("tests/Data/slice.mesh")
 
 
     def test_slice_subdomains(self):
@@ -63,6 +63,14 @@ class Slice_Test(unittest.TestCase):
         slice_.keep_largest_connected_component() 
         self.assertEqual(slice_.connected_components(), 1) 
 
+
+    def test_simplify(self):
+        slice1 = SVMTK.Slice()
+        slice1.add_constraint([SVMTK.Point_2(0,0),SVMTK.Point_2(1,1),SVMTK.Point_2(2,1)] ) 
+        slice1.simplify(1.0) 
+        constraints = slice1.get_constraints()
+        self.assertEqual(len(constraints[0]), 3) 
+ 
     #def tearDown(self):
     #    import os
     #    os.remove("./Data/slice.vtu")

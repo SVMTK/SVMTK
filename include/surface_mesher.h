@@ -141,6 +141,7 @@ struct InsertVisitor {
 // ----------------------------------------------------------------------------
 
 template < typename Mesh>
+inline
 void poisson_reconstruction(Mesh &mesh,
         const double sm_angle = 20.0,
         const double sm_radius = 100.0,

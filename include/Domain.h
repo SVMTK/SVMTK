@@ -22,7 +22,7 @@
 #include <tbb/tbb.h>
 #include <CGAL/tags.h>
 // LOCAL
-#include "Surface.h" 
+//#include "Surface.h" 
 #include "Polyhedral_vector_to_labeled_function_wrapper.h"
 #include <CGAL/Mesh_triangulation_3.h>
 #include <CGAL/Labeled_mesh_domain_3.h>
@@ -387,7 +387,7 @@ int remove_isolated_vertices(C3T3& c3t3, bool remove_domain=false)
 
 
 /// ----------MAIN CLASS ----------------
-
+//template<typename Surface>
 class Domain {
     public :
 
@@ -428,8 +428,6 @@ class Domain {
         typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
         typedef CGAL::Triple<Cell_handle, int, int> Edge; 
 
-
-     
         typedef Tr::Finite_vertices_iterator Finite_vertices_iterator;
         typedef Tr::Locate_type Locate_type;
         typedef Tr::Weighted_point Weighted_point;
@@ -440,12 +438,12 @@ class Domain {
         typedef std::map<std::string, double> Parameters;     
         typedef std::vector<std::size_t>  Face;
 
-        //typedef CGAL::Mesh_3::Lipschitz_sizing<Kernel, Mesh_domain> Sizing_field;
-     
-
         // --------Constructors---------------------
+        template<typename Surface>
         Domain(Surface& surface);
+        template<typename Surface>
         Domain(std::vector<Surface> surfaces);
+        template<typename Surface>
         Domain(std::vector<Surface> surfaces, AbstractMap& map);
         // -----------------------------------------
         ~Domain() { for( auto vit : this->v){delete vit;}v.clear();}        
@@ -458,7 +456,9 @@ class Domain {
         double get_bounding_sphere_radius(){ return min_sphere.get_bounding_sphere_radius(); }
 
         void add_sharp_border_edges(Polyhedron& polyhedron, double threshold);
-        void add_sharp_border_edges(Surface& surface, double threshold=60); 
+        template<typename Surface>
+        void add_sharp_border_edges(Surface& surface, double threshold=60);
+        template<typename Surface> 
         void add_surface_points(Surface &surface); // FIXME operator ?? 
 
         void set_borders();
@@ -466,8 +466,9 @@ class Domain {
 
         void clear_borders(){this->borders.clear();}
         void clear_features(){this->features.clear();}
-
+        template<typename Surface>
         std::vector<std::shared_ptr<Surface> > get_boundaries();
+        template<typename Surface>
         std::shared_ptr<Surface> get_boundary(int tag); 
 
         std::set<std::pair<int,int>> get_patches();
@@ -537,10 +538,10 @@ std::set<int> Domain::get_curves()
 
 
 // ---------CONSTRUCTORS -----------
-
+template<typename Surface>
 Domain::Domain( std::vector<Surface> surfaces )
 {
-    for(std::vector<Surface>::iterator sit= surfaces.begin() ;sit!= surfaces.end();sit++)
+    for(typename std::vector<Surface>::iterator sit= surfaces.begin() ;sit!= surfaces.end();sit++)
     {
        Polyhedron polyhedron;
        sit->get_polyhedron(polyhedron);
@@ -554,11 +555,11 @@ Domain::Domain( std::vector<Surface> surfaces )
     domain_ptr = std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox()));
 
 }
-
+template<typename Surface>
 Domain::Domain( std::vector<Surface> surfaces , AbstractMap& map )
 {
  
-    for(std::vector<Surface>::iterator sit= surfaces.begin() ;sit!= surfaces.end();sit++)
+    for(typename std::vector<Surface>::iterator sit= surfaces.begin() ;sit!= surfaces.end();sit++)
     {
        Polyhedron polyhedron; 
        sit->get_polyhedron(polyhedron);
@@ -571,7 +572,7 @@ Domain::Domain( std::vector<Surface> surfaces , AbstractMap& map )
     domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox()));
 
 }
-
+template<typename Surface>
 Domain::Domain(Surface &surface) 
 {
     Polyhedron polyhedron;
@@ -664,13 +665,13 @@ void Domain::save(std::string OutPath,bool save_1Dfeatures)
     medit_file.close();
 }
 
-
+template<typename Surface>
 void Domain::add_surface_points(Surface &surface) 
 { 
 
    typedef Tr::Bare_point Bare_point;
    typedef std::vector<std::pair<Bare_point, int> > Initial_points_vector;
-   typedef Surface::Index SM_Index;
+   typedef typename Surface::Index SM_Index;
    std::vector<Point_3> points;  
    std::vector<SM_Index> indicies; 
    Initial_points_vector points_vector;
@@ -792,7 +793,7 @@ void Domain::add_sharp_border_edges(Polyhedron& polyhedron, double threshold)
    }    
  }   
 }
-
+template<typename Surface>
 void Domain::add_sharp_border_edges(Surface& surface, double threshold) 
 { 
   Polyhedron polyhedron;
@@ -822,8 +823,8 @@ std::set<std::pair<int,int>>  Domain::get_patches()
    }
    return sf_indices;
 }
-
-std::shared_ptr<Surface> Domain::get_boundary(int tag=0)
+template<typename Surface>
+std::shared_ptr<Surface> Domain::get_boundary(int tag)
 {
    std::vector<Face> faces;
    Polyline_3 points;
@@ -832,7 +833,7 @@ std::shared_ptr<Surface> Domain::get_boundary(int tag=0)
    std::shared_ptr<Surface> surf(new  Surface(points, faces)) ;
    return surf;
 }
-
+template<typename Surface>
 std::vector<std::shared_ptr<Surface>> Domain::get_boundaries() 
 { 
    std::vector<Point_3> points;

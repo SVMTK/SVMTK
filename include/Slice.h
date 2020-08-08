@@ -18,7 +18,7 @@
 
 
 #define __Slice_H
-#include "SubdomainMap.h" 
+#include "SubdomainMap.h" // need to template 
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
@@ -49,10 +49,6 @@
 #include <CGAL/IO/write_vtu.h>
 #include <CGAL/IO/Triangulation_off_ostream_2.h>
 
-//#include <CGAL/Alpha_shape_2.h>
-//#include <CGAL/Alpha_shape_vertex_base_2.h>
-//#include <CGAL/Alpha_shape_face_base_2.h>
-
 #include <CGAL/utils.h>
 #include <CGAL/squared_distance_2.h>
 #include <CGAL/Triangulation_hierarchy_2.h>
@@ -61,22 +57,18 @@
 
 #include <boost/thread/thread.hpp>
 #include <boost/lockfree/queue.hpp>
-// TODO: REWRITE
+
 #include <algorithm> 
 #include <iterator>
 #include <queue>
 #include <assert.h>  
 #include <iterator>
-//#include <vector>
-//#include <set>
 #include <fstream>
 
-class Surface;
-
-class Domain;
 
 
-template< typename InputIterator>  
+template< typename InputIterator> 
+inline 
 double length_polyline( InputIterator begin , InputIterator end)
 {
   double length = 0.0;
@@ -395,12 +387,13 @@ void Slice::create_mesh(double mesh_resolution)
 
 
 }
-template<typename Surface> 
+
+template<typename Surface > 
 void Slice::slice_surfaces(std::vector<Surface> surfaces) 
 {
    for ( auto surf : surfaces ) 
    {
-         std::shared_ptr<Slice> temp = surf.mesh_slice(this->plane);     
+         std::shared_ptr<Slice> temp = surf.template mesh_slice<Slice>(this->plane) ;     
 
          this->add_constraints(*temp.get()); 
    }

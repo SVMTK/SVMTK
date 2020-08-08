@@ -120,8 +120,8 @@ class Surface_Test(unittest.TestCase):
         surface.smooth_taubin(2) 
 
     def test_mean_curvature_flow(self):
-        surface = SVMTK.Surface();
-        surface.implicit_surface(torus_function,6)        
+        surface =SVMTK.Surface()
+        surface.implicit_surface(torus_function,6,30,0.5,.5) 
         l1 =surface.mean_curvature_flow()
         self.assertTrue( l1[0]==l1[-1])
         
@@ -150,7 +150,12 @@ class Surface_Test(unittest.TestCase):
         self.assertTrue(surface.num_edges(),108) 
 
     def test_seperate_narrow_gaps(self):
-         """ To be Implemented"""
+         surface =SVMTK.Surface("tests/Data/narrow_gap.off")
+         self.assertEqual(s1.separate_narrow_gaps(),64) 
+         for i in range(5) :
+             s1.separate_narrow_gaps()
+         self.assertEqual(s1.separate_narrow_gaps(),0) 
+
     def test_reconstruct(self):
          """ To be Implemented"""
          #pig = SVMTK.Surface("tests/Data/blobby.off")

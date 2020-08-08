@@ -4,7 +4,7 @@
 
 
 #include "SubdomainMap.h" // safegaurd capture 
-
+#include <CGAL/Polygon_mesh_processing/bbox.h>
 namespace CGAL {
         template<class Function_, class BGT>
         class Polyhedral_vector_to_labeled_function_wrapper
