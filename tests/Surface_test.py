@@ -156,12 +156,6 @@ class Surface_Test(unittest.TestCase):
              s1.separate_narrow_gaps()
          self.assertEqual(s1.separate_narrow_gaps(),0) 
 
-    def test_reconstruct(self):
-         """ To be Implemented"""
-         #pig = SVMTK.Surface("tests/Data/blobby.off")
-         #self_intersecting = pig.num_self_intersections()
-         #pig.reconstruct(20.,10,0.25,0.02,3.0)
-         #self_intersecting = pig.num_self_intersections()
 
     def test_convex_hull(self):
         surface1=SVMTK.Surface()   
@@ -173,12 +167,13 @@ class Surface_Test(unittest.TestCase):
         surface=SVMTK.Surface()   
         surface.make_cube(-1.,-1.,-1.,1.,1.,1.,1) 
     
- 
+   
 
 
 if __name__ == '__main__':
-    import os 
-    print(os.path.dirname(__file__))
+    import os
+    unittest.main()        
+    os.remove('tests/Data/cube.stl')
+    os.remove('tests/Data/cube.off')
 
-    unittest.main()
 

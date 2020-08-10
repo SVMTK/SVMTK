@@ -66,7 +66,7 @@ class SubdomainMap :virtual public AbstractMap
 
         void add(std::string string, int subdomain)
         {
-           std::reverse( string.begin(), string.end() ) ; // Bmask initiate reverse 
+           std::reverse( string.begin(), string.end());
            subdmap[Bmask(string)]=subdomain;
         } 
         return_type index(const Bmask bits) 
@@ -79,12 +79,6 @@ class SubdomainMap :virtual public AbstractMap
            {
               std::cout << it->first << " " << it->second << " " << std::endl;
            }
-        }
-        int number_of_domains()
-        {
-           return subdmap.size() ; 
-
-
         }
    private:
         std::map<boost::dynamic_bitset<>,int> subdmap;

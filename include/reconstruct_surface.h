@@ -130,8 +130,6 @@ void poisson_reconstruction(Mesh &mesh,
 
     CGAL::Timer reconstruction_timer; reconstruction_timer.start();
 
-    Counter counter(std::distance(points.begin(), points.end()));
-    InsertVisitor visitor(counter) ;
 
     //***************************************
     // Computes implicit function  error
@@ -146,12 +144,11 @@ void poisson_reconstruction(Mesh &mesh,
     Poisson_reconstruction_function function(
             points.begin(), points.end(),
             CGAL::make_identity_property_map(PointList::value_type()),
-            CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
-            visitor);
+            CGAL::make_normal_of_point_with_normal_map(PointList::value_type()));
 
     CGAL::Eigen_solver_traits<Eigen::ConjugateGradient<CGAL::Eigen_sparse_symmetric_matrix<double>::EigenType> > solver;
     bool implicit_success = function.compute_implicit_function(
-            solver, visitor,
+            solver,
             approximation_ratio,
             average_spacing_ratio);
     if (!implicit_success) {

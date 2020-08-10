@@ -82,10 +82,6 @@ double length_polyline( InputIterator begin , InputIterator end)
 
 } 
 
-
-
-
-// TODO: move to new file
 template< typename Kernel>
 struct Minimum_sphere_2
 {
@@ -110,7 +106,7 @@ struct Minimum_sphere_2
     {
          for (auto it=polylines.begin();it != polylines.end(); ++it)
          {
-             for ( auto pit=it->begin() ; pit!=it->end(); ++pit)
+             for ( auto pit=it->begin(); pit!=it->end(); ++pit)
              { 
                  S.push_back(Sphere(*pit, 0.0));
              }
@@ -134,13 +130,11 @@ class Slice
     public :
      
        typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
-
-       //typedef Kernel::FT        FT;
+ 
        typedef Kernel::Plane_3   Plane_3;
        typedef Kernel::Point_2   Point_2;
-       typedef Kernel::Line_2    Line_2;
        typedef Kernel::Point_3   Point_3;
-       //typedef Kernel::Segment_2 Segment;
+
 
        typedef CGAL::Triangulation_vertex_base_with_info_2<int,Kernel>    Vb;
        typedef CGAL::Triangulation_face_base_with_info_2<int,Kernel>      Fb_w_i;
@@ -161,8 +155,8 @@ class Slice
        typedef CGAL::Polyline_simplification_2::Squared_distance_cost Cost;
 
 
-       typedef CDT::Face_handle     Face_handle ;
-       typedef CDT::Vertex_handle   Vertex_handle ;
+       typedef CDT::Face_handle     Face_handle;
+       typedef CDT::Vertex_handle   Vertex_handle;
        typedef CDT::Vertex_iterator Vertex_iterator;
        typedef CDT::Face_iterator   Face_iterator;
        typedef CDT::Edge            Edge;
@@ -170,8 +164,7 @@ class Slice
        typedef std::vector<Point_2> Polyline_2;
        typedef std::vector<Polyline_2> Polylines_2;   
 
-       // TODO: prequisit of slice = Plane_3
-       Slice(Plane_3 plane ,Polylines_2 &polylines) ;
+       Slice(Plane_3 plane ,Polylines_2 &polylines);
        Slice(Plane_3 plane_3) : plane(plane_3) {};
        Slice(){}
        ~Slice(){} 
@@ -180,11 +173,11 @@ class Slice
        void set_plane(Plane_3 inplane){ this->plane = inplane;}
        Plane_3& get_plane(){return this->plane;}
        template<typename Surface> 
-       void add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map) ; //todo rename
+       void add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map); //todo rename
        template<typename Surface> 
-       void add_surface_domains(std::vector<Surface> surfaces) ; //todo rename
+       void add_surface_domains(std::vector<Surface> surfaces); //todo rename
        template< typename Surface> 
-       void slice_surfaces(std::vector<Surface> surfaces) ;
+       void slice_surfaces(std::vector<Surface> surfaces);
 
        void remove_subdomains(std::vector<int> tags); 
        void remove_subdomains(int tag);
@@ -225,7 +218,6 @@ class Slice
        void write_STL(const std::string filename);
 
 
-       // Structs 
        struct sort_vectors_by_size {
                   template<typename T>
                   bool operator()(const std::vector<T> & a, const std::vector<T> & b)
@@ -250,7 +242,7 @@ std::set<int> Slice::get_subdomains()
        result.insert( static_cast<int>(fit->info()));
 
    }
-   return result ;
+   return result;
 }
 
 void Slice::remove_subdomains(int tag) 
@@ -268,12 +260,13 @@ void Slice::remove_subdomains(std::vector<int> tags)
            cdt.delete_face(fit);
     } 
 }
-
+/** Based on CGAL output_to_medit, but for 2D meshes
+ *
+ */
 void Slice::output_slice_to_medit_(std::ostream& os)
 {
-  // Based on CGAL output_to_medit, but for 2D meshes
- //TODO ; improve
-
+   
+ 
   Tds tds = cdt.tds();
   os << std::setprecision(17);
   os << "MeshVersionFormatted 1\n"
@@ -298,7 +291,7 @@ void Slice::output_slice_to_medit_(std::ostream& os)
   int edge_counter;
   for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
   {
-     for( int i =0 ; i<3 ; ++i)
+     for( int i =0; i<3; ++i)
      {  
          Edge eit(fit,i);
          Vertex_handle vh1 = fit->vertex(cdt.ccw(i));
@@ -333,7 +326,6 @@ Slice::Slice(Plane_3 plane_3,Polylines_2 &polylines) : plane(plane_3)
 {
     min_sphere.add_polylines(polylines);
 
-    //simplify_polylines(polylines);
     constraints.insert( constraints.end(),polylines.begin(),polylines.end());
 }
 
@@ -379,7 +371,7 @@ void Slice::create_mesh(double mesh_resolution)
      for(CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
      {
          fit->info()=0;
-         for( int i =0 ; i<3 ; ++i)
+         for( int i =0; i<3; ++i)
          {
             fit->vertex(i)->info()=0;
          }
@@ -393,7 +385,7 @@ void Slice::slice_surfaces(std::vector<Surface> surfaces)
 {
    for ( auto surf : surfaces ) 
    {
-         std::shared_ptr<Slice> temp = surf.template mesh_slice<Slice>(this->plane) ;     
+         std::shared_ptr<Slice> temp = surf.template mesh_slice<Slice>(this->plane);     
 
          this->add_constraints(*temp.get()); 
    }
@@ -402,14 +394,14 @@ template<typename Surface>
 std::shared_ptr<Surface> Slice::as_surface() 
 {
  
-  typedef std::vector<std::size_t> Face ;
+  typedef std::vector<std::size_t> Face;
   typedef CDT::Vertex_handle Vertex_handle;
 
-  std::vector<Point_3> points ;
+  std::vector<Point_3> points;
   std::vector<Face> faces;
   std::map<Vertex_handle, int> index_of_vertex;
   int i = 0;
-  for(CDT::Point_iterator it = cdt.points_begin() ;  it != cdt.points_end(); ++it, ++i)
+  for(CDT::Point_iterator it = cdt.points_begin();  it != cdt.points_end(); ++it, ++i)
   {
        points.push_back(plane.to_3d(*it));  
        index_of_vertex[it.base()] = i;
@@ -417,12 +409,12 @@ std::shared_ptr<Surface> Slice::as_surface()
   for(CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
   {
        Face temp;
-       temp.push_back( index_of_vertex[fit->vertex(0)] ) ;
-       temp.push_back( index_of_vertex[fit->vertex(1)] ) ;
-       temp.push_back( index_of_vertex[fit->vertex(2)] ) ;
+       temp.push_back( index_of_vertex[fit->vertex(0)] );
+       temp.push_back( index_of_vertex[fit->vertex(1)] );
+       temp.push_back( index_of_vertex[fit->vertex(2)] );
        faces.push_back(temp);
   }
-   std::shared_ptr<Surface> surf(new  Surface(points, faces)) ; // FIXME: use make_shared instead
+   std::shared_ptr<Surface> surf(new  Surface(points, faces)); 
    return surf;  
 }
 template<typename Surface> 
@@ -439,7 +431,7 @@ void Slice::add_surface_domains(std::vector<Surface> surfaces)
 }
 
 template<typename Surface> 
-void Slice::add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map) //TODO:RENAME
+void Slice::add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map) 
 {
    if ( this->cdt.number_of_faces()==0)
    {
@@ -481,7 +473,7 @@ void Slice::add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map)
    for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
    {
       fi = fit->info(); 
-      for( int i =0 ;i<3;++i)
+      for( int i =0;i<3;++i)
       {
          Edge ei(fit,i); 
          if (fit->neighbor(i)->is_in_domain())
@@ -514,13 +506,13 @@ void Slice::add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map)
 void Slice::simplify(const double point_density )
 {       
     Polylines_2 result;
-    for ( auto c = this->constraints.begin(); c !=this->constraints.end() ; ++c ) 
+    for ( auto c = this->constraints.begin(); c !=this->constraints.end(); ++c ) 
     {
           Polyline_2 temp; 
-          double length = length_polyline(c->begin(),c->end()) ; 
+          double length = length_polyline(c->begin(),c->end()); 
           double adjustment = point_density*length/(double)(c->size());    
           CGAL::Polyline_simplification_2::simplify(c->begin(), c->end(), Cost() , Stop(adjustment), std::back_inserter(temp));
-          result.push_back( temp ) ; 
+          result.push_back( temp ); 
     }
     this->constraints.clear();
     this->constraints=result;
@@ -536,7 +528,7 @@ void Slice::keep_largest_connected_component()
    int num_cc=0;
    for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
    {
-       handled[fit] = false ; 
+       handled[fit] = false; 
    }
    Face_handle fiq,fin;
    for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
@@ -549,10 +541,10 @@ void Slice::keep_largest_connected_component()
       {
          fiq = queue.back(); 
          queue.pop_back();         
-         if (handled[fiq]) continue ;  
+         if (handled[fiq]) continue;  
          handled[fiq] = true;
          connnected_component.push_back(fiq); 
-         for( int i =0 ; i < 3 ; i++) 
+         for( int i =0; i < 3; i++) 
          {        
             fin = fiq->neighbor(i); 
             if (  handled.find(fin)==handled.end() ) continue ;     
@@ -566,7 +558,7 @@ void Slice::keep_largest_connected_component()
     std::sort(connected_components.begin(), connected_components.end(), sort_vectors_by_size());
     for ( auto ccit  = connected_components.begin()+1; ccit !=connected_components.end(); ccit++)
     {
-          for ( auto fit = ccit->begin() ; fit!=ccit->end(); fit++)
+          for ( auto fit = ccit->begin(); fit!=ccit->end(); fit++)
           {
               cdt.delete_face(*fit);
 
@@ -585,7 +577,7 @@ int Slice::connected_components()
    int num_cc=0;
    for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
    {
-       handled[fit] = false ; 
+       handled[fit] = false; 
    }
    Face_handle fiq,fin;
    for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
@@ -596,12 +588,12 @@ int Slice::connected_components()
       {
          fiq = queue.back(); 
          queue.pop_back();         
-         if (handled[fiq]) continue ;  
+         if (handled[fiq]) continue;  
          handled[fiq] = true;
-         for( int i =0 ; i < 3 ; i++) 
+         for( int i =0; i < 3; i++) 
          {        
             fin = fiq->neighbor(i); 
-            if (  handled.find(fin)==handled.end() ) continue ;     
+            if (  handled.find(fin)==handled.end() ) continue;     
             queue.push_back(fin);
          }
       }
@@ -621,7 +613,7 @@ void Slice::save(std::string outpath)
      if ( cdt.number_of_faces()==0 ) 
      {
         std::cout <<"The resulting mesh has no facet, and will not be saved"<< std::endl;
-        return ;         
+        return;         
      }
 
      if ( extension=="off")
@@ -641,7 +633,7 @@ void Slice::save(std::string outpath)
      else if ( extension=="mesh")
      {
          std::ofstream out(outpath);
-         output_slice_to_medit_(out) ;
+         output_slice_to_medit_(out);
      }
 
 

@@ -2,7 +2,7 @@
 
 #define __READ_POLYGONS_STL_H
 
-//FIXME:
+
 #include <boost/tokenizer.hpp>
 #include <boost/algorithm/string.hpp>
 #include <fstream>
@@ -14,7 +14,7 @@
 #include <math.h>
 
 template<typename T>
-double convert_string(const std::string& s) // TODO: inline
+double convert_string(const std::string& s) 
 {
   std::istringstream is(s);
   T val;
@@ -23,7 +23,7 @@ double convert_string(const std::string& s) // TODO: inline
   return val;
 }
 
-void get_next_line(std::ifstream& file, std::string& line, std::size_t &lineno) // TODO: inline
+void get_next_line(std::ifstream& file, std::string& line, std::size_t &lineno)
 {
   do 
   {
@@ -33,6 +33,9 @@ void get_next_line(std::ifstream& file, std::string& line, std::size_t &lineno) 
   } while ( !file.eof() && line == "");
 }
 
+/** Based on the mshr dolfin implementation
+ *
+ */
 template< typename Point_3, typename  Polygon_3>
 bool read_polygons_STL(std::ifstream& file,
             std::vector<Point_3>& points,
@@ -103,7 +106,7 @@ bool read_polygons_STL(std::ifstream& file,
 
          tpoint = Point_3(x, y, z);
 
-         if (pmap[tpoint]==0) // if point is zero -> assign count
+         if (pmap[tpoint]==0) 
          {
             pmap[tpoint] = count;
             points.push_back(tpoint);

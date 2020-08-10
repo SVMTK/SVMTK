@@ -70,15 +70,14 @@ class Slice_Test(unittest.TestCase):
         slice1.simplify(1.0) 
         constraints = slice1.get_constraints()
         self.assertEqual(len(constraints[0]), 3) 
- 
-    #def tearDown(self):
-    #    import os
-    #    os.remove("./Data/slice.vtu")
-    #    os.remove("./Data/slice.stl")
-    #    os.remove("./Data/slice.off")
-    #    os.remove("./Data/slice.mesh")
+
 
 
 if __name__ == '__main__':
     unittest.main()
+    import os
+    os.remove("tests/Data/slice.vtu")
+    os.remove("tests/Data/slice.stl")
+    os.remove("tests/Data/slice.off")
+    os.remove("tests/Data/slice.mesh")
 

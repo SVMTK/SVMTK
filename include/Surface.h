@@ -303,6 +303,7 @@ bool separate_close_surfaces(Surface& surf1 , Surface& surf2 , Surface& other, d
                 
         }
    }
+   return true;
 }
 
 
@@ -346,11 +347,12 @@ bool separate_close_surfaces(Surface& surf1 , Surface& surf2, double edge_moveme
                 
         }
    }
+   return true;
 }
 
 
 
-template< typename Surface> // FIXME rename : union_of_
+template< typename Surface> 
 std::shared_ptr<Surface> union_partially_overlapping_surfaces( Surface& surf1 , Surface& surf2, double clusterth, double edge_movement, int smoothing )
 {
  
@@ -467,6 +469,7 @@ class Surface
     // ---- Basic opertaions ------
     Mesh& get_mesh() {return mesh;}
     void clear(){ mesh.clear();}
+
     int num_faces()    const {return mesh.number_of_faces();}
     int num_edges()    const {return mesh.number_of_edges();}
     int num_vertices() const {return mesh.number_of_vertices();}
@@ -541,13 +544,13 @@ class Surface
     Polyline shortest_surface_path(Point_3 source, Point_3 target);
     Polyline shortest_surface_path(double x0, double y0, double z0, double x1, double y1, double z1);
 
-    void reconstruct( double sm_angle = 20.0,
+   /* void reconstruct( double sm_angle = 20.0,
                           double sm_radius = 100.0,
                           double sm_distance = 0.25,
                           double approximation_ratio = 0.02,
                           double average_spacing_ratio = 5.0);
 
-
+   */
     Polylines mean_curvature_flow();
    
 
@@ -750,8 +753,12 @@ void Surface::write_STL(const std::string filename)
     file << "endsolid"  << std::endl;
 
 }
-/**
- * TODO 
+/** Creates a surface mesh based on an implicit function
+ *  @param function that takes Cartesian coordinates as double and 
+ *         that returns negative double variable inside, positive outside  
+ *  @param bounding sphere that encloses the mesh construction. 
+ *  @param angular bound  
+ *  @param radius bound 
  */
 template<typename Implicit_function>
 void Surface::implicit_surface(Implicit_function implicit_function,
@@ -762,7 +769,11 @@ void Surface::implicit_surface(Implicit_function implicit_function,
 {
      surface_mesher(mesh,implicit_function,bounding_sphere_radius,angular_bound,radius_bound, distance_bound);
 }
-
+/** Adjust the vertex coordinates of vertices in a vector that it iterated over 
+ *  @param begin call std::vector
+ *  @param end call of std::vector
+ *  @return updates the  
+ */
 
 template<typename InputIterator >
 void Surface::adjust_vertices_in_region(InputIterator begin , InputIterator  end, const double c)
@@ -1501,12 +1512,17 @@ struct sphere_wrapper{
 
 //double test_function(double x, double y , double z, std::optional(x
 
+inline double sphere_wrapper::radius = 0;
+inline double sphere_wrapper::x0 = 0;
+inline double sphere_wrapper::y0 = 0;
+inline double sphere_wrapper::z0 = 0;
+
+/*
 double sphere_wrapper::radius = 0;
 double sphere_wrapper::x0 = 0;
 double sphere_wrapper::y0 = 0;
 double sphere_wrapper::z0 = 0;
-
-
+*/
 void Surface::make_sphere( double x0, double y0, double  z0,double r0, double edge_size) 
 {
   // TODO:: Add resolution/ edge size 
@@ -1538,19 +1554,19 @@ void Surface::save(const std::string outpath)
        write_STL(outpath);
      }
 }
-
+/*
 void Surface::reconstruct( double sm_angle,
                                double sm_radius,
                                double sm_distance,
                                double approximation_ratio,
                                double average_spacing_ratio ){ 
      poisson_reconstruction(mesh,sm_angle,
-                            sm_radius,
+                           sm_radius,
                             sm_distance,
                             approximation_ratio,
                             average_spacing_ratio);
 }
-
+*/
 
 int Surface::separate_narrow_gaps(double adjustment) 
 {

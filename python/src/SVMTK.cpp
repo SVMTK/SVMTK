@@ -123,7 +123,6 @@ PYBIND11_MODULE(SVMTK, m) {
     py::class_<SubdomainMap,AbstractMap>(m, "SubdomainMap")
         .def(py::init<>())
         .def("print",  &SubdomainMap::print)
-        .def("number_of_domains", &SubdomainMap::number_of_domains)
         .def("add", &SubdomainMap::add);
 
     py::class_<Slice,std::shared_ptr<Slice>>(m, "Slice")
@@ -179,7 +178,8 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("clear" , &Surface::clear) 
 
         .def("make_cube", ( void (Surface::*)(double,double,double,double,double,double,int,int,int) ) &Surface::make_cube)
-        .def("make_cube", ( void (Surface::*)(double,double,double,double,double,double,int) ) &Surface::make_cube,py::arg("x0"),py::arg("y0"),py::arg("z0"),py::arg("x1"),py::arg("y1"),py::arg("z1"),  py::arg("N")=10)
+        .def("make_cube", ( void (Surface::*)(double,double,double,double,double,double,int) ) 
+                                 &Surface::make_cube,py::arg("x0"),py::arg("y0"),py::arg("z0"),py::arg("x1"),py::arg("y1"),py::arg("z1"),  py::arg("N")=10)
 	.def("make_cone", &Surface::make_cone)
 	.def("make_cylinder", &Surface::make_cylinder)
         .def("make_sphere", &Surface::make_sphere)
@@ -198,7 +198,7 @@ PYBIND11_MODULE(SVMTK, m) {
 
         .def("separate_narrow_gaps", &Surface::separate_narrow_gaps, py::arg("adjustment")=-0.33)
 
-        .def("reconstruct", &Surface::reconstruct)
+        //.def("reconstruct", &Surface::reconstruct)
         .def("convex_hull", &Surface::convex_hull)
 
         .def("num_faces", &Surface::num_faces)
