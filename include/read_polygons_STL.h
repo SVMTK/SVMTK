@@ -23,6 +23,7 @@ double convert_string(const std::string& s)
   return val;
 }
 
+inline
 void get_next_line(std::ifstream& file, std::string& line, std::size_t &lineno)
 {
   do 

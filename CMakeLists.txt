@@ -21,8 +21,8 @@ SET(TESTS
 
 include_directories(external/Catch2/include)
 add_executable("${PROJECT_NAME}_test" ${TESTS} )
-target_include_directories(${PROJECT_NAME}_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include 
-                                                        ${CMAKE_CURRENT_SOURCE_DIR}/external/Catch2/include)
+target_link_libraries("${PROJECT_NAME}_test" SVMTK ) 
+target_include_directories(${PROJECT_NAME}_test PRIVATE external/Catch2/include)
 
 find_package(Eigen3 REQUIRED) 
 include(${EIGEN3_USE_FILE})

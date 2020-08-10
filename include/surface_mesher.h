@@ -9,16 +9,8 @@
 #include <CGAL/Surface_mesh_default_criteria_3.h>
 #include <CGAL/Surface_mesh_triangulation_generator_3.h>
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
-//#include <CGAL/IO/Complex_2_in_triangulation_3_file_writer.h>
-#include <CGAL/Point_with_normal_3.h>
 #include <CGAL/Polyhedron_3.h>
 
-#include <CGAL/Timer.h>
-#include <CGAL/Poisson_reconstruction_function.h>
-#include <CGAL/Polygon_mesh_processing/compute_normal.h>
-#include <CGAL/compute_average_spacing.h>
-
-#include <deque>
 #include <cstdlib>
 #include <fstream>
 #include <math.h>
@@ -27,8 +19,6 @@
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Side_of_triangle_mesh.h>
 #include <CGAL/IO/Polyhedron_iostream.h>
-
-// needed
 
 #include <CGAL/IO/output_surface_facets_to_polyhedron.h>
 #include <CGAL/Complex_2_in_triangulation_3.h>
