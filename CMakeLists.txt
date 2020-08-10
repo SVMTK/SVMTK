@@ -16,7 +16,7 @@ SET(TESTS
     ${TEST_DIR}/test_main.cpp
 #    ${TEST_DIR}/test_Slice.cpp
 #    ${TEST_DIR}/test_Domain.cpp
-#    ${TEST_DIR}/test_Surface.cpp
+    ${TEST_DIR}/test_Surface.cpp
 )
 
 include_directories(external/Catch2/include)
