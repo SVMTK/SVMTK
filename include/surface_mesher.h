@@ -47,7 +47,6 @@ void surface_mesher(Mesh& mesh, Implicit_Function func, double& x0 ,double& y0, 
     typedef CGAL::Surface_mesh_triangulation_generator_3<Kernel>::Type Tr;
     typedef CGAL::Complex_2_in_triangulation_3<Tr> C2t3;
     typedef Tr::Geom_traits GT;
-    typedef Kernel::Sphere_3 Sphere_3;
     typedef Kernel::Point_3 Point_3;
     typedef Kernel::FT FT;
 
@@ -79,7 +78,6 @@ void surface_mesher(Mesh& mesh, Implicit_Function func,  double bounding_sphere_
 
     typedef CGAL::Complex_2_in_triangulation_3<Tr> C2t3;
     typedef Tr::Geom_traits GT;
-    typedef Kernel::Sphere_3 Sphere_3;
     typedef Kernel::Point_3 Point_3;
     typedef Kernel::FT FT;
     //Surface_mesh_traits().construct_initial_points_object()(surface_of_sphere_2, CGAL::inserter(tr_3), initial_number_of_points)

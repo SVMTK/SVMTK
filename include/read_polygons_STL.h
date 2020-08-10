@@ -69,7 +69,7 @@ bool read_polygons_STL(std::ifstream& file,
 
     get_next_line(file, line, lineno);
 
-    int hva=0;
+ 
     int count = 1; // Shift 
     do
     {

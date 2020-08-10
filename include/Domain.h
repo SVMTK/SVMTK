@@ -72,7 +72,6 @@ void facets_in_complex_3_to_triangle_soup_(const C3T3& c3t3,
   points.reserve(points.size() + nf/2); 
   VHmap vh_to_ids;
   std::size_t inum = 0;
-  int df =0;
   for(Ficit fit = c3t3.facets_in_complex_begin(sf_index),
             end = c3t3.facets_in_complex_end(sf_index); fit != end; ++fit)
   {
@@ -81,12 +80,7 @@ void facets_in_complex_3_to_triangle_soup_(const C3T3& c3t3,
     Face f;
     CGAL::Mesh_3::internal::resize(f, 3);
 
-    typename C3T3::Subdomain_index cell_sdi = c3t3.subdomain_index(c);
-    typename C3T3::Subdomain_index opp_sdi = c3t3.subdomain_index(c->neighbor(s));
 
-    //if(cell_sdi != sf_index.second or opp_sdi != sf_index.first)
-    //   continue;
-    
     for(std::size_t i=1; i<4; ++i)
     {
       typename VHmap::iterator map_entry;
@@ -133,7 +127,6 @@ void output_to_medit_(std::ostream& os,
 {
 
   typedef typename C3T3::Triangulation Tr;
-  typedef typename C3T3::Facets_in_complex_iterator Facet_iterator;
   typedef typename C3T3::Cells_in_complex_iterator Cell_iterator;
 
   typedef typename Tr::Finite_vertices_iterator Finite_vertices_iterator;
@@ -320,7 +313,6 @@ int remove_isolated_vertices(C3T3& c3t3, bool remove_domain=false)
 { 
   typedef typename C3T3::Triangulation Tr;
   typedef typename C3T3::Cells_in_complex_iterator Cell_iterator;
-  typedef typename C3T3::Cell_handle Cell_handle;
   typedef typename Tr::Finite_vertices_iterator Finite_vertices_iterator;
   typedef typename Tr::Vertex_handle Vertex_handle;
 
@@ -730,7 +722,6 @@ void Domain::remove_subdomain(std::vector<int> tags)
   {
       Cell_handle cn = std::get<0>(*cit);
       int s =std::get<1>(*cit);
-      Cell_handle cm=  cn->neighbor(s);
       Subdomain_index ck = Subdomain_index(std::get<2>(*cit));            
       c3t3.remove_from_complex(cn,s);
       c3t3.add_to_complex(cn,s,Surface_patch_index(ck,0) );  

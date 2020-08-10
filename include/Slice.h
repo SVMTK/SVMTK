@@ -205,7 +205,7 @@ class Slice
        int  number_of_faces(){return cdt.number_of_faces();} 
 
        std::set<int> get_subdomains();
-       std::map<Edge,int>& get_edges(){this->edges;}  
+       std::map<Edge,int>& get_edges(){return this->edges;}  
 
         
        template<typename Surface> 
@@ -287,8 +287,6 @@ void Slice::output_slice_to_medit_(std::ostream& os)
   
   std::map<std::pair<Vertex_handle,Vertex_handle>,int> set_edges; 
 
-  int fi, fn;
-  int edge_counter;
   for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
   {
      for( int i =0; i<3; ++i)
@@ -467,6 +465,7 @@ void Slice::add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map)
        bit.first->info()=map.index(bit.second);
        if (bit.first->info()==0)
           cdt.delete_face(bit.first);
+  
    
    }
    Edge ei;
@@ -479,25 +478,30 @@ void Slice::add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map)
          if (fit->neighbor(i)->is_in_domain())
             fn= fit->neighbor(i)->info();
          else 
-            fn=0;             
-            if (fn!=fi)
-            {     
-               if (fn>fi)
-                  spp={fn,fi};
-               else
-                  spp={fi,fn};
-               std ::pair<Pid_map::iterator, bool> is_insert_successful = pid_map_.insert(std::make_pair(spp,index_counter));
-               if(is_insert_successful.second)
-               { 
-                 index_counter++;
-               }
-               this->edges[ei] = pid_map_[spp];    
+            fn=0;  
+           
+         if (fn!=fi)
+         {     
+            if (fn>fi)
+                spp={fn,fi};
+            else
+                spp={fi,fn};
+            std ::pair<Pid_map::iterator, bool> is_insert_successful = pid_map_.insert(std::make_pair(spp,index_counter));
+
+            if(is_insert_successful.second)
+            { 
+                index_counter++;
+            }
+            this->edges[ei] = pid_map_[spp];    
             }
             else
             {
                this->edges[ei] =  0;
             }          
          }
+       
+
+
      }
         
 }

@@ -162,7 +162,6 @@ bool separate_surface_overlapp(Surface& surf1 , Surface& surf2, double edge_move
 {   
     typedef typename Surface::vertex_vector vertex_vector;
     typedef typename Surface::vertex_descriptor vertex_descriptor;
-    typedef typename Surface::face_vector face_vector;
 
     std::map< vertex_descriptor, double> map1,map2;
     vertex_vector surface1_vertices,surface2_vertices;
@@ -594,9 +593,6 @@ Surface::vertex_vector Surface::closest_vertices(Point_3 p1, int num)
    );
 
    Distance tr_dist(vppmap);
-
-   FT distance, edgeL;
-   bool flag;
    
    K_neighbor_search search(tree,p1, num,0,true,tr_dist); 
  
@@ -622,12 +618,10 @@ void Surface::cylindric_extension(const Point_3& p1, double radius, double lengt
 {
    
    Point_3 p3, p4;
-   FT distance, l(length); 
+   FT distance; 
    Vector_3 n;
 
-   Surface::Inside is_inside_query(mesh);
-   CGAL::Bounded_side res = is_inside_query(p1);
-   assert( res == CGAL::ON_UNBOUNDED_SIDE );
+   assert(  is_inside_query(p1)==false );
 
    vertex_vector vertices = closest_vertices(p1,1);
    vertices = closest_vertices(mesh.point(vertices[0]),8); 
@@ -980,9 +974,7 @@ template<typename Slice>
 std::shared_ptr<Slice> Surface::mesh_slice(Surface::Plane_3 plane_3) 
 {
      typedef Kernel::Point_2 Point_2;
-     typedef std::vector<Point_2> Polyline_2;
      typedef std::vector<Point_3>  Polyline_3; 
-     typedef std::vector<Polyline_2> Polylines_2;
      typedef std::vector<Polyline_3> Polylines; 
 
      CGAL::Polygon_mesh_slicer<Mesh, Kernel> slicer(mesh); 
@@ -1197,7 +1189,6 @@ Surface::Polylines Surface::mean_curvature_flow()
     typedef CGAL::Mean_curvature_flow_skeletonization<Surface::Mesh> Skeletonization;
     typedef Skeletonization::Skeleton                             Skeleton;
     typedef Skeleton::vertex_descriptor                           Skeleton_vertex;
-    typedef Skeleton::edge_descriptor                             Skeleton_edge;
 
     struct Construct_polylines
     {   
@@ -1239,7 +1230,7 @@ Surface::Polyline Surface::shortest_surface_path(double x0, double y0, double z0
 {
    Point_3 source(x0,y0,z0) ;
    Point_3 target(x1,y1,z1) ;
-   shortest_surface_path(source, target); 
+   return shortest_surface_path(source, target); 
 }
 
 Surface::Polyline Surface::shortest_surface_path(Point_3 source, Point_3 target) 
