@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
 
    boundary = svm.Surface("../Data/boundary.stl")
-
+    
    zmin, zmax = boundary.span(2) # should be in c++ code
    print(zmin,zmax)
    z = np.linspace(zmin,zmax,8) 
@@ -34,7 +34,7 @@ if __name__ == "__main__":
      rhslice = boundary.slice(0,0,1,-i)
      rhslice.simplify(0.8)
      rhslice.create_mesh(32.0)
-     rhslice.save("axial-slice-{}.off".format(str(i) ) )
+     rhslice.save("axial-slice-{}.vtu".format(str(i) ) )
 
        
    #surf2 = svm.Surface("test-output-slice.off")
