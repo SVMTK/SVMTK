@@ -20,8 +20,6 @@
 #define SubdomainMap_H
 
 #include <boost/dynamic_bitset.hpp>
-#include <boost/type_traits/remove_reference.hpp>
-#include <boost/type_traits/remove_cv.hpp>
 #include <map>
 #include <string>
 #include <vector>
@@ -35,6 +33,7 @@ class AbstractMap
 
         virtual return_type index(const Bmask bits) = 0;
         virtual ~AbstractMap() {}
+
 };
 
 
@@ -51,12 +50,12 @@ class DefaultMap : virtual public AbstractMap
         {
            return static_cast<return_type>(bits.to_ulong());
         }
+
+
 };
 
 class SubdomainMap :virtual public AbstractMap
 {
-   private:
-        std::map<boost::dynamic_bitset<>,int> subdmap;
 
    public:
         typedef int return_type;
@@ -67,7 +66,7 @@ class SubdomainMap :virtual public AbstractMap
 
         void add(std::string string, int subdomain)
         {
-           std::reverse( string.begin(), string.end() ) ; // Bmask initiate reverse 
+           std::reverse( string.begin(), string.end());
            subdmap[Bmask(string)]=subdomain;
         } 
         return_type index(const Bmask bits) 
@@ -81,6 +80,11 @@ class SubdomainMap :virtual public AbstractMap
               std::cout << it->first << " " << it->second << " " << std::endl;
            }
         }
+   private:
+        std::map<boost::dynamic_bitset<>,int> subdmap;
+      
 };
+
+
 
 #endif

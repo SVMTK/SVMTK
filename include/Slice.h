@@ -18,53 +18,70 @@
 
 
 #define __Slice_H
+#include "SubdomainMap.h" // need to template 
 
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Constrained_triangulation_plus_2.h>
 #include <CGAL/Triangulation_conformer_2.h>
-#include <CGAL/IO/Triangulation_off_ostream_2.h>
+
+#include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Delaunay_mesher_2.h>
 #include <CGAL/Delaunay_mesh_face_base_2.h>
 #include <CGAL/Delaunay_mesh_size_criteria_2.h>
+
 #include <CGAL/Polyline_simplification_2/Squared_distance_cost.h>
 #include <CGAL/Polyline_simplification_2/simplify.h> 
 #include <CGAL/Polyline_simplification_2/Stop_below_count_ratio_threshold.h>
 
 #include <CGAL/Min_sphere_of_spheres_d.h>
 #include <CGAL/Min_sphere_of_spheres_d_traits_2.h>
+#include <CGAL/Triangulation_vertex_base_with_info_2.h>
+#include <CGAL/Triangulation_face_base_with_info_2.h>
 
-#include <assert.h>  
-#include <iterator>
-#include <vector>
-#include <set>
-#include <string>
-#include <iostream>
-#include <fstream>
 #include <CGAL/convex_hull_2.h>
 #include <CGAL/Polygon_2_algorithms.h>
 #include <CGAL/centroid.h>
-#include <CGAL/Polygon_2_algorithms.h>
+
 #include <CGAL/IO/write_off_points.h>
 #include <CGAL/IO/write_xyz_points.h>
-#include <algorithm> 
-
-#include <CGAL/Alpha_shape_2.h>
-#include <CGAL/Alpha_shape_vertex_base_2.h>
-#include <CGAL/Alpha_shape_face_base_2.h>
-#include <CGAL/Delaunay_triangulation_2.h>
+#include <CGAL/IO/write_vtu.h>
+#include <CGAL/IO/Triangulation_off_ostream_2.h>
 
 #include <CGAL/utils.h>
 #include <CGAL/squared_distance_2.h>
 #include <CGAL/Triangulation_hierarchy_2.h>
 #include <CGAL/Polygon_with_holes_2.h>
+#include <CGAL/assertions.h>
 
-class Surface;
+#include <boost/thread/thread.hpp>
+#include <boost/lockfree/queue.hpp>
+
+#include <algorithm> 
+#include <iterator>
+#include <queue>
+#include <assert.h>  
+#include <iterator>
+#include <fstream>
 
 
 
-// TODO: move to new file
+template< typename InputIterator> 
+inline 
+double length_polyline( InputIterator begin , InputIterator end)
+{
+  double length = 0.0;
+  for ( ; begin != end; ++begin)
+  {
+     length += static_cast<double>( CGAL::sqrt(CGAL::squared_distance(*begin, *(begin+1) ) ) ); 
+
+  } 
+        
+  return length; 
+
+} 
+
 template< typename Kernel>
 struct Minimum_sphere_2
 {
@@ -76,11 +93,20 @@ struct Minimum_sphere_2
     typedef typename std::vector<typename Kernel::Point_2> Polyline_2;
     typedef typename std::vector<Polyline_2> Polylines_2;  
   
+
+    void add_polyline( const Polyline_2 &polyline) 
+    {
+         for (auto it=polyline.begin();it != polyline.end(); ++it)
+         {
+             S.push_back(Sphere(*it, 0.0));
+         }
+    }
+
     void add_polylines(const Polylines_2 &polylines)
     {
          for (auto it=polylines.begin();it != polylines.end(); ++it)
          {
-             for ( auto pit=it->begin() ; pit!=it->end(); ++pit)
+             for ( auto pit=it->begin(); pit!=it->end(); ++pit)
              { 
                  S.push_back(Sphere(*pit, 0.0));
              }
@@ -100,575 +126,500 @@ struct Minimum_sphere_2
 
 class Slice
 {
-    // EXPERIMENTAL CLASS
-    // TODO:CLEANUP
+
     public :
      
        typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
-      
-       typedef Kernel::Point_2 Point_2;
-       typedef Kernel::Line_2 Line_2;
-       typedef Kernel::Point_3 Point_3;
-       typedef Kernel::Segment_2 Segment;
-       typedef CGAL::Triangulation_vertex_base_2<Kernel> Vb;
-       typedef CGAL::Delaunay_mesh_face_base_2<Kernel> Fb;
+ 
+       typedef Kernel::Plane_3   Plane_3;
+       typedef Kernel::Point_2   Point_2;
+       typedef Kernel::Point_3   Point_3;
+
+
+       typedef CGAL::Triangulation_vertex_base_with_info_2<int,Kernel>    Vb;
+       typedef CGAL::Triangulation_face_base_with_info_2<int,Kernel>      Fb_w_i;
+
+       typedef CGAL::Constrained_triangulation_face_base_2<Kernel,Fb_w_i> C_fb_w_i;
+
+       typedef CGAL::Delaunay_mesh_face_base_2<Kernel,C_fb_w_i> Fb;
+
        typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
-       typedef Tds::Vertex_circulator Vertex_circulator;
-       typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, Tds,CGAL::Exact_predicates_tag> CDT; //??
-       //typedef CGAL::Constrained_triangulation_plus_2<CDT1> CDT;
+
+       typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, Tds,CGAL::Exact_predicates_tag> CDT1; //??
+       typedef CGAL::Constrained_triangulation_plus_2<CDT1> CDT;
        
        typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
        typedef CGAL::Delaunay_mesher_2<CDT, Criteria> Mesher;
-       typedef Kernel::FT FT;
-       typedef std::vector<Point_2> Polyline_2;
-       typedef std::vector<Polyline_2> Polylines_2;      
 
-       typedef Kernel::Plane_3 Plane_3; 
-       typedef CGAL::Polygon_2<Kernel> Polygon_2;
-       typedef CGAL::Polygon_with_holes_2<Kernel> Polygon_wh2;
-       typedef std::vector<Polygon_2> Polygons_2;
-       //typedef CGAL::Polyline_simplification_2::Stop_above_cost_threshold Stop;
        typedef CGAL::Polyline_simplification_2::Stop_below_count_ratio_threshold Stop;
        typedef CGAL::Polyline_simplification_2::Squared_distance_cost Cost;
 
-       typedef CGAL::Alpha_shape_2<CDT> Alpha_shape_2;
+
+       typedef CDT::Face_handle     Face_handle;
+       typedef CDT::Vertex_handle   Vertex_handle;
+       typedef CDT::Vertex_iterator Vertex_iterator;
+       typedef CDT::Face_iterator   Face_iterator;
+       typedef CDT::Edge            Edge;
+
+       typedef std::vector<Point_2> Polyline_2;
+       typedef std::vector<Polyline_2> Polylines_2;   
+
+       Slice(Plane_3 plane ,Polylines_2 &polylines);
+       Slice(Plane_3 plane_3) : plane(plane_3) {};
        Slice(){}
-       ~Slice(){}
+       ~Slice(){} 
+
+
+       void set_plane(Plane_3 inplane){ this->plane = inplane;}
+       Plane_3& get_plane(){return this->plane;}
+       template<typename Surface> 
+       void add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map); //todo rename
+       template<typename Surface> 
+       void add_surface_domains(std::vector<Surface> surfaces); //todo rename
+       template< typename Surface> 
+       void slice_surfaces(std::vector<Surface> surfaces);
+
+       void remove_subdomains(std::vector<int> tags); 
+       void remove_subdomains(int tag);
+
+
+       void create_mesh(double mesh_resolution);  
  
-       Slice(Slice &slice){constraints = slice.get_constraints() ; } 
+  
+       void simplify( const double point_density=0.4 );
+       int connected_components(); 
+       void keep_largest_connected_component(); 
 
-       Slice(const Polylines_2 &polylines) ;
+       void add_constraints(Polylines_2 &polylines); 
+       void add_constraints(Slice &slice);
+       void add_constraint(Polyline_2 &polyline);
 
-
-
-       void write_STL(const std::string filename);
-       void create_mesh(double mesh_resolution);               
-       void simplify(double stop_crit); 
-       void set_plane(Plane_3 inplane){ plane = inplane;}
-
-
-       void save(std::string outpath);
-
-       void add_constraints(Polylines_2 &polylines) {min_sphere.add_polylines(polylines); constraints.insert( constraints.end(),polylines.begin(),polylines.end());}
-
-       void clear_costraints(){constraints.clear();} 
 
        Polylines_2& get_constraints() { return constraints;}
-       Polygon_2& get_boundary() { return boundary;}
 
-       void repair_domain(Polylines_2& polylines_bad , bool is_boundary); 
-       std::shared_ptr<Surface> export_3D();
+       void clear_costraints(){ constraints.clear(); return; } 
+       void set_constraints();
 
-       int  num_constraints() { return constraints.size();}
+       int  number_of_subdomains(){return get_subdomains().size();} 
+       int  number_of_constraints() { return constraints.size();}
+       int  number_of_faces(){return cdt.number_of_faces();} 
 
-       // TODO : make functions operational after usage of  polyline
-       void add_constraints(Slice &slice, bool hole);
-       void keep_component(int next );
-       void add_holes(Polylines_2& closed_polylines );
-       // TODO : remove redundant 
-       //void find_holes(int min_num_edges);
-       void remove_bad_constraints( int min_num_edges);
+       std::set<int> get_subdomains();
+       std::map<Edge,int>& get_edges(){return this->edges;}  
+
+        
+       template<typename Surface> 
+       std::shared_ptr<Surface> as_surface();
+
+
  
+       void save(std::string outpath);
+       void output_slice_to_medit_(std::ostream& os);
+       void write_STL(const std::string filename);
 
 
-       // TODO: move structs to new file ? use template ?  
-       struct polyline_endpoints{
-
-                  polyline_endpoints( const std::vector<Point_2> & in ) : current(in) {}
-                  bool operator()(const std::vector<Point_2> & a, const std::vector<Point_2>& b)
-                       { 
-                          double tmp1 = static_cast<double>(CGAL::min(CGAL::squared_distance(a.front(),current.back()),CGAL::squared_distance(a.back(),current.back() ) ));
-                          double tmp2 = static_cast<double>(CGAL::min(CGAL::squared_distance(b.front(),current.back()),CGAL::squared_distance(b.back(),current.back() ) ));
-
-                          return tmp1 < tmp2; 
-                       }
-                  private:
-                      std::vector<Point_2> current;
-                   
-       };
-
-       struct search_knot{
-                  search_knot(const std::vector<Point_2> & b) : current(b) {} 
-                  bool operator()(const std::vector<Point_2> & a)
-                       { 
-                          if ( a.front()== current.front() and  a.back() == current.back()  ) 
-                              return true;
-
-                          return false; 
-                       }
-                  private:
-                      std::vector<Point_2> current;
-                   
-       };
-       struct search_lens{
-                       search_lens(const std::vector<Point_2> & b) : current(b) {} 
-                       bool operator()(const std::vector<Point_2> & a)
-                       { 
-                          if ( a.front()== current.front() and  a.back() == current.back()  ) 
-                              return true;
-                          else if ( a.front()== current.back() and  a.back() == current.front()  ) 
-                              return true;
-                          return false; 
-                       }
-                  private:
-                      std::vector<Point_2> current;
-                   
-       };
-       struct compare_size {
-                  bool operator()(const std::vector<Point_2> & a, const std::vector<Point_2> & b)
+       struct sort_vectors_by_size {
+                  template<typename T>
+                  bool operator()(const std::vector<T> & a, const std::vector<T> & b)
                        { return a.size() > b.size(); }
                    
        };
+
     private:
        Minimum_sphere_2<Kernel> min_sphere;
-       Polyline_2 seeds;
-       Polylines_2 constraints; // polygons_2D ?? 
-       Polygon_2 boundary;  
+       Polylines_2 constraints;
        CDT cdt;
-       Plane_3 plane;// Store the plane  equation -
-
+       Plane_3 plane;
+       std::map<Edge,int> edges; 
 
 };
-//TODO :remove Polygon dependence
 
-
-template< typename Polyline > // TODO:change to iterator 
-double length_polyline( Polyline& polyline)
+std::set<int> Slice::get_subdomains()
 {
-  double length = 0.0;
-  for (auto cit = polyline.begin() ; cit!=polyline.end(); ++cit)
-  {
-     length += static_cast<double>( CGAL::sqrt(CGAL::squared_distance(*cit, *(cit+1) ) ) ); 
+   std::set<int> result;
+   for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
+   {
+       result.insert( static_cast<int>(fit->info()));
 
-  } 
-        
-  return length; 
+   }
+   return result;
+}
 
-
-} 
-
-
-
-void Slice::repair_domain(Polylines_2& polylines_bad , bool is_boundary=false) 
+void Slice::remove_subdomains(int tag) 
 {
-    // TODO : rename cyclic and acyclic to open and closed ??
-    Polylines_2 cyclic;
-    Polylines_2 acyclic;
-    Polylines_2 lp;
+    std::vector<int> tags; 
+    tags.push_back(tag);
+    remove_subdomains(tags);
+}
 
-    Polyline_2 pline;
-    std::set<Polylines_2::iterator> toremove;
-    // ----------------------------------------
-    //  Polylines are divived into  closed polygons and open polygons TODO:rename 
-    //  Polylines less than 10 points are not considered TODO: make optional
-    // -----------------------------------------
-    for ( auto c = polylines_bad.begin(); c !=polylines_bad.end() ; ++c ) 
+void Slice::remove_subdomains(std::vector<int> tags) 
+{
+    for(CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
     {
-       if (c->size() <  16) 
-           break;
-
-       if ( c->front() == c->back()) 
-       {  
-           cyclic.push_back(*c) ;
-       }
-       else  
-       {
-          acyclic.push_back(*c);
-       }         
-    }
-    // ----------------------------------------
-    //  Find pairs of open Polylines that create a lense object 
-    //  and add to closed polygons instead.
-    // -----------------------------------------
-    for ( int i = 1 ; i < acyclic.size() ; ++i ) 
-    {
-       auto it  = std::find_if(acyclic.begin()+i, acyclic.end(), search_lens(acyclic[i-1]) ); 
-       if ( it!= acyclic.end() ) 
-       { 
-            Polyline_2 temp;
-            toremove.insert(it); 
-            toremove.insert(acyclic.begin()+i-1);   
-  
-            temp.insert(temp.end(), acyclic[i-1].begin(),acyclic[i-1].end()-1);
-            temp.insert(temp.end(), it->begin(), it->end());
-            cyclic.push_back(temp);
-       }
-          
-    }
-    
-    for ( auto c = toremove.begin(); c!= toremove.end(); ++c) 
-    {
-         acyclic.erase(*c);
-    }
-    // ----------------------------------------
-    // Finds open polygons matching endpoints to  form a closed polygon of the boundary. TODO: mateching or least distance away
-    // Polylines that causes a 1D constraint on the boundary are removed 
-    // Polylines that are not in the closed polygon are removed.
-    // -----------------------------------------
-    int ac_size = acyclic.size();
-
-    for ( int i = 1 ; i < ac_size ; ++i ) 
-    {
-        std::sort(acyclic.begin()+i, acyclic.end(),polyline_endpoints(acyclic[i-1]) );
-        
-        if ( CGAL::squared_distance(acyclic[i-1].back(),acyclic[i].back()) < CGAL::squared_distance(acyclic[i-1].back(),acyclic[i].front() )  )
-        {
-             std::reverse(acyclic[i].begin(),acyclic[i].end());
-        }
-        if ( acyclic[i-1].front() == acyclic[i].back() or acyclic[i-1].front() == acyclic[i].front())
-        {
-            acyclic.erase(acyclic.begin()+i-1) ;
-            ac_size--;
-            i--;
-        }
-        if ( acyclic[i].back()==acyclic[0].front() and i>1) 
-        { 
-            lp.insert(lp.end(),acyclic.begin()+i+1, acyclic.end());
-            acyclic.erase(acyclic.begin()+i+1, acyclic.end()) ;
-            break;
-        }
-    }
-    // ----------------------------------------
-    // Combines open polygons to form a closed polygon of the boundary.
-    // Density based 
-    // -----------------------------------------    
-
-    for ( auto c = cyclic.begin(); c !=cyclic.end() ; ++c ) 
-    {
-          Polyline_2 temp;
-          double length = length_polyline(*c) ; 
-          double adjustment = 0.4*length/(double)(c->size()); 
-          if( (double)(c->size()) >length*0.5)  
-          {
-              CGAL::Polyline_simplification_2::simplify(c->begin(), c->end(), Cost() , Stop(adjustment), std::back_inserter(temp));
-              *c=temp;
-          }
-          length = length_polyline(*c) ;
-    }
-
-    if ( acyclic.size()<3)
-    {
-        add_holes(cyclic);
-        return;
-    }
+        if(std::find(tags.begin(), tags.end(), fit->info() ) != tags.end())
+           cdt.delete_face(fit);
+    } 
+}
+/** Based on CGAL output_to_medit, but for 2D meshes
+ *
+ */
+void Slice::output_slice_to_medit_(std::ostream& os)
+{
    
-    //TODO ; remove pline and use acyclic  
-    for ( auto c = acyclic.begin(); c !=acyclic.end() ; ++c ) 
-    {
-
-          Polyline_2 temp; 
-          double length = length_polyline(*c) ; 
-          double adjustment = 0.4*length/(double)(c->size());
-         // ----------------------------------------
-         // In general, we want the that the density points/length to be less than 0.5, which gives 
-         // the edge size of 10 point to be greater than 50 length units
-         // -----------------------------------------             
-          CGAL::Polyline_simplification_2::simplify(c->begin(), c->end(), Cost() , Stop(adjustment), std::back_inserter(temp));
-          pline.insert( pline.end(), c->begin(),c->end()-1 ) ; 
-    }
-
-
-    // ----------------------------------------
-    //  Fixes the orientation and the number of points in the polygon
-    // 
-    // -----------------------------------------
-    // TODO : remove
-
-
-
-    if  ( static_cast<int>(CGAL::orientation_2(pline.begin(),pline.end()))== 1) 
-          std::reverse(pline.begin(),pline.end());
  
+  Tds tds = cdt.tds();
+  os << std::setprecision(17);
+  os << "MeshVersionFormatted 1\n"
+     << "Dimension 2\n";
+  //-------------------------------------------------------
+  // Vertices
+  //-------------------------------------------------------
 
-    // ----------------------------------------
-    // Finds 
-    // 
-    // -----------------------------------------
-    Polyline_2 result;
-    CGAL::Polyline_simplification_2::simplify(pline.begin(), pline.end(), Cost() , Stop(0.8), std::back_inserter(result));
+  os << "Vertices\n" << cdt.number_of_vertices() << '\n';
+  boost::unordered_map<Vertex_handle, int> V;
+  int inum = 1;
+  for( Vertex_iterator vit = cdt.vertices_begin(); vit != cdt.vertices_end();++vit)
+  {
+    V[vit] = inum++;
+    vit->info() = 0; 
+    os << *vit <<" "<< 0 <<'\n';
+  }
+  
+  std::map<std::pair<Vertex_handle,Vertex_handle>,int> set_edges; 
 
-    if (is_boundary) 
-    { 
-          //constraints.push_back(result)
-          boundary.insert(boundary.vertices_end(),result.begin(), result.end()) ;
-    }
+  for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
+  {
+     for( int i =0; i<3; ++i)
+     {  
+         Edge eit(fit,i);
+         Vertex_handle vh1 = fit->vertex(cdt.ccw(i));
+         Vertex_handle vh2 = fit->vertex(cdt.cw(i));
 
-    add_holes(cyclic);
-    
-
-    if ( lp.size() > 2 )  
-    { 
-         std::sort(lp.begin(), lp.end(),compare_size());
-         repair_domain(lp,false);
-    }
+         if (V[vh1] > V[vh2])
+            set_edges[std::pair<Vertex_handle,Vertex_handle>(vh1,vh2)]=this->edges[eit];
+         else
+            set_edges[std::pair<Vertex_handle,Vertex_handle>(vh2,vh1)]=this->edges[eit];  
+     }
+  }
+  os << "Edges\n" 
+  << set_edges.size() << '\n';
+  for(auto eit : set_edges) 
+  {     
+     os << V[eit.first.first] << " " << V[eit.first.second]  <<" " << eit.second <<std::endl;         
+  }
+  os << "Triangles\n" 
+  << cdt.number_of_faces()<< '\n';
+  for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
+  {
+     
+        os << V[fit->vertex(0)]<< " " <<V[fit->vertex(1)]<<" " <<V[fit->vertex(2)]<< " " <<fit->info() <<"\n";
+   
+  }
+  os << "End\n";
 
 }
 
-Slice::Slice(const Polylines_2 &polylines) 
-{
 
+Slice::Slice(Plane_3 plane_3,Polylines_2 &polylines) : plane(plane_3)
+{
     min_sphere.add_polylines(polylines);
 
-    Polylines_2 temp; 
-    temp = polylines;
-   
-    std::sort( temp.begin(), temp.end(),compare_size() );
-     
-    if ( temp[0].size() > 1 ) 
-    { 
-
-       if (temp[0].front() != temp[0].back() ) 
-       {
-           repair_domain(temp,true);
-       }
-       else 
-       { 
-  
-           boundary.insert(boundary.vertices_end(),temp[0].begin(), temp[0].end() ) ;
-           temp.erase(temp.begin());
-           repair_domain(temp,false);
-       }
-
-    }
-
-    
+    constraints.insert( constraints.end(),polylines.begin(),polylines.end());
 }
 
 
-std::shared_ptr<Surface> Slice::export_3D() 
+
+void Slice::add_constraints(Slice &slice) 
+{  
+  add_constraints(slice.get_constraints());
+}
+
+
+void Slice::add_constraint(Polyline_2 &polyline) 
+{  
+     min_sphere.add_polyline(polyline);
+     constraints.push_back( polyline );
+}
+void Slice::add_constraints(Polylines_2 &polylines) 
+{  
+     min_sphere.add_polylines(polylines);
+     constraints.insert( constraints.end(),polylines.begin(),polylines.end());
+}
+
+void Slice::set_constraints() 
+{    
+     for (auto pol: constraints){cdt.insert_constraint(pol.begin(), pol.end());}
+}
+
+void Slice::create_mesh(double mesh_resolution) 
 {
-  // FIXME
-  /*typedef std::vector<std::size_t> Face ;
+     set_constraints(); 
+     double r = min_sphere.get_bounding_sphere_radius();
+     double longest_edge = r/mesh_resolution;
+     Mesher mesher(cdt);    
+     
+
+     mesher.set_criteria(Criteria(0.125, longest_edge));
+
+     std::cout << "Start  meshing."  << std::endl;
+     mesher.refine_mesh(); 	
+
+     std::cout << "Done  meshing."   << std::endl;
+    
+     for(CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
+     {
+         fit->info()=0;
+         for( int i =0; i<3; ++i)
+         {
+            fit->vertex(i)->info()=0;
+         }
+     }
+
+
+}
+
+template<typename Surface > 
+void Slice::slice_surfaces(std::vector<Surface> surfaces) 
+{
+   for ( auto surf : surfaces ) 
+   {
+         std::shared_ptr<Slice> temp = surf.template mesh_slice<Slice>(this->plane);     
+
+         this->add_constraints(*temp.get()); 
+   }
+}  
+template<typename Surface> 
+std::shared_ptr<Surface> Slice::as_surface() 
+{
+ 
+  typedef std::vector<std::size_t> Face;
   typedef CDT::Vertex_handle Vertex_handle;
 
-  std::vector<Point_3> points ;
+  std::vector<Point_3> points;
   std::vector<Face> faces;
   std::map<Vertex_handle, int> index_of_vertex;
   int i = 0;
-  for(CDT::Point_iterator it = cdt.points_begin() ;  it != cdt.points_end(); ++it, ++i)
+  for(CDT::Point_iterator it = cdt.points_begin();  it != cdt.points_end(); ++it, ++i)
   {
        points.push_back(plane.to_3d(*it));  
        index_of_vertex[it.base()] = i;
   }
-  
   for(CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
   {
        Face temp;
-       temp.push_back( index_of_vertex[fit->vertex(0)] ) ;
-       temp.push_back( index_of_vertex[fit->vertex(1)] ) ;
-       temp.push_back( index_of_vertex[fit->vertex(2)] ) ;
+       temp.push_back( index_of_vertex[fit->vertex(0)] );
+       temp.push_back( index_of_vertex[fit->vertex(1)] );
+       temp.push_back( index_of_vertex[fit->vertex(2)] );
        faces.push_back(temp);
   }
-   std::shared_ptr<Surface> surf(new  Surface(points, faces)) ;
-   return surf;  */
+   std::shared_ptr<Surface> surf(new  Surface(points, faces)); 
+   return surf;  
+}
+template<typename Surface> 
+void Slice::add_surface_domains(std::vector<Surface> surfaces)
+{
+   if ( this->cdt.number_of_faces()==0)
+   {
+      std::cout<<"create mesh first"<< std::endl; 
+      return;
+   }
+   DefaultMap map =DefaultMap();
+   add_surface_domains(surfaces,map);
+
 }
 
-void Slice::keep_component(int next )
-{ 
-    // FIXME
-    if ( next ==0)
+template<typename Surface> 
+void Slice::add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map) 
+{
+   if ( this->cdt.number_of_faces()==0)
+   {
+      std::cout<<"create mesh first"<< std::endl; 
+      return;
+   }
+   typedef boost::dynamic_bitset<>   Bmask;
+   typedef std::pair<int,int>  Pid; 
+   typedef std::map<Pid,int> Pid_map;
+   int fn,fi;
+   
+   Pid_map pid_map_;
+   Pid spp;
+   std::map<Face_handle,Bmask> masks;
+   int index_counter=1;
+   for ( auto surf :  surfaces) 
+   {
+       typename Surface::Inside inside(surf.get_mesh());
+       for(CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
+       {
+          Point_2 p2 =  CGAL::centroid(fit->vertex(0)->point() ,fit->vertex(1)->point(),fit->vertex(2)->point());  
+          Point_3 p3 =  this->plane.to_3d(p2);
+          CGAL::Bounded_side res = inside(p3);
+          if (res == CGAL::ON_BOUNDED_SIDE)
+             masks[fit].push_back(1);
+          else
+             masks[fit].push_back(0);
+       }
+
+   } 
+   for (auto bit : masks)
+   {
+       bit.first->info()=map.index(bit.second);
+       if (bit.first->info()==0)
+          cdt.delete_face(bit.first);
+  
+   
+   }
+   Edge ei;
+   for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
+   {
+      fi = fit->info(); 
+      for( int i =0;i<3;++i)
+      {
+         Edge ei(fit,i); 
+         if (fit->neighbor(i)->is_in_domain())
+            fn= fit->neighbor(i)->info();
+         else 
+            fn=0;  
+           
+         if (fn!=fi)
+         {     
+            if (fn>fi)
+                spp={fn,fi};
+            else
+                spp={fi,fn};
+            std ::pair<Pid_map::iterator, bool> is_insert_successful = pid_map_.insert(std::make_pair(spp,index_counter));
+
+            if(is_insert_successful.second)
+            { 
+                index_counter++;
+            }
+            this->edges[ei] = pid_map_[spp];    
+            }
+            else
+            {
+               this->edges[ei] =  0;
+            }          
+         }
+       
+
+
+     }
+        
+}
+
+
+void Slice::simplify(const double point_density )
+{       
+    Polylines_2 result;
+    for ( auto c = this->constraints.begin(); c !=this->constraints.end(); ++c ) 
     {
-       constraints.clear();
+          Polyline_2 temp; 
+          double length = length_polyline(c->begin(),c->end()); 
+          double adjustment = point_density*length/(double)(c->size());    
+          CGAL::Polyline_simplification_2::simplify(c->begin(), c->end(), Cost() , Stop(adjustment), std::back_inserter(temp));
+          result.push_back( temp ); 
     }
-    else 
+    this->constraints.clear();
+    this->constraints=result;
+
+
+}
+
+void Slice::keep_largest_connected_component() 
+{
+   std::vector<Face_handle> queue;
+   std::map<Face_handle,bool> handled; 
+   std::vector<std::vector<Face_handle>> connected_components;
+   int num_cc=0;
+   for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
+   {
+       handled[fit] = false; 
+   }
+   Face_handle fiq,fin;
+   for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
+   {
+      std::vector<Face_handle> connnected_component;
+      if (handled[fit]) continue;
+      queue.push_back(fit);       
+ 
+      while( !queue.empty()  )
+      {
+         fiq = queue.back(); 
+         queue.pop_back();         
+         if (handled[fiq]) continue;  
+         handled[fiq] = true;
+         connnected_component.push_back(fiq); 
+         for( int i =0; i < 3; i++) 
+         {        
+            fin = fiq->neighbor(i); 
+            if (  handled.find(fin)==handled.end() ) continue ;     
+            queue.push_back(fin);
+         }
+      }
+      num_cc++;
+      connected_components.push_back(connnected_component); 
+    }
+    if (num_cc<2) return;
+    std::sort(connected_components.begin(), connected_components.end(), sort_vectors_by_size());
+    for ( auto ccit  = connected_components.begin()+1; ccit !=connected_components.end(); ccit++)
     {
-        if ( constraints.size()-1 < next) 
-        {
-            next = constraints.size()-1; 
-        }
-     
-        Polyline_2 temp= constraints[next-1]; 
-        boundary.clear();
-        boundary.insert(boundary.vertices_end(),temp.begin(), temp.end()) ;
+          for ( auto fit = ccit->begin(); fit!=ccit->end(); fit++)
+          {
+              cdt.delete_face(*fit);
+
+          }
+
     } 
 
 }
 
 
 
-void Slice::add_holes(Polylines_2& closed_polylines )
-{   
-    //FIXME  
-    if ( boundary.is_empty() )
-         return; 
-     for ( auto pol =  closed_polylines.begin(); pol != closed_polylines.end(); ++pol)
-     {
-            Polyline_2 temp = *pol;
-            if  ( static_cast<int>(CGAL::orientation_2(temp.begin(),temp.end()))== -1) 
-            {
-                  std::reverse(temp.begin(),temp.end());
-            }
-            Point_2 c2 = CGAL::centroid(temp.begin(), temp.end(), CGAL::Dimension_tag<0>());
-        
-            if ( CGAL::bounded_side_2(temp.begin(), temp.end(), c2 , Kernel())==CGAL::ON_BOUNDED_SIDE and  boundary.has_on_bounded_side(c2) )        
-            {
-                constraints.push_back(temp);
-                seeds.push_back(c2); 
-            }
-     }
-    
-} 
-
-void Slice::add_constraints(Slice &slice, bool hole=false) 
-{  
-     if (hole)
-     {
-           for ( auto pol =  slice.get_constraints().begin(); pol != slice.get_constraints().end(); ++pol)
-           {
-                Point_2 c2 = CGAL::centroid(pol->begin(), pol->end(), CGAL::Dimension_tag<0>());
-                seeds.push_back(c2); 
-           }
-     }
-     add_constraints(slice.get_constraints());
-}
-
-
-void Slice::remove_bad_constraints( int min_num_edges)
+int Slice::connected_components() 
 {
-      if(constraints.size() < 2 or constraints[0].size() < 20)
+   std::vector<Face_handle> queue;
+   std::map<Face_handle,bool> handled; 
+   int num_cc=0;
+   for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
+   {
+       handled[fit] = false; 
+   }
+   Face_handle fiq,fin;
+   for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
+   {
+      if (handled[fit]) continue;
+      queue.push_back(fit);     
+      while( !queue.empty()  )
       {
-        constraints.clear();
-        return;
+         fiq = queue.back(); 
+         queue.pop_back();         
+         if (handled[fiq]) continue;  
+         handled[fiq] = true;
+         for( int i =0; i < 3; i++) 
+         {        
+            fin = fiq->neighbor(i); 
+            if (  handled.find(fin)==handled.end() ) continue;     
+            queue.push_back(fin);
+         }
       }
-
-      for ( auto  pol = std::next(constraints.begin())  ; pol != constraints.end();) 
-      {   
-         Point_2 c2 = CGAL::centroid(pol->begin(), pol->end(), CGAL::Dimension_tag<0>());
-
-         if( !CGAL::is_simple_2( pol->begin(), pol->end(), Kernel()) or pol->size() < min_num_edges)
-         {
-            pol = constraints.erase(pol);
-         }
-         else 
-         {
-           ++pol;
-         } 
-
-      }
-
-
-} 
-
-//TODO: rmeove
-/*void Slice::find_holes( int min_num_edges)
-{
-
-     if(constraints.size() < 2)
-     {
-      //std::cout  << "There are no holes."<<  std::endl;
-      return;
-     }
-     
-     Polyline_2 temp = constraints[0];
-     int j=0;
-     Point_2 c2 = CGAL::centroid(temp.begin(), temp.end(), CGAL::Dimension_tag<0>());
-     if ( CGAL::bounded_side_2(temp.begin(), temp.end(), c2 , Kernel())==CGAL::ON_UNBOUNDED_SIDE)
-     {
-       std::cout << "Bad slice" << std::endl;
-     } 
-
-
-     for ( auto  pol = std::next(constraints.begin())  ; pol != constraints.end();) 
-     {
-         Point_2 c2 = CGAL::centroid(pol->begin(), pol->end(), CGAL::Dimension_tag<0>());
-         if ( CGAL::bounded_side_2(temp.begin(), temp.end(), c2 , Kernel())==CGAL::ON_BOUNDED_SIDE  and                                // inside the largest polyline 
-              CGAL::bounded_side_2(pol->begin(), pol->end(), c2 , Kernel())==CGAL::ON_BOUNDED_SIDE  and  pol->size() > min_num_edges ) // inside its own polyline i.e. have enclosed area          
-         {
-            seeds.push_back(c2);
-            ++pol;
-         } 
-         else if ( CGAL::bounded_side_2(temp.begin(), temp.end(), c2 , Kernel())==CGAL::ON_UNBOUNDED_SIDE or pol->size() < min_num_edges)           
-         {
-            pol = constraints.erase(pol);
-        
-         }
-         else
-         {
-            ++pol;
-         }
-     }
-
-   
-}*/
-
-
-void Slice::simplify( double stop_crit )
-{
-
-     if(constraints.size() < 1 or constraints[0].size() < 10)
-     {
-       return;
-     }
-
-     Polylines_2 temp;
-     for ( auto  pol = constraints.begin(); pol != constraints.end(); ++pol ) 
-     {
-         Polyline_2 result;
-         CGAL::Polyline_simplification_2::simplify(pol->begin(), pol->end(), Cost() , Stop(stop_crit), std::back_inserter(result));
-         temp.push_back(result);
-  
-     }
-     constraints = temp;
+     num_cc++;
+      
+   }
+   return num_cc;
 }
 
 
-
-void Slice::create_mesh(double mesh_resolution) 
-{
-    // 
-
-    if ( boundary.is_empty() )
-         return; 
-
-
-    cdt.insert_constraint(boundary.vertices_begin() , boundary.vertices_end(), true ) ;
-
-     for ( auto  pol = constraints.begin(); pol != constraints.end(); ++pol ) 
-     {         
-               cdt.insert_constraint(pol->begin(), pol->end(),true); //
-     }
-
-     double r = min_sphere.get_bounding_sphere_radius();
-     double longest_edge = r/mesh_resolution;
-     
-     Mesher mesher(cdt);
-     if ( !seeds.empty())
-          mesher.set_seeds(seeds.begin(),seeds.end());
-        
-     mesher.set_criteria(Criteria(0.125, longest_edge), true );
-
-     std::cout << "Start  meshing" << std::endl;
- 
-     mesher.refine_mesh(); // error step_by_step_refine_mesh(); 	
-     //-------------------------------------------------------------
-     // Remove facets outside can lead to errors if not a simple connected closed polyline.
-     //-------------------------------------------------------------
-     std::cout << "Done  meshing" << std::endl;
-
-     for(CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
-     {
-         if (!fit->is_in_domain())
-         {
-            cdt.delete_face(fit);
-         }
-     } 
- 
-
-
-}
 
 
 void Slice::save(std::string outpath)
 {
-
+     std::string extension = outpath.substr(outpath.find_last_of(".")+1);
+   
      if ( cdt.number_of_faces()==0 ) 
      {
         std::cout <<"The resulting mesh has no facet, and will not be saved"<< std::endl;
-        return ;     
+        return;         
      }
 
-     std::string extension = outpath.substr(outpath.find_last_of(".")+1);
-     std::ofstream out(outpath);
      if ( extension=="off")
      {
        std::ofstream out(outpath);
@@ -678,6 +629,17 @@ void Slice::save(std::string outpath)
      {
         write_STL(outpath);
      }
+     else if ( extension=="vtu")
+     {
+        std::ofstream out(outpath);
+        CGAL::write_vtu(out,cdt);
+     }
+     else if ( extension=="mesh")
+     {
+         std::ofstream out(outpath);
+         output_slice_to_medit_(out);
+     }
+
 
 }
 
