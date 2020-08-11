@@ -10,17 +10,16 @@
 #include <CGAL/convex_hull_3.h>
 
 // Local
-#include "Surface.h"
 
-using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
-using Point_3 = Kernel::Point_3;
-using CGAL_point_vector = std::vector< Point_3 >;
-using Polyhedron = CGAL::Polyhedron_3< Kernel >;
+//using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
+//using Point_3 = Kernel::Point_3;
+//using CGAL_point_vector = std::vector< Point_3 >;
+//using Polyhedron = CGAL::Polyhedron_3< Kernel >;
 
-
-std::shared_ptr< Surface > convex_hull(CGAL_point_vector& point_vector)
+template< typename Surface, typename Point_3 = typename Surface::Point_3>
+std::shared_ptr< Surface > convex_hull(std::vector<Point_3 >& point_vector)
 {
-    Polyhedron poly;
+    typename Surface::Polyhedron poly;
     CGAL::convex_hull_3(point_vector.begin(), point_vector.end(), poly);
     auto result = std::make_shared< Surface >(Surface(poly));
     return result;

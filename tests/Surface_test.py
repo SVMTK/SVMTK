@@ -165,7 +165,8 @@ class Surface_Test(unittest.TestCase):
     def test_reconstruction(self):
         surface1 =SVMTK.Surface()  
         surface1.make_cube(0.,0.,0.,10.,10.,10.,10) 
-        surface1.reconstruct(20,1.0,1.0) 
+        surface1.reconstruct(20,1.0,1.0)
+        surface1.collapse_edges() 
         surface1.save("tests/reconstruct.off")
 
 

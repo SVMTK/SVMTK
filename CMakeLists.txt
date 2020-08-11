@@ -8,7 +8,7 @@ set(SVMTK_VERSION "${SVMTK_VERSION_MAJOR}.${SVMTK_VERSION_MINOR}.${SVMTK_VERSION
 set(CMAKE_BUILD_TYPE Release)
 message("Compiler ID ${CMAKE_CXX_COMPILER_ID}")
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17) # 14 works also 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 SET(TEST_DIR "tests")
@@ -20,10 +20,12 @@ SET(TESTS
 )
 
 
-include_directories(external/Catch2/include)
+set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/Catch2/single_include/catch2 ) 
+add_library(Catch INTERFACE)
+target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
+
 add_executable("${PROJECT_NAME}_test" ${TESTS} )
-target_link_libraries("${PROJECT_NAME}_test" SVMTK ) 
-target_include_directories(${PROJECT_NAME}_test PRIVATE external/Catch2/include)
+target_link_libraries("${PROJECT_NAME}_test" SVMTK Catch) 
 
 find_package(Eigen3 REQUIRED) 
 find_package(CGAL REQUIRED COMPONENTS Core )
