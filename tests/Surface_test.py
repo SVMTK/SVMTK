@@ -155,7 +155,7 @@ class Surface_Test(unittest.TestCase):
         self.assertTrue(surface.num_edges(),108) 
 
     def test_seperate_narrow_gaps(self):
-         surface =SVMTK.Surface("tests/Data/narrow_gap.off")
+         s1=SVMTK.Surface("tests/Data/narrow_gap.off")
          self.assertEqual(s1.separate_narrow_gaps(),64) 
          for i in range(5) :
              s1.separate_narrow_gaps()
@@ -163,12 +163,11 @@ class Surface_Test(unittest.TestCase):
 
 
     def test_reconstruction(self):
-        surface1 =SVMTK.Surface()  
-        surface1.make_cube(0.,0.,0.,10.,10.,10.,10) 
-        surface1.reconstruct(20,1.0,1.0)
-        surface1.collapse_edges() 
-        surface1.save("tests/reconstruct.off")
-
+        surface =SVMTK.Surface()  
+        surface.make_cube(0.,0.,0.,10.,10.,10.,10) 
+        surface.reconstruct(20,1.0,1.0)
+        surface.collapse_edges() 
+        self.assertTrue(surface.num_vertices()>0 and surface.num_faces()>0 and surface.num_edges()>0)
 
     def test_convex_hull(self):
         surface1=SVMTK.Surface()   
@@ -176,9 +175,7 @@ class Surface_Test(unittest.TestCase):
         surface2 =surface1.convex_hull()
         self.assertEqual(surface2.num_vertices(),8)
 
-    def test_seperate_narrow_gaps(self):
-        surface=SVMTK.Surface()   
-        surface.make_cube(-1.,-1.,-1.,1.,1.,1.,1) 
+
     
    
 

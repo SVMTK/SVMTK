@@ -25,9 +25,7 @@
  
 // Local
 
-#include "read_polygons_STL.h"
 #include "surface_mesher.h"
-//#include "reconstruct_surface.h"
 
 // BOOST
 #include <boost/foreach.hpp>
@@ -36,15 +34,13 @@
 #include <CGAL/IO/STL_reader.h>
 #include <CGAL/centroid.h>
 #include <CGAL/extract_mean_curvature_flow_skeleton.h>
-//---------------------------------------------------------
-#include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
+
 #include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
 #include <CGAL/Polygon_mesh_processing/orient_polygon_soup.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 #include <CGAL/Polygon_mesh_processing/orientation.h>
 #include <CGAL/Polygon_mesh_processing/remesh.h>
 #include <CGAL/Polygon_mesh_processing/border.h>
-#include <CGAL/Polygon_mesh_processing/stitch_borders.h>//?
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
 #include <CGAL/Polygon_mesh_processing/clip.h>
 #include <CGAL/Polygon_mesh_processing/connected_components.h>
@@ -97,6 +93,10 @@ class Cost_stop_predicate
 };
 
 ///  --------------- AUXILIARY UTILITY -----------------
+
+
+
+
 template< typename Mesh> 
 bool load_surface(const std::string file, Mesh& mesh)
 {
@@ -129,7 +129,7 @@ bool load_surface(const std::string file, Mesh& mesh)
   }
   else if ( extension=="stl")
   {
-     if (!read_polygons_STL(input, points, polygons)) 
+     if (!read_STL(input, points, polygons)) 
      {
          std::cerr << "Error parsing the STL file " << std::endl;
          return false;
@@ -153,6 +153,16 @@ bool load_surface(const std::string file, Mesh& mesh)
   }
   return true;
 }
+
+template< typename Surface, typename Point_3 = typename Surface::Point_3>
+std::shared_ptr< Surface > convex_hull(std::vector<Point_3 >& point_vector)
+{
+    typename Surface::Polyhedron poly;
+    CGAL::convex_hull_3(point_vector.begin(), point_vector.end(), poly);
+    auto result = std::make_shared< Surface >(Surface(poly));
+    return result;
+}
+
 
 
 

@@ -12,7 +12,6 @@
 #include "Slice.h"
 
 
-#include "convex_hull.h"
 namespace py = pybind11;
 
 template <typename... Args>
@@ -55,8 +54,6 @@ Plane_3 Wrapper_plane_3(Point_3 p1, Point_3 p2 , Point_3 p3)
 {
       return Plane_3(p1,p2,p3);
 }
-
-
 
 std::shared_ptr< Surface > Wrapper_convex_hull(py::array_t< double > point3_array)
 {

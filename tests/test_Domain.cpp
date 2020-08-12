@@ -1,7 +1,8 @@
 #include <catch.hpp>
 
-#include "Domain.h"
 #include "Surface.h"
+#include "Domain.h"
+
 
 
 TEST_CASE("Minimum bounding sphere")

@@ -8,31 +8,32 @@ set(SVMTK_VERSION "${SVMTK_VERSION_MAJOR}.${SVMTK_VERSION_MINOR}.${SVMTK_VERSION
 set(CMAKE_BUILD_TYPE Release)
 message("Compiler ID ${CMAKE_CXX_COMPILER_ID}")
 
-set(CMAKE_CXX_STANDARD 17) # 14 works also 
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/Catch2/single_include/catch2 ) 
+set(SVMTK_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 SET(TEST_DIR "tests")
 SET(TESTS 
     ${TEST_DIR}/test_main.cpp
-#    ${TEST_DIR}/test_Slice.cpp
-#    ${TEST_DIR}/test_Domain.cpp
     ${TEST_DIR}/test_Surface.cpp
 )
 
 
-set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/Catch2/single_include/catch2 ) 
+
 add_library(Catch INTERFACE)
 target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
 
-add_executable("${PROJECT_NAME}_test" ${TESTS} )
-target_link_libraries("${PROJECT_NAME}_test" SVMTK Catch) 
+add_executable("${PROJECT_NAME}_test" ${TESTS}  )
+target_link_libraries("${PROJECT_NAME}_test" PRIVATE SVMTK Catch) 
+target_include_directories("${PROJECT_NAME}_test" PRIVATE  ${CATCH_INCLUDE_DIR} ${SVMTK_INCLUDE_DIR} )
 
 find_package(Eigen3 REQUIRED) 
-find_package(CGAL REQUIRED COMPONENTS Core )
 include(${EIGEN3_USE_FILE})
 
 find_package(CGAL REQUIRED COMPONENTS Core )
 include(${CGAL_USE_FILE})
+
 find_package(Boost REQUIRED)
 include_directories(${BOOST_USE_FILES})
 

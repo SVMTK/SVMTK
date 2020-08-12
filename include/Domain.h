@@ -25,22 +25,17 @@
 #include <CGAL/Polyhedral_mesh_domain_with_features_3.h>
 #include <CGAL/Mesh_complex_3_in_triangulation_3.h>
 #include <CGAL/Mesh_criteria_3.h>
-#include <CGAL/Mesh_cell_base_3.h>
-#include <CGAL/Mesh_vertex_base_3.h>
 #include <CGAL/Mesh_3/Detect_polylines_in_polyhedra.h>
-#include <CGAL/Mesh_3/polylines_to_protect.h>
-#include <CGAL/Mesh_3/Mesher_3.h>
+
 #include <CGAL/Mesh_polyhedron_3.h>
-#include <CGAL/Mesh_3/C3T3_helpers.h>
 
 #include <CGAL/refine_mesh_3.h>
 
 #include <CGAL/make_mesh_3.h>
-#include <CGAL/IO/Polyhedron_iostream.h>
 
 #include <CGAL/Min_sphere_of_spheres_d.h>
 #include <CGAL/Min_sphere_of_spheres_d_traits_3.h>
-#include <CGAL/Triangulation_3.h>
+#include <CGAL/Triangulation_3.h>//?
 
 
 template<class C3T3, class PointContainer, class FaceContainer>

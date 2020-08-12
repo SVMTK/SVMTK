@@ -7,15 +7,10 @@
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/make_surface_mesh.h>
 
-
 #include <CGAL/Surface_mesh_traits_generator_3.h>
 #include <CGAL/Surface_mesh_default_criteria_3.h>
 #include <CGAL/Surface_mesh_triangulation_generator_3.h>
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
-
-
-#include <cstdlib>
-
 
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Side_of_triangle_mesh.h>
@@ -36,7 +31,7 @@
 #include <fstream>
 #include <math.h>
 #include <functional>
-
+#include <cstdlib>
 
 template <typename FT, typename P>
 class FT_to_point_function_wrapper : public std::unary_function<P, FT>

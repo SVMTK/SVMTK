@@ -43,23 +43,29 @@ TEST_CASE("Region operations")
     REQUIRE( vertices.size()==1);
     point = surface.get_points(vertices);
  
-    REQUIRE( (point[0].x()==2.0 and point[0].y()==2.0 and point[0].z()==2.0) );
+    REQUIRE( point[0].x()==Approx(2).margin(1e-12) );
+    REQUIRE( point[0].y()==Approx(2).margin(1e-12) );
+    REQUIRE( point[0].z()==Approx(2).margin(1e-12) );
+ 
     surface.adjust_vertices_in_region( vertices.begin() ,vertices.end(), -0.3);
     point = surface.get_points(vertices);
     
-    REQUIRE( (point[0].x()==1.9 and point[0].y()==1.8 and point[0].z()==1.8) );
+    REQUIRE( point[0].x()==Approx(1.9).margin(1e-12) );
+    REQUIRE( point[0].y()==Approx(1.8).margin(1e-12) );
+    REQUIRE( point[0].z()==Approx(1.8).margin(1e-12) );
 
     surface.smooth_laplacian_region( vertices.begin(), vertices.end() , -0.9);
     point = surface.get_points(vertices) ;
 
-    std::cout<<"P3  "<<point[0].x() << " " << point[0].y() << " " << point[0].z()  << std::endl;
-    REQUIRE( ( (point[0].x()-2.35)<0.01 and (point[0].y()-1.98)<0.01 and (point[0].z()-1.98)<0.01) );
+    REQUIRE( ( point[0].x()==Approx(2.35).margin(1e-2) and point[0].y()==Approx(1.98).margin(1e-2) and point[0].z()==Approx(1.98).margin(1e-2) ));
+    REQUIRE( point[0].x()==Approx(2.35).margin(1e-3) );
+    REQUIRE( point[0].y()==Approx(1.98).margin(1e-3) );
+    REQUIRE( point[0].z()==Approx(1.98).margin(1e-3) );
 
-
-    surface.smooth_taubin_region( vertices.begin(), vertices.end()      ,30);
+    surface.smooth_taubin_region( vertices.begin(), vertices.end()      ,50);
     point = surface.get_points(vertices) ;
-
-    REQUIRE( (point[0].x()==1.4 and point[0].y()==1.6 and point[0].z()==1.6) );
-
+    REQUIRE( point[0].x()==Approx(1.4).margin(1e-12) );
+    REQUIRE( point[0].y()==Approx(1.6).margin(1e-12) );
+    REQUIRE( point[0].z()==Approx(1.6).margin(1e-12) );
 }
 

@@ -6,14 +6,12 @@ class Utility_Test(unittest.TestCase):
 
 
     def test_convex_hull(self):
-        s1 = SVMTK.convex_hull([1,2,3]) 
-        self.assertEqual(surface2.num_vertices(),1)  
-        tetra_points = [0, 0, 0, 
-                                    0, 0, 1, 
-                                    0, 1, 1,
-                                    1, 1, 1,  ]
-        s2 = SVMTK.convex_hull(tetra_points)   
-        self.assertEqual(surface2.num_vertices(),4)
+        tetra_points = [[0, 0, 0, 
+                         0, 0, 1, 
+                         0, 1, 1,
+                         1, 1, 1,  ]]
+        surface = SVMTK.convex_hull(tetra_points)   
+        self.assertEqual(surface.num_vertices(),4)
 
     def test_simple_cgal_wrappers(self):
         p3 = SVMTK.Point_3(1.,0,1.0)
