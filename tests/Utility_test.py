@@ -86,7 +86,7 @@ class Utility_Test(unittest.TestCase):
     def test_morphological_surface_union(self):
         s1 =SVMTK.Surface("tests/Data/s1.off")
         s2 =SVMTK.Surface("tests/Data/s2.off")  
-        s5  = SVMTK.union_partially_overlapping_surfaces(s1,s2,0.9,0.2,1)
+        s5  = SVMTK.union_partially_overlapping_surfaces(s1,s2,0.9,0.2)
         self.assertTrue(s5.num_faces()>0) 
 
 

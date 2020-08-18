@@ -3,8 +3,9 @@
 #define __Polyhedral_vector_to_labeled_function_wrapper_H
 
 
-#include "SubdomainMap.h" // safegaurd capture 
+#include "SubdomainMap.h" 
 #include <CGAL/Polygon_mesh_processing/bbox.h>
+
 namespace CGAL {
         template<class Function_, class BGT>
         class Polyhedral_vector_to_labeled_function_wrapper
@@ -16,8 +17,6 @@ namespace CGAL {
                 typedef typename BGT::Point_3       Point_3;
                 typedef boost::dynamic_bitset<>   Bmask;
             
-                 
-
                 Polyhedral_vector_to_labeled_function_wrapper(const std::vector<Function_*>& v, AbstractMap& map) : function_vector_(v)
                 {
                     subdmap =&map;

@@ -68,7 +68,6 @@
 
 
 template< typename InputIterator> 
-inline 
 double length_polyline( InputIterator begin , InputIterator end)
 {
   double length = 0.0;
@@ -182,10 +181,7 @@ class Slice
        void remove_subdomains(std::vector<int> tags); 
        void remove_subdomains(int tag);
 
-
-       void create_mesh(double mesh_resolution);  
- 
-  
+       void create_mesh(double mesh_resolution);    
        void simplify( const double point_density=0.4 );
        int connected_components(); 
        void keep_largest_connected_component(); 
@@ -212,7 +208,7 @@ class Slice
        std::shared_ptr<Surface> as_surface();
 
 
- 
+       double get_bounding_circle_radius(){return min_sphere.get_bounding_sphere_radius();} 
        void save(std::string outpath);
        void output_slice_to_medit_(std::ostream& os);
        void write_STL(const std::string filename);
@@ -234,6 +230,7 @@ class Slice
 
 };
 
+inline
 std::set<int> Slice::get_subdomains()
 {
    std::set<int> result;
@@ -244,14 +241,14 @@ std::set<int> Slice::get_subdomains()
    }
    return result;
 }
-
+inline
 void Slice::remove_subdomains(int tag) 
 {
     std::vector<int> tags; 
     tags.push_back(tag);
     remove_subdomains(tags);
 }
-
+inline
 void Slice::remove_subdomains(std::vector<int> tags) 
 {
     for(CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
@@ -263,6 +260,7 @@ void Slice::remove_subdomains(std::vector<int> tags)
 /** Based on CGAL output_to_medit, but for 2D meshes
  *
  */
+inline
 void Slice::output_slice_to_medit_(std::ostream& os)
 {
    
@@ -319,7 +317,7 @@ void Slice::output_slice_to_medit_(std::ostream& os)
 
 }
 
-
+inline
 Slice::Slice(Plane_3 plane_3,Polylines_2 &polylines) : plane(plane_3)
 {
     min_sphere.add_polylines(polylines);
@@ -328,29 +326,31 @@ Slice::Slice(Plane_3 plane_3,Polylines_2 &polylines) : plane(plane_3)
 }
 
 
-
+inline
 void Slice::add_constraints(Slice &slice) 
 {  
   add_constraints(slice.get_constraints());
 }
 
-
+inline
 void Slice::add_constraint(Polyline_2 &polyline) 
 {  
      min_sphere.add_polyline(polyline);
      constraints.push_back( polyline );
 }
+
+inline
 void Slice::add_constraints(Polylines_2 &polylines) 
 {  
      min_sphere.add_polylines(polylines);
      constraints.insert( constraints.end(),polylines.begin(),polylines.end());
 }
-
+inline
 void Slice::set_constraints() 
 {    
      for (auto pol: constraints){cdt.insert_constraint(pol.begin(), pol.end());}
 }
-
+inline
 void Slice::create_mesh(double mesh_resolution) 
 {
      set_constraints(); 
@@ -506,7 +506,7 @@ void Slice::add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map)
         
 }
 
-
+inline
 void Slice::simplify(const double point_density )
 {       
     Polylines_2 result;
@@ -524,6 +524,7 @@ void Slice::simplify(const double point_density )
 
 }
 
+inline
 void Slice::keep_largest_connected_component() 
 {
    std::vector<Face_handle> queue;
@@ -573,7 +574,7 @@ void Slice::keep_largest_connected_component()
 }
 
 
-
+inline
 int Slice::connected_components() 
 {
    std::vector<Face_handle> queue;
@@ -609,7 +610,7 @@ int Slice::connected_components()
 
 
 
-
+inline
 void Slice::save(std::string outpath)
 {
      std::string extension = outpath.substr(outpath.find_last_of(".")+1);
@@ -643,8 +644,8 @@ void Slice::save(std::string outpath)
 
 }
 
-
-void Slice::write_STL(const std::string filename)
+inline
+void Slice::write_STL(const std::string filename)// TODO : ofstream input
 {
     std::ofstream file(filename);
     file.precision(6);

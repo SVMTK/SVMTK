@@ -69,3 +69,6 @@ TEST_CASE("Region operations")
     REQUIRE( point[0].z()==Approx(1.6).margin(1e-12) );
 }
 
+
+
+

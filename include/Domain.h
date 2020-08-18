@@ -465,7 +465,7 @@ class Domain {
         Polylines features;
 
 };
-
+inline
 void Domain::set_borders()
 {
   if (this->borders.size()>0)
@@ -473,6 +473,7 @@ void Domain::set_borders()
      domain_ptr.get()->add_features(this->borders.begin(), this->borders.end());
   }
 }
+inline
 void Domain::set_features()
 {
   if (this->borders.size()>0)
@@ -481,6 +482,7 @@ void Domain::set_features()
   }
 }
 
+inline
 std::set<int> Domain::get_curves()
 {
     const Tr& tr = c3t3.triangulation();
@@ -546,7 +548,7 @@ Domain::Domain(Surface &surface)
 
 
 }
-
+inline
 void Domain::create_mesh(double cell_size, double facet_size,double facet_angle,  double facet_distance,double cell_radius_edge_ratio)
 {
 
@@ -575,7 +577,7 @@ void Domain::create_mesh(double cell_size, double facet_size,double facet_angle,
 }
 
 
-
+inline
 void Domain::create_mesh(const double mesh_resolution )
 {
     
@@ -601,7 +603,7 @@ void Domain::create_mesh(const double mesh_resolution )
             c3t3.rescan_after_load_of_triangulation();
     std::cout << "Done meshing" << std::endl;
 }
-
+inline
 void Domain::save(std::string OutPath,bool save_1Dfeatures)
 {
     std::ofstream  medit_file(OutPath);
@@ -639,7 +641,7 @@ void Domain::add_surface_points(Surface &surface)
    c3t3.insert_surface_points(points_vector.begin(), points_vector.end());
 }*/
 
-
+inline
 void Domain::remove_subdomain(int tag) 
 { 
    std::vector<int> temp;
@@ -649,7 +651,7 @@ void Domain::remove_subdomain(int tag)
 
 
 
-
+inline
 void Domain::remove_subdomain(std::vector<int> tags)
 {
 
@@ -729,7 +731,7 @@ void Domain::remove_subdomain(std::vector<int> tags)
 }
 
 
-
+inline
 void Domain::add_sharp_border_edges(Polyhedron& polyhedron, double threshold)
 { 
  typedef boost::property_map<Polyhedron, CGAL::edge_is_feature_t>::type EIF_map;
@@ -808,9 +810,10 @@ std::vector<std::shared_ptr<Surface>> Domain::get_boundaries()
    return patches;
 }
 
+inline
 void Domain::lloyd(double time_limit, int max_iteration_number, double convergence,double freeze_bound, bool do_freeze )
 {CGAL::lloyd_optimize_mesh_3(c3t3, *domain_ptr.get(), time_limit=time_limit, max_iteration_number=max_iteration_number,convergence=convergence, freeze_bound  = freeze_bound, do_freeze = do_freeze); } 
-
+inline
 void Domain::odt(double time_limit, int max_iteration_number, double convergence,double freeze_bound, bool do_freeze) 
 {CGAL::odt_optimize_mesh_3(c3t3, *domain_ptr.get(), time_limit=time_limit, max_iteration_number=max_iteration_number,convergence=convergence, freeze_bound  = freeze_bound, do_freeze = do_freeze); } 
 

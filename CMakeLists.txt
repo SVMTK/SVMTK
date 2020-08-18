@@ -17,6 +17,7 @@ SET(TEST_DIR "tests")
 SET(TESTS 
     ${TEST_DIR}/test_main.cpp
     ${TEST_DIR}/test_Surface.cpp
+    ${TEST_DIR}/test_Domain.cpp
 )
 
 

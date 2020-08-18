@@ -215,6 +215,9 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("shortest_surface_path", py::overload_cast<double , double, double , double,double,double>( &Surface::shortest_surface_path) )
         .def("shortest_surface_path", py::overload_cast<Point_3,Point_3>( &Surface::shortest_surface_path) )
 
+        .def("strictly_inside", &Surface::strictly_inside, py::arg("other") , py::arg("adjustment")=-0.5)
+        .def("separate_enclosed_surface", &Surface::separate_enclosed_surface, py::arg("other") , py::arg("adjustment")=-0.5)
+
 
         .def("collapse_edges", py::overload_cast<const double >( &Surface::collapse_edges))
         .def("collapse_edges", py::overload_cast<>(&Surface::collapse_edges))
@@ -290,7 +293,7 @@ PYBIND11_MODULE(SVMTK, m) {
                                    py::arg("surf1"), py::arg("surf2"), py::arg("edge_movement")=-0.25 , py::arg("smoothing")=0.3 );
 
        m.def("union_partially_overlapping_surfaces", &union_partially_overlapping_surfaces<Surface>,
-                                   py::arg("surf1"), py::arg("surf2"), py::arg("clusterth")=0.8 ,py::arg("edge_movement")=0.25 , py::arg("smoothing")=0.3 ); 
+                                   py::arg("surf1"), py::arg("surf2"), py::arg("clusterth")=0.8 ,py::arg("edge_movement")=0.25 , py::arg("smoothing")=1 ); 
 
 
 

@@ -154,12 +154,36 @@ class Surface_Test(unittest.TestCase):
         surface.extension(SVMTK.Point_3(0,0,2),1,1,True)
         self.assertTrue(surface.num_edges(),108) 
 
-    def test_seperate_narrow_gaps(self):
+    def test_separate_narrow_gaps(self):
          s1=SVMTK.Surface("tests/Data/narrow_gap.off")
          self.assertEqual(s1.separate_narrow_gaps(),64) 
          for i in range(5) :
              s1.separate_narrow_gaps()
          self.assertEqual(s1.separate_narrow_gaps(),0) 
+
+    def test_strictly_inside(self):
+        surface1 =SVMTK.Surface()  
+        surface1.make_cube(0.,0.,0.,2.,2.,2.,4) 
+        surface2 =SVMTK.Surface()  
+        surface2.make_cube(0.5,0.5,0.5,2.5,2.5,2.5,4) 
+        itr=0 
+        while(surface2.strictly_inside(surface1,-0.1)>0 and itr<200 ):
+             itr+=1
+        #self.assertEqual( surface2.strictly_inside(surface1,-0.1) ,)
+        surface2.save("sis2.off")
+
+
+
+    def test_separate_enclosed_surface(self):
+        surface1 =SVMTK.Surface()  
+        surface1.make_cube(0.,0.,0.,2.,2.,2.,1) 
+        surface2 =SVMTK.Surface()  
+        surface2.make_cube(0.2,0.2,0.2,1.8,1.8,1.8,5) 
+        itr=0 
+        while (surface2.separate_enclosed_surface(surface1, -0.1)>0 and itr<200):
+              itr+=1
+        surface2.save("sess2.off")
+
 
 
     def test_reconstruction(self):

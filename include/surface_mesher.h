@@ -36,7 +36,6 @@
 template <typename FT, typename P>
 class FT_to_point_function_wrapper : public std::unary_function<P, FT>
 {
-  //typedef FT (*Implicit_function)(FT, FT, FT);
   typedef std::function<double(double,double,double)> Implicit_function;
   Implicit_function function;
 public:
@@ -48,7 +47,7 @@ public:
 };
 
 
-template<typename Mesh , typename Implicit_Function> // Implicit function -> return coordiantes x0,y0,z0-> make center 
+template<typename Mesh , typename Implicit_Function> 
 void surface_mesher(Mesh& mesh, Implicit_Function func, double& x0 ,double& y0, double& z0 , double bounding_sphere_radius, double angular_bound, double radius_bound, double distance_bound ) 
 {
     typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
@@ -61,7 +60,6 @@ void surface_mesher(Mesh& mesh, Implicit_Function func, double& x0 ,double& y0, 
     typedef FT_to_point_function_wrapper<FT, Point_3> Function;
     typedef CGAL::Implicit_surface_3<Kernel, Function> Surface_3;
 
-    // no known conversion for argument 1 from ‘CGAL::Point_3<CGAL::Epeck>’ to ‘const Point_3_& {aka const CGAL::Point_3<CGAL::Epick>&}’
     Tr tr;
     C2t3 c2t3 (tr);
     Function wrapper(func);
@@ -88,8 +86,6 @@ void surface_mesher(Mesh& mesh, Implicit_Function func,  double bounding_sphere_
     typedef Tr::Geom_traits GT;
     typedef Kernel::Point_3 Point_3;
     typedef Kernel::FT FT;
-    //Surface_mesh_traits().construct_initial_points_object()(surface_of_sphere_2, CGAL::inserter(tr_3), initial_number_of_points)
-
 
     typedef FT_to_point_function_wrapper<FT, Point_3> Function;
     typedef CGAL::Implicit_surface_3<Kernel, Function> Surface_3;
@@ -105,8 +101,6 @@ void surface_mesher(Mesh& mesh, Implicit_Function func,  double bounding_sphere_
 
     CGAL::Surface_mesh_default_criteria_3<Tr> criteria(angular_bound,radius_bound,distance_bound);
 
-
-//    CGAL::make_surface_mesh(c2t3, surface, criteria,CGAL::Manifold_with_boundary_tag());
     CGAL::make_surface_mesh(c2t3, surface, criteria, CGAL::Non_manifold_tag());
     CGAL::facets_in_complex_2_to_triangle_mesh(c2t3,mesh);
 
@@ -126,10 +120,10 @@ void poisson_reconstruction(Surface &surface,double angular_bound, double radius
      typedef std::vector<Point_with_normal> PointList;
      typedef CGAL::First_of_pair_property_map<Point_with_normal> Point_map;
      typedef CGAL::Second_of_pair_property_map<Point_with_normal> Normal_map;
-
+     typedef CGAL::Complex_2_in_triangulation_3<Tr> C2t3;
 
      FT sm_distance(distance_bound) ;
-     typedef CGAL::Complex_2_in_triangulation_3<Tr> C2t3;
+
 
 
      PointList points;
@@ -159,9 +153,6 @@ void poisson_reconstruction(Surface &surface,double angular_bound, double radius
   
 
      CGAL::Surface_mesh_default_criteria_3<Tr> criteria(angular_bound,radius_bound,distance_bound);
-
-
-//    CGAL::make_surface_mesh(c2t3, surface, criteria,CGAL::Manifold_with_boundary_tag());
      CGAL::make_surface_mesh(c2t3, implicit_surface, criteria, CGAL::Manifold_tag());
      CGAL::facets_in_complex_2_to_triangle_mesh(c2t3,surface.get_mesh());
  
