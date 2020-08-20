@@ -108,13 +108,13 @@ void facets_in_complex_3_to_triangle_soup_(const C3T3& c3t3,
 */
 template <class C3T3,
           class Vertex_index_property_map,
-          class Facet_index_property_map,
+          typename Facet_index_property_map,
           class Facet_index_property_map_twice,
           class Cell_index_property_map>
 void output_to_medit_(std::ostream& os,
                 const C3T3& c3t3,
                 const Vertex_index_property_map& vertex_pmap,
-                const Facet_index_property_map& facet_pmap,
+                Facet_index_property_map& facet_pmap,
                 const Cell_index_property_map& cell_pmap,
                 const Facet_index_property_map_twice& facet_twice_pmap = Facet_index_property_map_twice(),
                 const bool print_each_facet_twice = false,
@@ -123,7 +123,7 @@ void output_to_medit_(std::ostream& os,
 
   typedef typename C3T3::Triangulation Tr;
   typedef typename C3T3::Cells_in_complex_iterator Cell_iterator;
-
+  typedef typename C3T3::Surface_patch_index Surface_patch_index;
   typedef typename Tr::Finite_vertices_iterator Finite_vertices_iterator;
   typedef typename Tr::Vertex_handle Vertex_handle;
   typedef typename Tr::Weighted_point Weighted_point;
@@ -238,7 +238,23 @@ void output_to_medit_(std::ostream& os,
     if (c3t3.is_in_complex(fit->first) or  c3t3.is_in_complex(fit->first->neighbor(fit->second) ) )  {
 
     os << V[vh1] << ' ' << V[vh2] << ' ' << V[vh3] << ' '; 
-    if (get(facet_pmap, *fit)<0)
+    Surface_patch_index spi = c3t3.surface_patch_index(*fit);
+    std::pair<int,int> key(static_cast<int>(spi.first) , static_cast<int>(spi.second) );
+    if ( key.second> key.first){std::swap(key.first,key.second);}
+    if (facet_pmap.find(key) == facet_pmap.end() )
+    {
+      os << 0 << '\n'; 
+    }
+    else
+    {
+       os << facet_pmap.at(key) << '\n';
+    }
+    // c3t3.surfacefit
+    // s
+    // 
+    //if ( facet_pmap.find(temp) == face_pmap.end() )
+    // else 
+    /*if (get(facet_pmap, *fit)<0)
     {
       os << 0 << '\n'; 
     }
@@ -246,7 +262,7 @@ void output_to_medit_(std::ostream& os,
     {
       os << get(facet_pmap, *fit) << '\n'; 
 
-    } 
+    } */
 
     }
 
@@ -402,7 +418,7 @@ class Domain {
         template<typename Surface>
         Domain(std::vector<Surface> surfaces);
         template<typename Surface>
-        Domain(std::vector<Surface> surfaces, AbstractMap& map);
+        Domain(std::vector<Surface> surfaces, std::shared_ptr<AbstractMap> map);
 
         ~Domain() { for( auto vit : this->v){delete vit;}v.clear();}        
 
@@ -441,7 +457,7 @@ class Domain {
         int number_of_patches(){return get_patches().size() ;} 
         int number_of_cells(){return c3t3.number_of_cells();}
         int number_of_surfaces(){return v.size();}
-
+        
         void remove_subdomain(std::vector<int> tags);
         void remove_subdomain(int tag);              // tags 
 
@@ -457,7 +473,7 @@ class Domain {
 
     private :
         Function_vector v; 
-        std::unique_ptr<DefaultMap> map_ptr;
+        std::shared_ptr<AbstractMap> map_ptr;
         std::unique_ptr<Mesh_domain> domain_ptr;
         Minimum_sphere<Kernel> min_sphere; 
         C3t3 c3t3;
@@ -506,14 +522,14 @@ Domain::Domain( std::vector<Surface> surfaces )
        Polyhedral_mesh_domain_3 *polyhedral_domain = new Polyhedral_mesh_domain_3(polyhedron);
        this->v.push_back(polyhedral_domain);
     }
-    map_ptr = std::unique_ptr<DefaultMap>( new  DefaultMap()) ; 
+    map_ptr = std::shared_ptr<DefaultMap>( new  DefaultMap()) ; 
 
     Function_wrapper wrapper(this->v, *map_ptr.get());
     domain_ptr = std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox()));
 
 }
 template<typename Surface>
-Domain::Domain( std::vector<Surface> surfaces , AbstractMap& map )
+Domain::Domain( std::vector<Surface> surfaces , std::shared_ptr<AbstractMap> map )
 {
  
     for(typename std::vector<Surface>::iterator sit= surfaces.begin() ;sit!= surfaces.end();sit++)
@@ -525,7 +541,8 @@ Domain::Domain( std::vector<Surface> surfaces , AbstractMap& map )
        this->v.push_back(polyhedral_domain);
     }
 
-    Function_wrapper wrapper(this->v,map);
+    map_ptr = std::move(map);
+    Function_wrapper wrapper(this->v,*map_ptr.get());
     domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox()));
 
 }
@@ -540,9 +557,9 @@ Domain::Domain(Surface &surface)
 
 
     this->v.push_back(polyhedral_domain);
-    map_ptr = std::unique_ptr<DefaultMap>( new  DefaultMap());
+    map_ptr = std::shared_ptr<DefaultMap>( new  DefaultMap());
 
-    Function_wrapper wrapper(this->v, *map_ptr.get());
+    Function_wrapper wrapper(this->v,*map_ptr.get());
 
     domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox())); 
 
@@ -603,43 +620,33 @@ void Domain::create_mesh(const double mesh_resolution )
             c3t3.rescan_after_load_of_triangulation();
     std::cout << "Done meshing" << std::endl;
 }
+
+
+
 inline
 void Domain::save(std::string OutPath,bool save_1Dfeatures)
 {
     std::ofstream  medit_file(OutPath);
-    typedef CGAL::Mesh_3::Medit_pmap_generator<C3t3,false,false> Generator;
+    typedef CGAL::Mesh_3::Medit_pmap_generator<C3t3,false,false> Generator; // previous false false
     typedef typename Generator::Cell_pmap Cell_pmap;
     typedef typename Generator::Facet_pmap Facet_pmap;
     typedef typename Generator::Facet_pmap_twice Facet_pmap_twice;
     typedef typename Generator::Vertex_pmap Vertex_pmap;
-
+ 
+    //std::map<std::pair<int,int>,int> facet_pmap = map_ptr->get_pacthes(); 
     Cell_pmap cell_pmap(c3t3);
-    Facet_pmap facet_pmap(c3t3, cell_pmap);
+    Facet_pmap facet_pmap(c3t3, cell_pmap); 
     Facet_pmap_twice  facet_twice_pmap(c3t3,cell_pmap);
-    Vertex_pmap vertex_pmap(c3t3, cell_pmap,facet_pmap);
+    Vertex_pmap vertex_pmap(c3t3, cell_pmap,facet_pmap); // 
 
-    output_to_medit_(medit_file,c3t3, vertex_pmap, facet_pmap, cell_pmap, facet_twice_pmap , false, save_1Dfeatures) ;
+    std::map<std::pair<int,int>,int> facet_map = this->map_ptr->get_interfaces(this->number_of_surfaces() ); 
+
+    output_to_medit_(medit_file,c3t3, vertex_pmap, facet_map, cell_pmap, facet_twice_pmap , false, save_1Dfeatures) ;
     medit_file.close();
-}
-/*
-template<typename Surface>
-void Domain::add_surface_points(Surface &surface) 
-{ 
 
-   typedef Tr::Bare_point Bare_point;
-   typedef std::vector<std::pair<Bare_point, int> > Initial_points_vector;
-   typedef typename Surface::Index SM_Index;
-   std::vector<Point_3> points;  
-   std::vector<SM_Index> indicies; 
-   Initial_points_vector points_vector;
-   points = surface.get_points() ; 
-   indicies = surface.get_vertices(); 
-   for(int i = 0; i<points.size(); i++)
-   {
-      points_vector.push_back(std::make_pair<Bare_point,int>(Bare_point(points[i]), indicies[i] )    ) ;
-   }
-   c3t3.insert_surface_points(points_vector.begin(), points_vector.end());
-}*/
+
+
+}
 
 inline
 void Domain::remove_subdomain(int tag) 

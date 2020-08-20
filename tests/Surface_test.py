@@ -9,9 +9,6 @@ def torus_function(x,y,z):
  
 class Surface_Test(unittest.TestCase):
 
-    def SetUp(self):
-        self.unit_cube = SVMTK.Surface() 
-        self.unit_cube.make_cube(0.,0.,0.,1.,1.,1.,1) 
 
 
     def test_surface_io(self):

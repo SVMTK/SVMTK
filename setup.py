@@ -5,7 +5,6 @@ import subprocess
 
 from setuptools import setup,find_packages,Extension
 from setuptools.command.build_ext import build_ext
-from setuptools.command.test import test as TestCommand
 from shutil import copyfile, copymode
 
 
@@ -52,6 +51,7 @@ class CMakeBuild(build_ext):
         subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(["cmake", "--build", "."] + build_args, cwd=self.build_temp)
         test_bin = os.path.join(self.build_temp, 'SVMTK_test')
+        
         self.copy_test_file(test_bin)
         print()
 
@@ -77,8 +77,11 @@ class CMakeBuild(build_ext):
 
 setup(
     name="SVMTK",
-    version="{0}.{1}".format(MAJOR, MINOR),
+    version="{}.{}".format(MAJOR, MINOR),
     description="A collection of tools for volume and surface meshing",
+    url="",
+    license="GNU GENERAL PUBLIC LICENSE",
+    keywords="Surface Volume Meshing Toolkit " ,
     long_description="",
     ext_modules=[CMakeExtension("SVMTK")],
     cmdclass=dict(build_ext=CMakeBuild),

@@ -30,8 +30,10 @@ class AbstractMap
    public:
         typedef int return_type;
         typedef boost::dynamic_bitset<> Bmask;
-
+        
         virtual return_type index(const Bmask bits) = 0;
+        //virtual return_type patch_index(const double s1,const double s2)=0;
+        virtual const std::map<std::pair<int,int>,int> get_interfaces(const int number_of_surfaces)=0;
         virtual ~AbstractMap() {}
 
 };
@@ -45,10 +47,27 @@ class DefaultMap : virtual public AbstractMap
     
         DefaultMap() {}
         ~DefaultMap() {} 
-
+         
         return_type index(const Bmask bits) 
         {
            return static_cast<return_type>(bits.to_ulong());
+        }
+              
+      
+        const std::map<std::pair<int,int>,int> get_interfaces(const int number_of_surfaces)
+        { 
+             
+           int ulim =  pow (2,number_of_surfaces )+1; 
+           std::map<std::pair<int,int> ,int> patches;
+           int iter=1;
+           for(int i =1; i< ulim; i++ )
+           {
+              for(int j=0; j< i ; j++)
+              {
+                 patches[std::pair<int,int>(i,j)]=iter++;
+              }
+           } 
+           return patches;
         }
 
 
@@ -60,7 +79,7 @@ class SubdomainMap :virtual public AbstractMap
    public:
         typedef int return_type;
         typedef boost::dynamic_bitset<> Bmask;
-    
+       
         SubdomainMap() {}
         ~SubdomainMap() {} 
 
@@ -77,12 +96,58 @@ class SubdomainMap :virtual public AbstractMap
         {
            for(std::map<boost::dynamic_bitset<>,int>::iterator it=subdmap.begin();it!=subdmap.end();++it )
            {
-              std::cout << it->first << " " << it->second << " " << std::endl;
+              std::cout<< "Subdomain: " << it->first << " " << it->second << " " << std::endl;
            }
+           for(std::map<std::pair<int,int>,int>::iterator it=patches.begin();it!=patches.end();++it )
+           {
+              std::cout<< "Patches: " << it->first.first << " " << it->first.second << " " << it->second << " " << std::endl;
+           }
+
         }
+        std::vector<int> get_tags() 
+        {
+              std::vector<int> tags;
+              tags.push_back(0);
+              for (auto it : subdmap) 
+              {
+                 tags.push_back(it.second);
+              } 
+              return tags;
+        }
+        void add_interface(std::pair<int,int> interface, int tag)
+        {
+              if (interface.second > interface.first) 
+              {std::swap(interface.first, interface.second);}
+              patches[interface] = tag;
+        } 
+        const std::map<std::pair<int,int>, int> get_interfaces(const int number_of_surfaces)
+        {
+           if (!patches.empty()) 
+           {
+              return patches;
+           }
+           else
+           {
+              int iter=1;
+              std::vector<int> tags = get_tags();
+              for( auto i : tags )
+              {
+                 for(auto j : tags)
+                 {
+                    if( j>i )
+                    {
+                      patches[std::pair<int,int>(j,i)]=iter++;
+                    }
+                 } 
+              }
+              return patches;
+           } 
+        }
+
    private:
         std::map<boost::dynamic_bitset<>,int> subdmap;
-      
+   protected:
+        std::map<std::pair<int,int> ,int> patches;
 };
 
 

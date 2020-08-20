@@ -148,12 +148,14 @@ PYBIND11_MODULE(SVMTK, m) {
        .def("x", &Point_2::x)
        .def("y", &Point_2::y);     
  
-    py::class_<AbstractMap,PyAbstractMap>(m,"AbstractMap");
+    py::class_<AbstractMap,PyAbstractMap,std::shared_ptr<AbstractMap>>(m,"AbstractMap");
 
-    py::class_<SubdomainMap,AbstractMap>(m, "SubdomainMap")
+    py::class_<SubdomainMap,AbstractMap,std::shared_ptr<SubdomainMap>>(m, "SubdomainMap")
         .def(py::init<>())
         .def("print",  &SubdomainMap::print)
+        .def("add_interface", &SubdomainMap::add_interface)
         .def("add", &SubdomainMap::add);
+       
 
     py::class_<Slice,std::shared_ptr<Slice>>(m, "Slice")
         .def(py::init<>())
@@ -239,7 +241,7 @@ PYBIND11_MODULE(SVMTK, m) {
     py::class_<Domain,std::shared_ptr<Domain>>(m, "Domain")
         .def(py::init<Surface &>())
         .def(py::init<std::vector<Surface>>())
-        .def(py::init<std::vector<Surface>, AbstractMap&>())
+        .def(py::init<std::vector<Surface>, std::shared_ptr<AbstractMap>>())
         .def("create_mesh", py::overload_cast<double,double,double,double,double>( &Domain::create_mesh)) 
         .def("create_mesh", py::overload_cast<double>(&Domain::create_mesh))
 

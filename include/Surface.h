@@ -30,6 +30,7 @@
 // BOOST
 #include <boost/foreach.hpp>
 #include <boost/multi_array.hpp>
+#include <boost/system/error_code.hpp>
 //  STL
 #include <CGAL/IO/STL_reader.h>
 #include <CGAL/IO/STL_writer.h>
