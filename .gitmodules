@@ -1,7 +1,11 @@
 [submodule "external/pybind11"]
-	path = external/pybind11
-	url = https://github.com/pybind/pybind11.git
-[submodule "external/Catch2"]
-	path = external/Catch2
-	url = https://github.com/catchorg/Catch2.git
+    path = external/pybind11
+    url = https://github.com/pybind/pybind11.git
 
+[submodule "external/Catch2"]
+    path = external/Catch2
+    url = https://github.com/catchorg/Catch2.git
+
+[submodule "external/cgal"]
+    path = external/cgal
+    url = https://github.com/CGAL/cgal.git

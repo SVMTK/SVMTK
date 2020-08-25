@@ -13,36 +13,31 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/Catch2/single_include/catch2 ) 
 set(SVMTK_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-
-
-
 SET(TEST_DIR "tests")
-SET(TESTS 
+SET(TESTS
     ${TEST_DIR}/test_main.cpp
 #    ${TEST_DIR}/test_Surface.cpp
 #    ${TEST_DIR}/test_Domain.cpp
 )
 
-
-
 add_library(Catch INTERFACE)
 target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
 
-if (${BUILD_TESTING} ) 
-   add_executable("${PROJECT_NAME}_test" ${TESTS}  )
-   target_link_libraries("${PROJECT_NAME}_test" PRIVATE SVMTK Catch) 
+if (${BUILD_TESTING})
+   add_executable("${PROJECT_NAME}_test" ${TESTS})
+   target_link_libraries("${PROJECT_NAME}_test" PRIVATE SVMTK Catch)
    target_include_directories("${PROJECT_NAME}_test" PRIVATE  ${CATCH_INCLUDE_DIR} ${SVMTK_INCLUDE_DIR} )
 endif()
-find_package(Eigen3 REQUIRED) 
+find_package(Eigen3 REQUIRED)
 include(${EIGEN3_USE_FILE})
 
-find_package(CGAL REQUIRED COMPONENTS Core )
+set(CGAL_DIR external/cgal)
+find_package(CGAL REQUIRED COMPONENTS Core)
 include(${CGAL_USE_FILE})
 
 find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
-#message(${BOOST_USE_FILES})
-
+# message(${BOOST_USE_FILES})
 
 if (${CGAL_MAJOR_VERSION} GREATER 4)
   message(STATUS "CGAL version ${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}")
@@ -60,8 +55,3 @@ pybind11_add_module(SVMTK SHARED python/src/SVMTK.cpp)
 target_link_libraries(SVMTK PRIVATE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${GMP_LIBRARIES}
                             ${MPFR_LIBRARIES} ${OpenMesh} ${Eigen3} ${Boost})
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-
-
-
-
-
