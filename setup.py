@@ -51,9 +51,9 @@ class CMakeBuild(build_ext):
         subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(["cmake", "--build", "."] + build_args, cwd=self.build_temp)
 
-        test_bin = os.path.join(self.build_temp, 'SVMTK_test')
-        self.copy_test_file(test_bin)
-        print()
+        # test_bin = os.path.join(self.build_temp, 'SVMTK_test')
+        # self.copy_test_file(test_bin)
+        # print()
 
     def copy_test_file(self, src_file):
         '''
