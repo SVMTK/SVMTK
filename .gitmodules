@@ -7,5 +7,5 @@
     url = https://github.com/catchorg/Catch2.git
 
 [submodule "external/cgal"]
-    path = external/cgal
-    url = https://github.com/CGAL/cgal.git
+	path = external/cgal
+	url = https://github.com/CGAL/cgal.git
