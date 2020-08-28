@@ -75,77 +75,69 @@
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
 
 
-template<class TM_> 
+template<class TM_>
 class Cost_stop_predicate
 {
-   public:
-       typedef TM_ TM; 
-        
+  public:
+    typedef TM_ TM;
 
-      Cost_stop_predicate(double threshold) : thres(threshold) {}
+    Cost_stop_predicate(double threshold) : thres(threshold) {}
 
-      template< typename F, typename Profile>
-      bool operator()( F const & aCurrentCost, Profile const & profile, std::size_t aic ,std::size_t acc) const 
-      {
-          return static_cast<double>(aCurrentCost) > thres;
-      }
-   private :
-      double thres;
-
+    template< typename F, typename Profile>
+    bool operator()( F const & aCurrentCost, Profile const & profile, std::size_t aic ,std::size_t acc) const
+    {
+      return static_cast<double>(aCurrentCost) > thres;
+    }
+  private :
+    double thres;
 };
 
 ///  --------------- AUXILIARY UTILITY -----------------
 
-
-
-
-template< typename Mesh> 
+template< typename Mesh >
 bool load_surface(const std::string file, Mesh& mesh)
 {
   typedef typename Mesh::Point Point_3;
-  
-  
+
   std::vector<Point_3> points;
   std::vector< std::vector<std::size_t> > polygons;
 
   std::ifstream input(file);
 
-  std::string extension = file.substr(file.find_last_of(".")+1);//TODO: FIX boost linking problem
+  std::string extension = file.substr(file.find_last_of(".") + 1);//TODO: FIX boost linking problem
   if (!input)
   {
     std::cerr << "Cannot open file " << std::endl;
     return false;
   }
 
-
-
-  if ( extension=="off")
+  if (extension == "off")
   {
-     std::cout<< "reading off" << std::endl;
-     if (!CGAL::read_OFF(input, points, polygons))
-     {
-         std::cerr << "Error parsing the OFF file " << std::endl;
-         return false;
-     }
-     std::cout<< "finished" << std::endl;
+    std::cout<< "reading off" << std::endl;
+    if (!CGAL::read_OFF(input, points, polygons))
+    {
+      std::cerr << "Error parsing the OFF file " << std::endl;
+      return false;
+    }
+    std::cout<< "finished" << std::endl;
   }
-  else if ( extension=="stl")
+  else if (extension == "stl")
   {
-     if (!read_STL(input, points, polygons)) 
-     {
-         std::cerr << "Error parsing the STL file " << std::endl;
-         return false;
-     }
+    if (!CGAL::read_STL(input, points, polygons))
+    {
+      std::cerr << "Error parsing the STL file " << std::endl;
+      return false;
+    }
   }
   else
   {
-     std::cerr << "Error unkown file" << std::endl;
-     return false;
+    std::cerr << "Error unkown file" << std::endl;
+    return false;
   }
 
   CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons);
   CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons,mesh);
-  CGAL::Polygon_mesh_processing::orient(mesh) ;
+  CGAL::Polygon_mesh_processing::orient(mesh);
 
   if (CGAL::is_closed(mesh) && (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)))
   {
@@ -159,58 +151,53 @@ bool load_surface(const std::string file, Mesh& mesh)
 template< typename Surface, typename Point_3 = typename Surface::Point_3>
 std::shared_ptr< Surface > convex_hull(std::vector<Point_3 >& point_vector)
 {
-    typename Surface::Polyhedron poly;
-    CGAL::convex_hull_3(point_vector.begin(), point_vector.end(), poly);
-    auto result = std::make_shared< Surface >(Surface(poly));
-    return result;
+  typename Surface::Polyhedron poly;
+  CGAL::convex_hull_3(point_vector.begin(), point_vector.end(), poly);
+  auto result = std::make_shared< Surface >(Surface(poly));
+  return result;
 }
 
-
-
-
-template< typename Surface>  
+template< typename Surface>
 bool separate_surface_overlapp(Surface& surf1 , Surface& surf2, double edge_movement=-0.25, double smoothing=0.3)
-{   
-    typedef typename Surface::vertex_vector vertex_vector;
-    typedef typename Surface::vertex_descriptor vertex_descriptor;
+{
+  typedef typename Surface::vertex_vector vertex_vector;
+  typedef typename Surface::vertex_descriptor vertex_descriptor;
 
-    std::map< vertex_descriptor, double> map1,map2;
-    vertex_vector surface1_vertices,surface2_vertices;
-    surface1_vertices  = surf1.vertices_inside(surf2);
-    surface2_vertices  = surf2.vertices_inside(surf1);
+  std::map< vertex_descriptor, double> map1,map2;
+  vertex_vector surface1_vertices,surface2_vertices;
+  surface1_vertices  = surf1.vertices_inside(surf2);
+  surface2_vertices  = surf2.vertices_inside(surf1);
 
-    int iter =0;
-  
-    while (  !surface1_vertices.empty() or  !surface2_vertices.empty() )
+  int iter =0;
+
+  while (!surface1_vertices.empty() or !surface2_vertices.empty())
+  {
+    map1 = surf1.shortest_edge_map(surface1_vertices,edge_movement);
+    map2 = surf2.shortest_edge_map(surface2_vertices,edge_movement);
+
+    surf1.adjust_vertices_in_region(map1.begin(),map1.end());
+    surf2.adjust_vertices_in_region(map2.begin(),map2.end());
+
+    surf1.smooth_laplacian_region(surface1_vertices.begin(), surface1_vertices.end(), smoothing);
+    surf2.smooth_laplacian_region(surface2_vertices.begin(), surface2_vertices.end(), smoothing);
+
+    surface1_vertices  = surf1.vertices_inside(surf2,surface1_vertices );
+    surface2_vertices  = surf2.vertices_inside(surf1,surface2_vertices );
+
+    if ( surf1.num_self_intersections()+surf2.num_self_intersections() >0 )
     {
-            map1 = surf1.shortest_edge_map(surface1_vertices,edge_movement);
-            map2 = surf2.shortest_edge_map(surface2_vertices,edge_movement);
-
-            surf1.adjust_vertices_in_region(map1.begin(),map1.end());
-            surf2.adjust_vertices_in_region(map2.begin(),map2.end());
-
-            surf1.smooth_laplacian_region(surface1_vertices.begin(), surface1_vertices.end(),smoothing);   
-            surf2.smooth_laplacian_region(surface2_vertices.begin(), surface2_vertices.end(),smoothing);   
-
-            surface1_vertices  = surf1.vertices_inside(surf2,surface1_vertices );
-            surface2_vertices  = surf2.vertices_inside(surf1,surface2_vertices );
-
-            if ( surf1.num_self_intersections()+surf2.num_self_intersections() >0 )
-            {                
-                std::cout << "Detected "<< surf1.num_self_intersections()+surf2.num_self_intersections() <<" self-intersections" << std::endl;
-                std::cout << "Recommended to use functions colapse_edges or istropic_remeshing before continuation"  << std::endl;
-                return false;
-            }
-
-            if ( iter++>200)
-            {
-                std::cout << "Failed to converge in 200 steps, terminating" << std::endl;
-                return false;
-                
-            }
-
+      std::cout << "Detected "<< surf1.num_self_intersections()+surf2.num_self_intersections() <<" self-intersections" << std::endl;
+      std::cout << "Recommended to use functions colapse_edges or istropic_remeshing before continuation"  << std::endl;
+      return false;
     }
-    return true;
+
+    if ( iter++>200)
+    {
+      std::cout << "Failed to converge in 200 steps, terminating" << std::endl;
+      return false;
+    }
+  }
+  return true;
 }
 
 
