@@ -62,7 +62,7 @@ or download the source code manually and
 `cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$PROJECT_HOME/src/SVMTK/local -DWITH_Eigen3:BOOL=ON .. && make -j4`
 `make install`
 `cd ../../../`
-`mkdir -p /cluster/home/johannr/src/SVMTK/local/lib/python3.7/site-packages/`
+`mkdir -p $PROJECT_HOME/src/SVMTK/local/lib/python3.7/site-packages/`
 `export PYTHONPATH=$PROJECT_HOME/src/SVMTK/local/lib/python3.7/site-packages:$PYTHONPATH`
 `python setup.py install --prefix=$PWD/local`
 
