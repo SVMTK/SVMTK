@@ -19,6 +19,7 @@
 
 #define __DOMAIN_H
 #include "Polyhedral_vector_to_labeled_function_wrapper.h"
+
 #include <CGAL/Mesh_triangulation_3.h>
 #include <CGAL/Labeled_mesh_domain_3.h>
 #include <CGAL/Mesh_domain_with_polyline_features_3.h>
@@ -28,9 +29,7 @@
 #include <CGAL/Mesh_3/Detect_polylines_in_polyhedra.h>
 
 #include <CGAL/Mesh_polyhedron_3.h>
-
 #include <CGAL/refine_mesh_3.h>
-
 #include <CGAL/make_mesh_3.h>
 
 #include <CGAL/Min_sphere_of_spheres_d.h>

@@ -46,9 +46,9 @@
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
 #include <CGAL/Polygon_mesh_processing/clip.h>
 #include <CGAL/Polygon_mesh_processing/connected_components.h>
-#ifdef SVMTK_INSTALL_CGAL_5
-  #include <CGAL/Polygon_mesh_processing/smooth_shape.h>
-#endif
+
+#include <CGAL/Polygon_mesh_processing/smooth_shape.h>
+
 #include <CGAL/Polygon_mesh_processing/bbox.h>
 
 #include <CGAL/Polygon_mesh_slicer.h>
@@ -1160,12 +1160,7 @@ void Surface::smooth_laplacian(const double c, int iter)
 inline
 void Surface::smooth_shape(double time,int nb_iterations)
 {
-     #ifdef SVMTK_INSTALL_CGAL_5
        CGAL::Polygon_mesh_processing::smooth_shape(mesh, time, CGAL::Polygon_mesh_processing::parameters::number_of_iterations(nb_iterations));
-     #else  
-       std::cout<<"Require that SVMTK to be installed with CGAL 5 or greater" << std::endl;
-     #endif
-
 }
 
 
@@ -1553,7 +1548,7 @@ int Surface::separate_narrow_gaps(double adjustment)
 {
    if ( num_self_intersections() >0 )
    {
-   std::cout << "Warning" <<  num_self_intersections() << " detected" <<std::endl;
+   std::cout << "Warning " <<  num_self_intersections() << " detected" <<std::endl;
    std::cout << "This may impact the end result." << std::endl; 
    }
    std::map<vertex_descriptor, double> results;

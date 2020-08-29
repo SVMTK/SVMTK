@@ -10,41 +10,22 @@ message("Compiler ID ${CMAKE_CXX_COMPILER_ID}")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/Catch2/single_include/catch2)
 set(SVMTK_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-SET(TEST_DIR "tests")
-SET(TESTS
-    ${TEST_DIR}/test_main.cpp
-#    ${TEST_DIR}/test_Surface.cpp
-#    ${TEST_DIR}/test_Domain.cpp
-)
-
-add_library(Catch INTERFACE)
-target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
-
 if (${BUILD_TESTING})
-   add_executable("${PROJECT_NAME}_test" ${TESTS})
-   target_link_libraries("${PROJECT_NAME}_test" PRIVATE SVMTK Catch)
-   target_include_directories("${PROJECT_NAME}_test" PRIVATE  ${CATCH_INCLUDE_DIR} ${SVMTK_INCLUDE_DIR} )
+   add_subdirectory(tests)
 endif()
+
+
 find_package(Eigen3 REQUIRED)
 include(${EIGEN3_USE_FILE})
 
 set(CGAL_DIR external/cgal)
-find_package(CGAL REQUIRED COMPONENTS Core)
+find_package(CGAL REQUIRED COMPONENTS Core PATHS ${CGAL_DIR} HINT ${CGAL_DIR} NO_DEFAULT_PATH )
 include(${CGAL_USE_FILE})
 
 find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
-# message(${BOOST_USE_FILES})
-
-if (${CGAL_MAJOR_VERSION} GREATER 4)
-  message(STATUS "CGAL version ${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}")
-  add_definitions(-DSVMTK_INSTALL_CGAL_5)
-else()
-  message(STATUS "CGAL version ${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}")
-endif()
 
 add_subdirectory(external/pybind11)
 

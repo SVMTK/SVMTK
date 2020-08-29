@@ -47,9 +47,8 @@
 #include <CGAL/IO/write_off_points.h>
 #include <CGAL/IO/write_xyz_points.h>
 
-#ifdef SVMTK_INSTALL_CGAL_5
-  #include <CGAL/IO/write_vtu.h>
-#endif
+#include <CGAL/IO/write_vtu.h>
+
 
 #include <CGAL/IO/Triangulation_off_ostream_2.h>
 
@@ -636,11 +635,8 @@ void Slice::save(std::string outpath)
      else if ( extension=="vtu")
      {
         std::ofstream out(outpath);
-        #ifdef SVMTK_INSTALL_CGAL_5
-              CGAL::write_vtu(out,cdt);
-        #else  
-              std::cout<<"Require that SVMTK to be installed with CGAL 5 or greater" << std::endl;
-        #endif
+        CGAL::write_vtu(out,cdt);
+
         
      }
      else if ( extension=="mesh")
