@@ -21,7 +21,7 @@ find_package(Eigen3 REQUIRED)
 include(${EIGEN3_USE_FILE})
 
 set(CGAL_DIR external/cgal)
-find_package(CGAL REQUIRED COMPONENTS Core PATHS ${CGAL_DIR} HINT ${CGAL_DIR} NO_DEFAULT_PATH )
+find_package(CGAL REQUIRED COMPONENTS Core)
 include(${CGAL_USE_FILE})
 
 find_package(Boost REQUIRED)

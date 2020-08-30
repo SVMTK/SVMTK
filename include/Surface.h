@@ -187,7 +187,7 @@ bool separate_surface_overlapp(Surface& surf1 , Surface& surf2, double edge_move
     if ( surf1.num_self_intersections()+surf2.num_self_intersections() >0 )
     {
       std::cout << "Detected "<< surf1.num_self_intersections()+surf2.num_self_intersections() <<" self-intersections" << std::endl;
-      std::cout << "Recommended to use functions colapse_edges or istropic_remeshing before continuation"  << std::endl;
+      std::cout << "Recommended to use functions collapse_edges or istropic_remeshing before continuation"  << std::endl;
       return false;
     }
 
@@ -241,7 +241,7 @@ bool separate_surface_overlapp(Surface& surf1 , Surface& surf2 , Surface& other,
         if ( surf1.num_self_intersections()+surf2.num_self_intersections() >0 )
         {                
            std::cout << "Detected "<< surf1.num_self_intersections()+surf2.num_self_intersections() <<" self-intersections" << std::endl;
-           std::cout << "Recommend use of functions colapse_edges or istropic_remeshing before continuation"  << std::endl;
+           std::cout << "Recommend use of functions collapse_edges or istropic_remeshing before continuation"  << std::endl;
            return false;
         }
 
@@ -289,7 +289,7 @@ bool separate_close_surfaces(Surface& surf1 , Surface& surf2 , Surface& other, d
         if ( surf1.num_self_intersections()+surf2.num_self_intersections() >0 )
         {                
            std::cout << "Detected "<< surf1.num_self_intersections()+surf2.num_self_intersections() <<" self-intersections" << std::endl;
-           std::cout << "Recommend use of functions colapse_edges or istropic_remeshing before continuation"  << std::endl;
+           std::cout << "Recommend use of functions collapse_edges or istropic_remeshing before continuation"  << std::endl;
            return false;
         }
 
@@ -333,7 +333,7 @@ bool separate_close_surfaces(Surface& surf1 , Surface& surf2, double edge_moveme
         if ( surf1.num_self_intersections()+surf2.num_self_intersections() >0 )
         {                
            std::cout << "Detected "<< surf1.num_self_intersections()+surf2.num_self_intersections() <<" self-intersections" << std::endl;
-           std::cout << "Recommend use of functions colapse_edges or istropic_remeshing before continuation"  << std::endl;
+           std::cout << "Recommend use of functions collapse_edges or istropic_remeshing before continuation"  << std::endl;
            return false;
         }
 
@@ -579,7 +579,7 @@ inline int Surface::strictly_inside(Surface& other, double adjustment)
    vertex_vector vertices = vertices_outside(other); 
    std::map< vertex_descriptor, double> map = shortest_edge_map(vertices,adjustment);
    adjust_vertices_in_region(map.begin(),map.end()) ;
-    vertices = vertices_outside(other, vertices ); 
+   vertices = vertices_outside(other, vertices ); 
 
    return vertices.size();
 }
@@ -1490,23 +1490,15 @@ struct sphere_wrapper{
         static double function(double x, double y , double z) { return  (x-x0)*(x -x0) +  (y-y0)*(y -y0) + (z-z0)*(z -z0) -radius*radius; }
 };
 
-//double test_function(double x, double y , double z, std::optional(x
-
 inline double sphere_wrapper::radius = 0;
 inline double sphere_wrapper::x0 = 0;
 inline double sphere_wrapper::y0 = 0;
 inline double sphere_wrapper::z0 = 0;
 
-/*
-double sphere_wrapper::radius = 0;
-double sphere_wrapper::x0 = 0;
-double sphere_wrapper::y0 = 0;
-double sphere_wrapper::z0 = 0;
-*/
+
 inline
 void Surface::make_sphere( double x0, double y0, double  z0,double r0, double edge_size) 
 {
-  // TODO:: Add resolution/ edge size 
   sphere_wrapper sphere;
    
   sphere.radius = r0;
@@ -1548,7 +1540,7 @@ int Surface::separate_narrow_gaps(double adjustment)
 {
    if ( num_self_intersections() >0 )
    {
-   std::cout << "Warning " <<  num_self_intersections() << " detected" <<std::endl;
+   std::cout << "Warning " <<  num_self_intersections() << " self-intersections detected" <<std::endl;
    std::cout << "This may impact the end result." << std::endl; 
    }
    std::map<vertex_descriptor, double> results;
@@ -1585,7 +1577,6 @@ int Surface::separate_narrow_gaps(double adjustment)
               flag=false;
             break;
            }
-         //*vbegin++;
         }while(++vbegin!=done);
     
         if (flag){results[vit] = adjustment*static_cast<double>(CGAL::sqrt(distance)) ;} // both vertices are affected changes, used 0.5

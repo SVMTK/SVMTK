@@ -27,7 +27,7 @@
 #include <CGAL/Mesh_complex_3_in_triangulation_3.h>
 #include <CGAL/Mesh_criteria_3.h>
 #include <CGAL/Mesh_3/Detect_polylines_in_polyhedra.h>
-
+#include <CGAL/Mesh_3/polylines_to_protect.h>
 #include <CGAL/Mesh_polyhedron_3.h>
 #include <CGAL/refine_mesh_3.h>
 #include <CGAL/make_mesh_3.h>
@@ -422,7 +422,7 @@ class Domain {
         ~Domain() { for( auto vit : this->v){delete vit;}v.clear();}        
 
         void create_mesh(const double mesh_resolution );
-        void create_mesh(double cell_size, double facet_size,double facet_angle,  double facet_distance,double cell_radius_edge_ratio);
+        void create_mesh(double edge_size,double cell_size, double facet_size,double facet_angle,  double facet_distance,double cell_radius_edge_ratio);
 
         void save(std::string OutPath, bool save_1Dfeatures); 
 
@@ -523,7 +523,7 @@ Domain::Domain( std::vector<Surface> surfaces )
     }
     map_ptr = std::shared_ptr<DefaultMap>( new  DefaultMap()) ; 
 
-    Function_wrapper wrapper(this->v, *map_ptr.get());
+    Function_wrapper wrapper(this->v, map_ptr);
     domain_ptr = std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox()));
 
 }
@@ -541,7 +541,7 @@ Domain::Domain( std::vector<Surface> surfaces , std::shared_ptr<AbstractMap> map
     }
 
     map_ptr = std::move(map);
-    Function_wrapper wrapper(this->v,*map_ptr.get());
+    Function_wrapper wrapper(this->v,map_ptr);
     domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox()));
 
 }
@@ -558,14 +558,14 @@ Domain::Domain(Surface &surface)
     this->v.push_back(polyhedral_domain);
     map_ptr = std::shared_ptr<DefaultMap>( new  DefaultMap());
 
-    Function_wrapper wrapper(this->v,*map_ptr.get());
+    Function_wrapper wrapper(this->v,map_ptr);
 
     domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox())); 
 
 
 }
 inline
-void Domain::create_mesh(double cell_size, double facet_size,double facet_angle,  double facet_distance,double cell_radius_edge_ratio)
+void Domain::create_mesh(double edge_size,double cell_size, double facet_size,double facet_angle,  double facet_distance,double cell_radius_edge_ratio)
 {
 
     set_borders();
@@ -576,7 +576,8 @@ void Domain::create_mesh(double cell_size, double facet_size,double facet_angle,
 
 
 
-    Mesh_criteria criteria(CGAL::parameters::facet_angle=facet_angle ,
+    Mesh_criteria criteria(CGAL::parameters::edge_size = edge_size,
+                           CGAL::parameters::facet_angle=facet_angle ,
                            CGAL::parameters::facet_size =facet_size,
                            CGAL::parameters::facet_distance=facet_distance,
                            CGAL::parameters::cell_radius_edge_ratio=cell_radius_edge_ratio,
@@ -742,7 +743,7 @@ void Domain::add_sharp_border_edges(Polyhedron& polyhedron, double threshold)
 { 
  typedef boost::property_map<Polyhedron, CGAL::edge_is_feature_t>::type EIF_map;
  EIF_map eif = get(CGAL::edge_is_feature, polyhedron);
-
+ Polylines temp;
  CGAL::Polygon_mesh_processing::detect_sharp_edges(polyhedron,threshold, eif); 
  for( Polyhedron::Edge_iterator he = polyhedron.edges_begin(); he != polyhedron.edges_end() ; ++he)
  {
@@ -751,9 +752,10 @@ void Domain::add_sharp_border_edges(Polyhedron& polyhedron, double threshold)
        Polyline_3 polyline;
        polyline.push_back(he->vertex()->point());
        polyline.push_back(he->opposite()->vertex()->point());     
-       borders.push_back(polyline);
+       temp.push_back(polyline);
    }    
- }   
+ }  
+ polylines_to_protect(temp, borders.begin() , borders.end()); // REMOVE?? optional  
 }
 template<typename Surface>
 void Domain::add_sharp_border_edges(Surface& surface, double threshold) 

@@ -1,6 +1,6 @@
 # SurfaceVolumeMeshingToolKit
 
-Clone SVMTK with the flag '--recursive' to also clone the submodules Catch2, Pybind11 and CGAL.
+Clone SVMTK with the flag '--recursive' to also clone the submodules Pybind11 and CGAL.
 Alternatively run `git submodule update --init`.
 
 ## Requirements
@@ -10,12 +10,18 @@ Alternatively run `git submodule update --init`.
 
 ## Pybind11
 
-Install pybind and place it in `external`
+The relevant files can be found in external/pybind11 after 
 
-```
-mkdir external && cd external
-git clone https://github.com/pybind/pybind11.git --branch=v2.4.3
-```
+`git clone --recursive https://github.com/SVMTK/SVMTK`
+
+The submodule can be updated with 
+
+`git submodule update`
+
+or submodule version switched with 
+
+`cd external/pybind11`
+`git checkout version`
 
 ## Installation
 
@@ -34,17 +40,13 @@ For more information on how to use docker, take a look at the docker tutorial:
 
 ### Install CGAL with Eigen3
 
-Either download the eigen source code or install with `sudo apt-get install libeigen3-dev`
-
 Download and install CGAL 5.0.2 with
-
-`curl -sL https://github.com/CGAL/cgal/releases/download/releases%2FCGAL-5.0.2/CGAL-5.0.2.tar.xz | tar -xJf -`
 
 or download the source code manually and
 
 `cd CGAL-5.0.2 && cmake -DWITH_Eigen3:BOOL=ON . && make``
 
-## Build instructions on SAGA
+## Build instructions on SAGA HPC Cluster
 
 `export PROJECT_HOME=path-to-base-install-dir`
 `module load Python/3.7.4-GCCcore-8.3.0 CMake/3.12.1 GCC/8.3.0 Boost/1.71.0-GCC-8.3.0 Eigen/3.3.7 MPFR/4.0.2-GCCcore-8.3.0.lua GMP/6.1.2-GCCcore-8.3.0.lua`
@@ -66,7 +68,7 @@ or download the source code manually and
 `export PYTHONPATH=$PROJECT_HOME/src/SVMTK/local/lib/python3.7/site-packages:$PYTHONPATH`
 `python setup.py install --prefix=$PWD/local`
 
-### Running SVMTK on SAGA
+### Running SVMTK on SAGA HPC Cluster
 
 `export PROJECT_HOME=path-to-base-install-dir`
 `module load Python/3.7.4-GCCcore-8.3.0 CMake/3.12.1 GCC/8.3.0 Boost/1.71.0-GCC-8.3.0 Eigen/3.3.7 MPFR/4.0.2-GCCcore-8.3.0.lua GMP/6.1.2-GCCcore-8.3.0.lua`
