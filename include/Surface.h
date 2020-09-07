@@ -349,6 +349,18 @@ bool separate_close_surfaces(Surface& surf1 , Surface& surf2, double edge_moveme
 
 
 
+/**
+ * Takes surface union of surfaces that partially overlapp each other. It will expand 
+ * the surfaces so that the region with    
+ *
+ * @param Surface class 
+ * @param Surface class
+ * @param double clusterth lower bound of the cos angle between normal vectors that  
+ * @param double edge_movement the multipler that with the smallest edge of a vertex that indicates the longest movement of that vertex.
+ * @param int smoothing the number of taubin iterations after each iteration of vertex movement 
+ * @return Surface class union of the modified 
+ */
+
 template< typename Surface> 
 std::shared_ptr<Surface> union_partially_overlapping_surfaces( Surface& surf1 , Surface& surf2, double clusterth, double edge_movement, int smoothing )
 {

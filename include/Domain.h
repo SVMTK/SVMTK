@@ -424,7 +424,7 @@ class Domain {
         void create_mesh(const double mesh_resolution );
         void create_mesh(double edge_size,double cell_size, double facet_size,double facet_angle,  double facet_distance,double cell_radius_edge_ratio);
 
-        void save(std::string OutPath, bool save_1Dfeatures); 
+        void save(std::string outpath, bool save_1Dfeatures); 
 
         double get_bounding_sphere_radius(){ return min_sphere.get_bounding_sphere_radius(); }
 
@@ -624,9 +624,9 @@ void Domain::create_mesh(const double mesh_resolution )
 
 
 inline
-void Domain::save(std::string OutPath,bool save_1Dfeatures)
+void Domain::save(std::string outpath,bool save_1Dfeatures)
 {
-    std::ofstream  medit_file(OutPath);
+    std::ofstream  medit_file(outpath);
     typedef CGAL::Mesh_3::Medit_pmap_generator<C3t3,false,false> Generator; // previous false false
     typedef typename Generator::Cell_pmap Cell_pmap;
     typedef typename Generator::Facet_pmap Facet_pmap;
