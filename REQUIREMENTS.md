@@ -1,4 +1,4 @@
-##Installing additional requirements 
+## Installing additional requirements 
 The installation script of SVMTK will automatically try to find 
 the necessary packages. Some of the packages can already be installed, 
 so it can be practical to run the install script first to get an overview 
