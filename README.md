@@ -3,10 +3,20 @@
 Clone SVMTK with the flag '--recursive' to also clone the submodules Pybind11 and CGAL.
 Alternatively run `git submodule update --init`.
 
-## Requirements
+## Additional requirements
 
- - CGAL-5.0.2 with EIGEN >= 3.2
+The installation of SVMTK requires the following:  
  - Python>=3.6
+ - EIGEN >= 3.2
+ - CMake >= 3.5 
+ - GMP   
+ - MPFR
+ - boost   
+ - C++>=7
+
+## Installing requirements
+   see [REQUIREMENTS.md](REQUIREMENTS.md)
+
 
 ## Pybind11
 
@@ -29,7 +39,11 @@ It is highly recommended to use a virtual environment for python.
 
 run `python3 setup.py install`
 
-Check the installation with any of the examples in `examples/`
+To test the installation 
+
+run `python3 setup.py test`
+
+Also check the installation with any of the examples in `examples/`
 
 ## Docker
 
@@ -38,14 +52,24 @@ There is a Dockerfile in `docker/`
 For more information on how to use docker, take a look at the docker tutorial:
 [https://docs.docker.com/get-started/]
 
-### Install CGAL with Eigen3
+### Configure CGAL
 
-Download and install CGAL 5.0.2 with
+The relevant files can be found in external/cgal after 
 
-or download the source code manually and
+`git clone --recursive https://github.com/SVMTK/SVMTK`
 
-`cd CGAL-5.0.2 && cmake -DWITH_Eigen3:BOOL=ON . && make``
+The submodule can be updated with 
 
+`git submodule update`
+
+or submodule version switched with 
+
+`cd external/cgal`
+`git checkout releases/CGAL-5.0.3`
+
+Tested CGAL versions 
+  - 5.0.3
+  - 5.0.2
 ## Build instructions on SAGA HPC Cluster
 
 `export PROJECT_HOME=path-to-base-install-dir`
