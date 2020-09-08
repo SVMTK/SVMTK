@@ -46,9 +46,9 @@
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
 #include <CGAL/Polygon_mesh_processing/clip.h>
 #include <CGAL/Polygon_mesh_processing/connected_components.h>
-#ifdef SVMTK_INSTALL_CGAL_5
-  #include <CGAL/Polygon_mesh_processing/smooth_shape.h>
-#endif
+
+#include <CGAL/Polygon_mesh_processing/smooth_shape.h>
+
 #include <CGAL/Polygon_mesh_processing/bbox.h>
 
 #include <CGAL/Polygon_mesh_slicer.h>
@@ -187,7 +187,7 @@ bool separate_surface_overlapp(Surface& surf1 , Surface& surf2, double edge_move
     if ( surf1.num_self_intersections()+surf2.num_self_intersections() >0 )
     {
       std::cout << "Detected "<< surf1.num_self_intersections()+surf2.num_self_intersections() <<" self-intersections" << std::endl;
-      std::cout << "Recommended to use functions colapse_edges or istropic_remeshing before continuation"  << std::endl;
+      std::cout << "Recommended to use functions collapse_edges or istropic_remeshing before continuation"  << std::endl;
       return false;
     }
 
@@ -241,7 +241,7 @@ bool separate_surface_overlapp(Surface& surf1 , Surface& surf2 , Surface& other,
         if ( surf1.num_self_intersections()+surf2.num_self_intersections() >0 )
         {                
            std::cout << "Detected "<< surf1.num_self_intersections()+surf2.num_self_intersections() <<" self-intersections" << std::endl;
-           std::cout << "Recommend use of functions colapse_edges or istropic_remeshing before continuation"  << std::endl;
+           std::cout << "Recommend use of functions collapse_edges or istropic_remeshing before continuation"  << std::endl;
            return false;
         }
 
@@ -289,7 +289,7 @@ bool separate_close_surfaces(Surface& surf1 , Surface& surf2 , Surface& other, d
         if ( surf1.num_self_intersections()+surf2.num_self_intersections() >0 )
         {                
            std::cout << "Detected "<< surf1.num_self_intersections()+surf2.num_self_intersections() <<" self-intersections" << std::endl;
-           std::cout << "Recommend use of functions colapse_edges or istropic_remeshing before continuation"  << std::endl;
+           std::cout << "Recommend use of functions collapse_edges or istropic_remeshing before continuation"  << std::endl;
            return false;
         }
 
@@ -333,7 +333,7 @@ bool separate_close_surfaces(Surface& surf1 , Surface& surf2, double edge_moveme
         if ( surf1.num_self_intersections()+surf2.num_self_intersections() >0 )
         {                
            std::cout << "Detected "<< surf1.num_self_intersections()+surf2.num_self_intersections() <<" self-intersections" << std::endl;
-           std::cout << "Recommend use of functions colapse_edges or istropic_remeshing before continuation"  << std::endl;
+           std::cout << "Recommend use of functions collapse_edges or istropic_remeshing before continuation"  << std::endl;
            return false;
         }
 
@@ -348,6 +348,18 @@ bool separate_close_surfaces(Surface& surf1 , Surface& surf2, double edge_moveme
 }
 
 
+
+/**
+ * Takes surface union of surfaces that partially overlapp each other. It will expand 
+ * the surfaces so that the region with    
+ *
+ * @param Surface class 
+ * @param Surface class
+ * @param double clusterth lower bound of the cos angle between normal vectors that  
+ * @param double edge_movement the multipler that with the smallest edge of a vertex that indicates the longest movement of that vertex.
+ * @param int smoothing the number of taubin iterations after each iteration of vertex movement 
+ * @return Surface class union of the modified 
+ */
 
 template< typename Surface> 
 std::shared_ptr<Surface> union_partially_overlapping_surfaces( Surface& surf1 , Surface& surf2, double clusterth, double edge_movement, int smoothing )
@@ -579,7 +591,7 @@ inline int Surface::strictly_inside(Surface& other, double adjustment)
    vertex_vector vertices = vertices_outside(other); 
    std::map< vertex_descriptor, double> map = shortest_edge_map(vertices,adjustment);
    adjust_vertices_in_region(map.begin(),map.end()) ;
-    vertices = vertices_outside(other, vertices ); 
+   vertices = vertices_outside(other, vertices ); 
 
    return vertices.size();
 }
@@ -1160,12 +1172,7 @@ void Surface::smooth_laplacian(const double c, int iter)
 inline
 void Surface::smooth_shape(double time,int nb_iterations)
 {
-     #ifdef SVMTK_INSTALL_CGAL_5
        CGAL::Polygon_mesh_processing::smooth_shape(mesh, time, CGAL::Polygon_mesh_processing::parameters::number_of_iterations(nb_iterations));
-     #else  
-       std::cout<<"Require that SVMTK to be installed with CGAL 5 or greater" << std::endl;
-     #endif
-
 }
 
 
@@ -1495,23 +1502,15 @@ struct sphere_wrapper{
         static double function(double x, double y , double z) { return  (x-x0)*(x -x0) +  (y-y0)*(y -y0) + (z-z0)*(z -z0) -radius*radius; }
 };
 
-//double test_function(double x, double y , double z, std::optional(x
-
 inline double sphere_wrapper::radius = 0;
 inline double sphere_wrapper::x0 = 0;
 inline double sphere_wrapper::y0 = 0;
 inline double sphere_wrapper::z0 = 0;
 
-/*
-double sphere_wrapper::radius = 0;
-double sphere_wrapper::x0 = 0;
-double sphere_wrapper::y0 = 0;
-double sphere_wrapper::z0 = 0;
-*/
+
 inline
 void Surface::make_sphere( double x0, double y0, double  z0,double r0, double edge_size) 
 {
-  // TODO:: Add resolution/ edge size 
   sphere_wrapper sphere;
    
   sphere.radius = r0;
@@ -1553,7 +1552,7 @@ int Surface::separate_narrow_gaps(double adjustment)
 {
    if ( num_self_intersections() >0 )
    {
-   std::cout << "Warning" <<  num_self_intersections() << " detected" <<std::endl;
+   std::cout << "Warning " <<  num_self_intersections() << " self-intersections detected" <<std::endl;
    std::cout << "This may impact the end result." << std::endl; 
    }
    std::map<vertex_descriptor, double> results;
@@ -1590,7 +1589,6 @@ int Surface::separate_narrow_gaps(double adjustment)
               flag=false;
             break;
            }
-         //*vbegin++;
         }while(++vbegin!=done);
     
         if (flag){results[vit] = adjustment*static_cast<double>(CGAL::sqrt(distance)) ;} // both vertices are affected changes, used 0.5

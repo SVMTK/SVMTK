@@ -211,7 +211,7 @@ PYBIND11_MODULE(SVMTK, m) {
                           py::arg("x0"),py::arg("y0"),py::arg("z0"),py::arg("x1"),py::arg("y1"),py::arg("z1"),  py::arg("N")=10)
 	.def("make_cone", &Surface::make_cone)
 	.def("make_cylinder", &Surface::make_cylinder)
-        .def("make_sphere", &Surface::make_sphere)
+        .def("make_sphere", &Surface::make_sphere )
 
         .def("mean_curvature_flow", &Surface::mean_curvature_flow)
         .def("shortest_surface_path", py::overload_cast<double , double, double , double,double,double>( &Surface::shortest_surface_path) )
@@ -242,7 +242,7 @@ PYBIND11_MODULE(SVMTK, m) {
         .def(py::init<Surface &>())
         .def(py::init<std::vector<Surface>>())
         .def(py::init<std::vector<Surface>, std::shared_ptr<AbstractMap>>())
-        .def("create_mesh", py::overload_cast<double,double,double,double,double>( &Domain::create_mesh)) 
+        .def("create_mesh", py::overload_cast<double,double,double,double,double,double>( &Domain::create_mesh)) 
         .def("create_mesh", py::overload_cast<double>(&Domain::create_mesh))
 
         .def("get_boundary", &Domain::get_boundary<Surface>, py::arg("tag")=0)

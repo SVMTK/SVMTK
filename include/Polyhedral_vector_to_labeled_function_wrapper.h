@@ -17,9 +17,9 @@ namespace CGAL {
                 typedef typename BGT::Point_3       Point_3;
                 typedef boost::dynamic_bitset<>   Bmask;
             
-                Polyhedral_vector_to_labeled_function_wrapper(const std::vector<Function_*>& v, AbstractMap& map) : function_vector_(v)
+                Polyhedral_vector_to_labeled_function_wrapper(const std::vector<Function_*>& v, std::shared_ptr<AbstractMap> map) : function_vector_(v)
                 {
-                    subdmap =&map;
+                    subdmap =std::move(map);
 
                 }
                 ~Polyhedral_vector_to_labeled_function_wrapper() {}
@@ -52,7 +52,7 @@ namespace CGAL {
 
             private:
                 Function_vector function_vector_;
-                AbstractMap* subdmap;
+                std::shared_ptr<AbstractMap> subdmap;
         };
 }
 

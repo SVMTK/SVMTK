@@ -51,29 +51,7 @@ class CMakeBuild(build_ext):
         subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(["cmake", "--build", "."] + build_args, cwd=self.build_temp)
 
-        # test_bin = os.path.join(self.build_temp, 'SVMTK_test')
-        # self.copy_test_file(test_bin)
-        # print()
 
-    def copy_test_file(self, src_file):
-        '''
-        Copy ``src_file`` to `tests/bin` directory, ensuring parent directory 
-        exists. Messages like `creating directory /path/to/package` and
-        `copying directory /src/path/to/package -> path/to/package` are
-        displayed on standard output. Adapted from scikit-build.
-        '''
-        # Create directory if needed
-        dest_dir = os.path.join(os.path.dirname(
-            os.path.abspath(__file__)), 'tests', 'bin')
-        if dest_dir != "" and not os.path.exists(dest_dir):
-            print("creating directory {}".format(dest_dir))
-            os.makedirs(dest_dir)
-
-        # Copy file
-        dest_file = os.path.join(dest_dir, os.path.basename(src_file))
-        print("copying {} -> {}".format(src_file, dest_file))
-        copyfile(src_file, dest_file)
-        copymode(src_file, dest_file)
 
 setup(
     name="SVMTK",
