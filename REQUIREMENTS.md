@@ -61,8 +61,7 @@ Installing boost using terminal
 
 From source 
 
-Download and unpack a version of boost from
-[Download](https://www.boost.org/users/download/) 
+Download and unpack a version of boost from [Download](https://www.boost.org/users/download/) 
 
 Open the boost folder and run 
 
@@ -85,8 +84,7 @@ Installing the GMP using terminal
 
 From source :
 
-Download and unpack a version of GMP from 
-[Download](https://ftp.gnu.org/gnu/gmp)
+Download and unpack a version of GMP from [Download](https://ftp.gnu.org/gnu/gmp)
 
 Open the GMP folder and run 
 
@@ -112,8 +110,7 @@ Installing MPFR using terminal
 
 From source :
 
-Download and unpack a version of MPFR from 
-[Download](https://www.mpfr.org/mpfr-current/#download)
+Download and unpack a version of MPFR from [Download](https://www.mpfr.org/mpfr-current/#download)
 
 Open the MPFR folder and run 
 
@@ -138,8 +135,7 @@ Installing CMake using terminal
 
 From source :
 
-Download and unpack a version of CMake from 
-[Download](http://cmake.org/download)
+Download and unpack a version of CMake from [Download](http://cmake.org/download)
 
 Open the CMake folder and complete the installation with
 

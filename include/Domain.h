@@ -37,13 +37,22 @@
 #include <CGAL/Triangulation_3.h>//?
 
 
+/**
+ *  Based on CGAL version with similar name, but uses facet tags instead of cell tags. 
+ *  Outputs the vertices and faces of a facet tag in the mesh.
+ *  @param[in] c3t3 the mesh srtucture stored in the Domain class Obejct
+ *  @param[in] sf_index mesh facet tag. 
+ *  @param[out] points 
+ *  @param[out] faces 
+ *  @param[in] normals_point_outside_of_the_subdomain determines the orientation of the output faces  
+ *  @see [facets_in_complex_3_to_triangle_soup](https://github.com/CGAL/cgal/blob/master/Mesh_3/include/CGAL/IO/facets_in_complex_3_to_triangle_mesh.h)
+ */
 template<class C3T3, class PointContainer, class FaceContainer>
 void facets_in_complex_3_to_triangle_soup_(const C3T3& c3t3,
                                           const typename C3T3::Surface_patch_index sf_index,
                                           PointContainer& points,
                                           FaceContainer& faces,
-                                          const bool normals_point_outside_of_the_subdomain = false,
-                                          const bool export_all_facets = false)
+                                          const bool normals_point_outside_of_the_subdomain = false)
                                        
 {
   typedef typename PointContainer::value_type         Point_3;
@@ -102,8 +111,19 @@ void facets_in_complex_3_to_triangle_soup_(const C3T3& c3t3,
   
 }
 
-/** Based on CGAL output_to_medit, but writes all facets to file.
- *  i.e. boundary factes and internal facets 
+/** Based on CGAL output_to_medit, but writes more information to file.
+ *  The additional information is internal facets, internal edges
+ *  and edge tag. This is done so that the conversion to FEniCS mesh format 
+ *  is easier.
+ *  @param c3t3 the mesh structure stored in the Domain class Obejct
+ *  @param vertex_pmap
+ *  @param facet_pmap
+ *  @param cell_pmap
+ *  @param facet_twice_pmap 
+ *  @param print_each_facet_twice
+ *  @param save_edges 
+ *  @return none, write mesh to textfile with extension .mesh.
+ *  @see [output_to_medit] (https://github.com/CGAL/cgal/blob/master/Mesh_3/include/CGAL/IO/File_medit.h)  
 */
 template <class C3T3,
           class Vertex_index_property_map,
@@ -117,7 +137,7 @@ void output_to_medit_(std::ostream& os,
                 const Cell_index_property_map& cell_pmap,
                 const Facet_index_property_map_twice& facet_twice_pmap = Facet_index_property_map_twice(),
                 const bool print_each_facet_twice = false,
-                const bool save_edges = false)
+                const bool save_edges = true )
 {
 
   typedef typename C3T3::Triangulation Tr;
@@ -289,8 +309,12 @@ void output_to_medit_(std::ostream& os,
   //-------------------------------------------------------
   os << "End\n";
 
+
 }
 
+/**
+ * Adds surface points to the struct, and computes the minimum bounding radius.
+ */
 template<typename Kernel>
 struct Minimum_sphere
 {
@@ -317,7 +341,12 @@ struct Minimum_sphere
                  std::vector<Sphere> S;
 };
 
-
+/**
+ * Removes vertices that is not connected to any cells in the mesh.
+ * @note 
+ * @param c3t3 the mesh structure stored in the Domain class Obejct
+ * @param remove_domain indication if a subdomain is removed, avoiding warning. 
+ */
 template<typename C3T3> 
 int remove_isolated_vertices(C3T3& c3t3, bool remove_domain=false)
 { 
@@ -480,16 +509,26 @@ class Domain {
         Polylines features;
 
 };
-inline
-void Domain::set_borders()
+/**
+ * Sets 1-D features located on the boundary. This is done automatically 
+ * in the function create_mesh.
+ * @param none 
+ * @return none 
+ */
+inline void Domain::set_borders()
 {
   if (this->borders.size()>0)
   { 
      domain_ptr.get()->add_features(this->borders.begin(), this->borders.end());
   }
 }
-inline
-void Domain::set_features()
+/**
+ * Sets 1-D features located not on the boundary. This is done automatically 
+ * in the function create_mesh.
+ * @param none 
+ * @return none 
+ */
+inline void Domain::set_features()
 {
   if (this->borders.size()>0)
   { 
@@ -497,8 +536,13 @@ void Domain::set_features()
   }
 }
 
-inline
-std::set<int> Domain::get_curves()
+/**
+ * Returns a set of integer of the curve tags in the triangulation.
+ * @note This should be done after a call to create_mesh. 
+ * @param none 
+ * @return result a set of integers representing the curve tags.
+ */
+inline std::set<int> Domain::get_curves()
 {
     const Tr& tr = c3t3.triangulation();
     std::set<int> result;
@@ -510,6 +554,12 @@ std::set<int> Domain::get_curves()
 
 }
 
+/**
+ * Constructor:
+ * 
+ * @param surface a vector of templated input Surface defined 
+ * 
+ */
 template<typename Surface>
 Domain::Domain( std::vector<Surface> surfaces )
 {
@@ -527,6 +577,13 @@ Domain::Domain( std::vector<Surface> surfaces )
     domain_ptr = std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox()));
 
 }
+
+/**
+ * Constructor:
+ *
+ * @param surfaces a vector of templated object Surface class defined in local header Surface.h 
+ * @param map a smart pointer to an virtuell class AbstractMap defind in local header SubdomainMap.h
+ */
 template<typename Surface>
 Domain::Domain( std::vector<Surface> surfaces , std::shared_ptr<AbstractMap> map )
 {
@@ -545,6 +602,12 @@ Domain::Domain( std::vector<Surface> surfaces , std::shared_ptr<AbstractMap> map
     domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain(wrapper, wrapper.bbox()));
 
 }
+
+/**
+ * Constructor:
+ *
+ * @param suraface a templated object Surface class defined in local header Surface.h
+ */
 template<typename Surface>
 Domain::Domain(Surface &surface) 
 {
@@ -564,8 +627,21 @@ Domain::Domain(Surface &surface)
 
 
 }
-inline
-void Domain::create_mesh(double edge_size,double cell_size, double facet_size,double facet_angle,  double facet_distance,double cell_radius_edge_ratio)
+
+/**
+ * TODO check
+ *  Creates the mesh stored in the class member variable c3t3. 
+ *  Specific mesh
+ * @param edge_size mesh criteria for the maximum edge size 
+ * @param cell_size mesh criteria for the maximum cell size  
+ * @param facet_size mesh criteria for the maximum facet size 
+ * @param facet_angle mesh criteria for the minimum edge size 
+ * @param facet_distance mesh criteria for surface approximation  
+ * @param cell_radius_edge_ratio mesh criteria for the relation between cell rddius and edge
+ * @see [CGAL::Mesh_criteria](https://doc.cgal.org/latest/Mesh_3/classCGAL_1_1Mesh__criteria__3.html) 
+ * @overload
+ */
+inline void Domain::create_mesh(double edge_size,double cell_size, double facet_size,double facet_angle,  double facet_distance,double cell_radius_edge_ratio)
 {
 
     set_borders();
@@ -593,9 +669,15 @@ void Domain::create_mesh(double edge_size,double cell_size, double facet_size,do
 
 }
 
+/**
+ *  Creates the mesh stored in the class member variable c3t3. 
+ *  @note The mesh criteria is set based on mesh_resolution and the minimum bounding radius of the mesh.
+ *  @param mesh_resolution a value determined 
+ *  @see [CGAL::Mesh_criteria](https://doc.cgal.org/latest/Mesh_3/classCGAL_1_1Mesh__criteria__3.html) 
+ *  @overload
+ */
 
-inline
-void Domain::create_mesh(const double mesh_resolution )
+inline void Domain::create_mesh(const double mesh_resolution )
 {
     
     set_borders();
@@ -622,9 +704,13 @@ void Domain::create_mesh(const double mesh_resolution )
 }
 
 
-
-inline
-void Domain::save(std::string outpath,bool save_1Dfeatures)
+/**
+ *  Writes the mesh stored in the class member variable c3t3 to file. 
+ * 
+ * @param outpath the path to the output file.
+ * @param save_1Dfeatures option to save the edges with tags.
+ */
+inline void Domain::save(std::string outpath,bool save_1Dfeatures)
 {
     std::ofstream  medit_file(outpath);
     typedef CGAL::Mesh_3::Medit_pmap_generator<C3t3,false,false> Generator; // previous false false
@@ -648,18 +734,26 @@ void Domain::save(std::string outpath,bool save_1Dfeatures)
 
 }
 
-inline
-void Domain::remove_subdomain(int tag) 
+/**
+ * Removes all cells in the mesh with a specified integer tag   
+ * 
+ * @param tag removes cells with this integer tag
+ * @overload
+ */
+inline void Domain::remove_subdomain(int tag) 
 { 
    std::vector<int> temp;
    temp.push_back(tag);
    remove_subdomain(temp);
 }
 
-
-
-inline
-void Domain::remove_subdomain(std::vector<int> tags)
+/**
+ * Removes all cells in the mesh with tags in a vector.  
+ * 
+ * @param tags vector of cell tag to be removed. 
+ * @overload
+ */
+inline void Domain::remove_subdomain(std::vector<int> tags)
 {
 
   int before = c3t3.number_of_cells();
@@ -737,9 +831,14 @@ void Domain::remove_subdomain(std::vector<int> tags)
   c3t3.rescan_after_load_of_triangulation(); 
 }
 
-
-inline
-void Domain::add_sharp_border_edges(Polyhedron& polyhedron, double threshold)
+/**
+ * Checks polyhedron for sharp edges, and store this as 1-D border features.   
+ * 
+ * @param polyhedron definition found in Domain object typedefs.
+ * @param threshold that determines sharp edges.
+ * @overload
+ */
+inline void Domain::add_sharp_border_edges(Polyhedron& polyhedron, double threshold)
 { 
  typedef boost::property_map<Polyhedron, CGAL::edge_is_feature_t>::type EIF_map;
  EIF_map eif = get(CGAL::edge_is_feature, polyhedron);
@@ -757,6 +856,14 @@ void Domain::add_sharp_border_edges(Polyhedron& polyhedron, double threshold)
  }  
  polylines_to_protect(temp, borders.begin() , borders.end()); // REMOVE?? optional  
 }
+
+/**
+ * Checks Surface object for sharp edges, and store this as 1-D border features.   
+ * 
+ * @param surface Surface object defined in Surface.h .
+ * @param threshold that determines sharp edges.
+ * @overload
+ */
 template<typename Surface>
 void Domain::add_sharp_border_edges(Surface& surface, double threshold) 
 { 
@@ -765,6 +872,12 @@ void Domain::add_sharp_border_edges(Surface& surface, double threshold)
   add_sharp_border_edges(polyhedron, threshold);
 }
 
+/**
+ * Returns a set of integer that represents the subdomains in the mesh.   
+ * 
+ * @param none 
+ * @return sd_indices a set of integers that represents the subdomain tags in the mesh.
+ */
 std::set<int>  Domain::get_subdomains()
 {
    std::set<int> sd_indices;
@@ -774,6 +887,13 @@ std::set<int>  Domain::get_subdomains()
    }
    return sd_indices;
 }
+
+/**
+ * Returns a set of integer pairs that represents the surface facet tags in the mesh.   
+ * 
+ * @param none 
+ * @return sf_indices a set of integer pairs that represents the facet tags in the mesh.
+ */
 std::set<std::pair<int,int>>  Domain::get_patches()
 {
    std::set<std::pair<int,int>> sf_indices;
@@ -787,6 +907,13 @@ std::set<std::pair<int,int>>  Domain::get_patches()
    }
    return sf_indices;
 }
+
+/**
+ * Returns the boundary of a subdomain tag stored in a Surface object.   
+ * 
+ * @param tag the subdomain tag 
+ * @return surf Surface object 
+ */
 template<typename Surface>
 std::shared_ptr<Surface> Domain::get_boundary(int tag)
 {
@@ -797,6 +924,12 @@ std::shared_ptr<Surface> Domain::get_boundary(int tag)
    std::shared_ptr<Surface> surf(new  Surface(points, faces)) ;
    return surf;
 }
+/**
+ * Iterates over all surface boundaries of subdomains and stores and returns it as a vector of Surface objects.   
+ * 
+ * @param none 
+ * @return patches vector of Surface objects 
+ */
 template<typename Surface>
 std::vector<std::shared_ptr<Surface>> Domain::get_boundaries() 
 { 
@@ -818,11 +951,32 @@ std::vector<std::shared_ptr<Surface>> Domain::get_boundaries()
    return patches;
 }
 
-inline
-void Domain::lloyd(double time_limit, int max_iteration_number, double convergence,double freeze_bound, bool do_freeze )
+/**
+ * Wrapper CGAL function for lloyd optimazation of the constructed mesh.  
+ * @see (lloyd_optimize_mesh)[https://doc.cgal.org/latest/Mesh_3/group__PkgMesh3Functions.html]
+ * @param time_limit 
+ * @param max_iteration_number   
+ * @param convergence 
+ * @param freeze_bound 
+ * @param do_freeze
+ * @return patches vector of Surface objects
+ * @note Do not use lloyd after excude optimazation, since it will cause failure. 
+ */
+inline void Domain::lloyd(double time_limit, int max_iteration_number, double convergence,double freeze_bound, bool do_freeze )
 {CGAL::lloyd_optimize_mesh_3(c3t3, *domain_ptr.get(), time_limit=time_limit, max_iteration_number=max_iteration_number,convergence=convergence, freeze_bound  = freeze_bound, do_freeze = do_freeze); } 
-inline
-void Domain::odt(double time_limit, int max_iteration_number, double convergence,double freeze_bound, bool do_freeze) 
+
+/**
+ * Wrapper CGAL function for odt optimazation of the constructed mesh.  
+ * @see  (odt_optimize_mesh)[https://doc.cgal.org/latest/Mesh_3/group__PkgMesh3Functions.html]
+ * @param time_limit 
+ * @param max_iteration_number   
+ * @param convergence 
+ * @param freeze_bound 
+ * @param do_freeze
+ * @return patches vector of Surface objects
+ * @note Do not use lloyd after excude optimazation, since it will cause failure. 
+ */
+inline void Domain::odt(double time_limit, int max_iteration_number, double convergence,double freeze_bound, bool do_freeze) 
 {CGAL::odt_optimize_mesh_3(c3t3, *domain_ptr.get(), time_limit=time_limit, max_iteration_number=max_iteration_number,convergence=convergence, freeze_bound  = freeze_bound, do_freeze = do_freeze); } 
 
 

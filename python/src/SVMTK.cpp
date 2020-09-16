@@ -86,7 +86,7 @@ std::shared_ptr< Surface > Wrapper_convex_hull(py::array_t< double > point3_arra
 
 
 PYBIND11_MODULE(SVMTK, m) {
-
+   m.doc() = "Surface Volume Meshing Toolkit";
    py::class_<Vector_3,std::shared_ptr<Vector_3>>(m, "Vector_3")
        .def(py::init<double,double,double>())
        .def("__repr__",[](Vector_3 const & self)   
@@ -242,7 +242,11 @@ PYBIND11_MODULE(SVMTK, m) {
         .def(py::init<Surface &>())
         .def(py::init<std::vector<Surface>>())
         .def(py::init<std::vector<Surface>, std::shared_ptr<AbstractMap>>())
-        .def("create_mesh", py::overload_cast<double,double,double,double,double,double>( &Domain::create_mesh)) 
+
+        .def("create_mesh", py::overload_cast<double,double,double,double,double,double>( &Domain::create_mesh), 
+                            py::arg("edge_size"), py::arg("cell_size"), py::arg("facet_size"),
+                            py::arg("facet_angle"),py::arg("facet_distance"), py::arg("cell_radius_edge_ratio") )  
+
         .def("create_mesh", py::overload_cast<double>(&Domain::create_mesh))
 
         .def("get_boundary", &Domain::get_boundary<Surface>, py::arg("tag")=0)

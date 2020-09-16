@@ -74,7 +74,12 @@
 #include <CGAL/AABB_traits.h>
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
 
-
+/**
+ * Wrapper:
+ *  cost function  
+ * 
+ * @see
+ */
 template<class TM_>
 class Cost_stop_predicate
 {
@@ -92,8 +97,9 @@ class Cost_stop_predicate
     double thres;
 };
 
-///  --------------- AUXILIARY UTILITY -----------------
-
+/**
+ * TODO
+ */
 template< typename Mesh >
 bool load_surface(const std::string file, Mesh& mesh)
 {
@@ -148,6 +154,9 @@ bool load_surface(const std::string file, Mesh& mesh)
   return true;
 }
 
+
+
+
 template< typename Surface, typename Point_3 = typename Surface::Point_3>
 std::shared_ptr< Surface > convex_hull(std::vector<Point_3 >& point_vector)
 {
@@ -156,6 +165,20 @@ std::shared_ptr< Surface > convex_hull(std::vector<Point_3 >& point_vector)
   auto result = std::make_shared< Surface >(Surface(poly));
   return result;
 }
+
+
+
+/** FIXME
+ * Takes surface union of surfaces that partially overlapp each other. It will expand 
+ * the surfaces so that the region with    
+ *
+ * @param Surface class 
+ * @param Surface class
+ * @param double clusterth lower bound of the cos angle between normal vectors that  
+ * @param double edge_movement the multipler that with the smallest edge of a vertex that indicates the longest movement of that vertex.
+ * @param int smoothing the number of taubin iterations after each iteration of vertex movement 
+ * @return Surface class union of the modified 
+ */
 
 template< typename Surface>
 bool separate_surface_overlapp(Surface& surf1 , Surface& surf2, double edge_movement=-0.25, double smoothing=0.3)
@@ -200,6 +223,17 @@ bool separate_surface_overlapp(Surface& surf1 , Surface& surf2, double edge_move
   return true;
 }
 
+/** FIXME
+ * Takes surface union of surfaces that partially overlapp each other. It will expand 
+ * the surfaces so that the region with    
+ *
+ * @param Surface class 
+ * @param Surface class
+ * @param double clusterth lower bound of the cos angle between normal vectors that  
+ * @param double edge_movement the multipler that with the smallest edge of a vertex that indicates the longest movement of that vertex.
+ * @param int smoothing the number of taubin iterations after each iteration of vertex movement 
+ * @return Surface class union of the modified 
+ */
 
 template< typename Surface> 
 bool separate_surface_overlapp(Surface& surf1 , Surface& surf2 , Surface& other, double edge_movement=-0.25, double smoothing=0.3)
@@ -256,6 +290,18 @@ bool separate_surface_overlapp(Surface& surf1 , Surface& surf2 , Surface& other,
     }
    return true ;
 }
+
+/** FIXME 
+ * Takes surface union of surfaces that partially overlapp each other. It will expand 
+ * the surfaces so that the region with    
+ *
+ * @param Surface class 
+ * @param Surface class
+ * @param double clusterth lower bound of the cos angle between normal vectors that  
+ * @param double edge_movement the multipler that with the smallest edge of a vertex that indicates the longest movement of that vertex.
+ * @param int smoothing the number of taubin iterations after each iteration of vertex movement 
+ * @return Surface class union of the modified 
+ */
 template< typename Surface> 
 bool separate_close_surfaces(Surface& surf1 , Surface& surf2 , Surface& other, double edge_movement=-0.25, double smoothing=0.3)
 {
@@ -303,7 +349,17 @@ bool separate_close_surfaces(Surface& surf1 , Surface& surf2 , Surface& other, d
    return true;
 }
 
-
+/** FIXME
+ * Takes surface union of surfaces that partially overlapp each other. It will expand 
+ * the surfaces so that the region with    
+ *
+ * @param Surface class 
+ * @param Surface class
+ * @param double clusterth lower bound of the cos angle between normal vectors that  
+ * @param double edge_movement the multipler that with the smallest edge of a vertex that indicates the longest movement of that vertex.
+ * @param int smoothing the number of taubin iterations after each iteration of vertex movement 
+ * @return Surface class union of the modified 
+ */
 template< typename Surface> 
 bool separate_close_surfaces(Surface& surf1 , Surface& surf2, double edge_movement=-0.25, double smoothing=0.3)
 {
@@ -360,7 +416,6 @@ bool separate_close_surfaces(Surface& surf1 , Surface& surf2, double edge_moveme
  * @param int smoothing the number of taubin iterations after each iteration of vertex movement 
  * @return Surface class union of the modified 
  */
-
 template< typename Surface> 
 std::shared_ptr<Surface> union_partially_overlapping_surfaces( Surface& surf1 , Surface& surf2, double clusterth, double edge_movement, int smoothing )
 {
@@ -414,13 +469,15 @@ std::shared_ptr<Surface> union_partially_overlapping_surfaces( Surface& surf1 , 
 }
 
 
-///  --------------- MAIN CLASS  -----------------
-
+/**
+ *
+ *
+ */ 
 class Surface
 {
    public:
     typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel; 
-
+    // FIXME restructure
     typedef Kernel::Point_3 Point_3;
     typedef Kernel::Plane_3 Plane_3;
     typedef Kernel::FT FT; 
@@ -436,11 +493,10 @@ class Surface
     typedef boost::graph_traits<Mesh>::edge_descriptor             edge_descriptor;
     typedef boost::graph_traits<Mesh>::halfedge_descriptor         halfedge_descriptor;
     typedef boost::graph_traits<Mesh>::face_descriptor             face_descriptor;
-    typedef boost::graph_traits<Mesh>::vertex_descriptor           vertex_descriptor; //  vertex    
+    typedef boost::graph_traits<Mesh>::vertex_descriptor           vertex_descriptor; 
     typedef boost::graph_traits<Mesh>::vertices_size_type          size_type;
     typedef boost::property_map<Mesh,CGAL::vertex_point_t>::type   Vertex_point_pmap; 
 
-    // ???FIXME
     typedef std::vector<Point_3>               Polyline;
     typedef std::vector<Polyline>              Polylines;
     typedef std::vector<std::size_t>           Face;
@@ -464,20 +520,17 @@ class Surface
     
     bool is_point_inside(Point_3 point_3);
 
-    // ----------------------
-
     void make_cone_(    double x0, double y0, double  z0,  double x1, double y1, double z1, double r0, int number_of_segments=360) ;
     void make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1,       double radius,  int number_of_segments=360) ;
     void make_cone(     double x0, double y0, double  z0,  double x1, double y1, double z1, double r0,double r1,  int number_of_segments=360) ; 
     void make_cube(     double x0, double y0, double  z0,  double x1, double y1, double z1, int N=10);
     void make_cube(     double x0, double y0, double  z0,  double x1, double y1, double z1, int Nx , int Ny, int Nz);
     void make_sphere(   double x0, double y0, double  z0,  double r0, double edge_size);
-    //-----Boolean operations -----
 
     void surface_intersection( Surface other){CGAL::Polygon_mesh_processing::corefine_and_compute_intersection(mesh, other.get_mesh(),mesh);}
     void surface_difference(   Surface other){CGAL::Polygon_mesh_processing::corefine_and_compute_difference(mesh , other.get_mesh(), mesh);}
     void surface_union(        Surface other){CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh, other.get_mesh(), mesh);}   
-    // ---- Basic opertaions ------
+
     Mesh& get_mesh() {return mesh;}
     void clear(){ mesh.clear();}
 
@@ -510,7 +563,7 @@ class Surface
     void smooth_taubin(const size_t nb_iter); 
     int separate_narrow_gaps(double adjustment);
 
-    void clip(double x1,double x2, double x3 ,double x4, bool clip);
+    void clip(double a,double b, double c ,double d, bool clip);
     std::map<vertex_descriptor,double> separate_close_surfaces(Surface& other);
 
     template< typename Slice>
@@ -582,7 +635,7 @@ class Surface
 /**
  * Moves all vertices so that all is inside another surface. 
  *
- * @param Surface class object (assert non-empty)  
+ * @param other SVMTK Surface class (assert non-empty)  
  * @return the number of vertices not inside surface.
  */
 
@@ -598,7 +651,7 @@ inline int Surface::strictly_inside(Surface& other, double adjustment)
 
 /**
  * Moves all vertices that are close to another surface. 
- * @param Surface class object (assert non-empty)  
+ * @param other SVMTK Surface class (assert non-empty)  
  * @return the number of close vertices 
  */
 inline int Surface::separate_enclosed_surface(Surface& other, double adjustment)
@@ -794,6 +847,14 @@ void Surface::adjust_vertices_in_region(InputIterator begin , InputIterator  end
 
 
 }
+
+/**
+ * Adjust vertices in the map iterator input with the corresponding double value in the vertex normal direction.       
+ * @param map iterator begin  
+ * @param map iterator end
+ * @return void  class member mesh is updated with new coordinates for the vertices. 
+ */
+// TODO : rename in region ?? 
 inline
 void Surface::adjust_vertices_in_region(std::map<vertex_descriptor,double>::iterator begin, std::map<vertex_descriptor,double>::iterator end) // map or two vectors
 {
@@ -811,6 +872,14 @@ void Surface::adjust_vertices_in_region(std::map<vertex_descriptor,double>::iter
       mesh.point(s.first) = s.second;
   }
 }
+/**
+ * Adjust vertices in the map iterator input with the corresponding vector direction.       
+ * @param map iterator begin  
+ * @param map iterator end
+ * @return void  class member mesh is updated with new coordinates for the vertices. 
+ * 
+ * @overload
+ */
 inline
 void Surface::adjust_vertices_in_region(std::map<vertex_descriptor,Vector_3>::iterator begin, std::map<vertex_descriptor,Vector_3>::iterator end) // map or two vectors
 {
@@ -828,8 +897,14 @@ void Surface::adjust_vertices_in_region(std::map<vertex_descriptor,Vector_3>::it
   }
 }
 
-
-
+/**
+ * Smooths the vertices in the iterator input. This is done by taking the sum of the vector edges for each vertex, and
+ * multipled with the constant double input.       
+ * @param template iterator begin.
+ * @param template iterator end.
+ * @param const double c 
+ * @return void; class member mesh is updated with new coordinates for the vertices. 
+ */
 template<typename InputIterator >
 void Surface::smooth_laplacian_region(InputIterator begin , InputIterator end ,const double c)
 {
@@ -856,19 +931,39 @@ void Surface::smooth_laplacian_region(InputIterator begin , InputIterator end ,c
   }
 }
 
-//--------------------------------------------
-//      CGALSURFACE FUNCTIONS
-//--------------------------------------------
+/**
+ * Constructor: 
+ * Takes a CGAL polyhedron surface and copies the structure over to CGAL surface mesh.
+ * @param polyhedron  defined CGAL::Polyhedron_3<Kernel> Polyhedron; 
+ * @return the inpute is copied to the member variable mesh. 
+ */
+// TODO : make tempalate instead, so that different kernels can be used ? 
 inline Surface::Surface(Polyhedron &polyhedron) {
     CGAL::copy_face_graph(polyhedron, mesh);
 }
-inline
-Surface::Surface(const std::string filename)
+
+/**
+ * Constructor: 
+ * Read the surface corresponding to the input filename.
+ * Current fileformats: 
+           .off 
+           .stl 
+           .vtu TODO; 
+ * @param string of filename TODO rename to path ? 
+ * @return  is copied to the member variable mesh. 
+ */
+inline Surface::Surface(const std::string filename)
 {
     load_surface(filename,mesh);
 }
-inline
-Surface::Surface(std::vector<Point_3>& points,  std::vector<Face>& faces)
+/**
+ * Constructor: 
+ * Creates  
+ * Extensions
+ * @param points coordinates of vertices  
+ * @param faces connections of  vertices
+ */
+inline Surface::Surface(std::vector<Point_3>& points,  std::vector<Face>& faces)
 {
   CGAL::Polygon_mesh_processing::orient_polygon_soup(points, faces);
   CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, faces,mesh);
@@ -881,9 +976,15 @@ Surface::Surface(std::vector<Point_3>& points,  std::vector<Face>& faces)
 
 }
 
-
-inline
-void Surface::normal_vector_cluster(Surface::vertex_vector &vertices, double cos_angle) // FIXME :  rename cos_angle 
+/**
+ * Takes a vector of verticrs and finds cluster of adjacent vertices with normals determined 
+ * with
+ *       $ n_1*n_2  >=|n_1| |n_2| * cos_angle $    
+ * @param[in,out] vertices a vector of vertices.  
+ * @param cos_angle threshold cosinus angle between two vectors 
+ * @return void 
+ */
+inline void Surface::normal_vector_cluster(Surface::vertex_vector &vertices, double cos_angle) // FIXME :  rename cos_angle 
 {
 
   int size = vertices.size();
@@ -912,15 +1013,33 @@ void Surface::normal_vector_cluster(Surface::vertex_vector &vertices, double cos
   }
 }
 
-
-
-inline
-void Surface::smooth_taubin(const size_t nb_iter) {
+/** TODO
+ * Taubin smaoothing of the surface vertices. This a two
+ * Laplacian smoothing in one iteration with the requirment    
+ *               $ \lambda < -\mu $    
+ * @note The Laplacian smoothin parameters are set, but the 
+ *       user may consturct with their own parameters with smooth_laplacian function.
+ * @param nb_iter number of iterations of smoothing   
+ * @return void 
+ */
+inline void Surface::smooth_taubin(const size_t nb_iter) {
     for (size_t i = 0; i < nb_iter; ++i) {
         this->smooth_laplacian(0.8,1);
         this->smooth_laplacian(-0.805,1);
     }
 }
+/** TODO
+ * Taubin smaoothing of the input vertices. This a two
+ * Laplacian smoothing in one iteration with the requirment    
+ *               $ \lambda < -\mu $    
+ * @note The Laplacian smoothin parameters are set, but the 
+ *       user combine smooth_laplacian.
+ * @param template iterator begin 
+ * @param template iterator end 
+ * @param nb_iter number of iterations of smoothing   
+ * @return void 
+ */
+
 template<typename InputIterator >
 void Surface::smooth_taubin_region(InputIterator begin , InputIterator end ,const size_t nb_iter)
 {
@@ -929,14 +1048,21 @@ void Surface::smooth_taubin_region(InputIterator begin , InputIterator end ,cons
         this->smooth_laplacian_region(begin,end,-0.805);
     }
 }
-inline
-int Surface::num_self_intersections() {
+/**
+ * Returns number of sef 
+ * @param nb_iter number of iterations of smoothing   
+ * @return void 
+ */
+inline int Surface::num_self_intersections() {
     std::vector< std::pair<face_descriptor, face_descriptor> > intersected_tris;
     CGAL::Polygon_mesh_processing::self_intersections(mesh, std::back_inserter(intersected_tris));
     return intersected_tris.size();  // Could actually return the triangles themselves -> return facets
 }
-inline
-int Surface::collapse_edges(const double target_edge_length) {
+/**
+ * @param nb_iter number of iterations of smoothing   
+ * @return void 
+ */
+inline int Surface::collapse_edges(const double target_edge_length) {
     CGAL::Surface_mesh_simplification::Edge_length_stop_predicate<double> stop(target_edge_length);
 
     const int r = CGAL::Surface_mesh_simplification::edge_collapse(
@@ -948,8 +1074,12 @@ int Surface::collapse_edges(const double target_edge_length) {
     return r;
 }
 
-inline
-int Surface::collapse_edges() {
+/**
+ * @param nb_iter number of iterations of smoothing   
+ * @return void
+ * @overload  
+ */
+inline int Surface::collapse_edges() {
     Cost_stop_predicate<Mesh> stop(1.e-6);
     const int r = CGAL::Surface_mesh_simplification::edge_collapse(
         mesh,
@@ -957,6 +1087,11 @@ int Surface::collapse_edges() {
 
     return r;
 }
+
+/**
+ * @param template slice,    
+ * @return void 
+ */
 template<typename Slice>
 std::shared_ptr<Slice> Surface::mesh_slice(double x1,double x2, double x3 ,double x4)
 {
@@ -965,6 +1100,11 @@ std::shared_ptr<Slice> Surface::mesh_slice(double x1,double x2, double x3 ,doubl
    return this->mesh_slice<Slice>(plane);
 
 }
+/**
+ * 
+ * @param template slice,   
+ * @return slice SVMTK Slice class defined in Slice.h
+ */
 template<typename Slice>
 std::shared_ptr<Slice> Surface::mesh_slice(Surface::Plane_3 plane_3) 
 {
@@ -993,9 +1133,20 @@ std::shared_ptr<Slice> Surface::mesh_slice(Surface::Plane_3 plane_3)
 
      return slice;
 }     
-
-inline
-void Surface::isotropic_remeshing(double target_edge_length, unsigned int nb_iter, bool protect_border)
+/**
+ * Wrapper: 
+ * CGAL isotropic_remeshing and split_long_edges.
+ * @see [split_long_edges](https://doc.cgal.org/latest/Polygon_mesh_processing/group__PMP__meshing__grp.html) 
+ * @see [isotropic_remeshing](https://doc.cgal.org/latest/Polygon_mesh_processing/group__PMP__meshing__grp.html) 
+ * @note split_long_edges is used to avoid a pitfall described [here](https://doc.cgal.org/5.0.3/Polygon_mesh_processing/index.html)
+ *
+ * Remeshing of the surface mesh so that all edges have the same length.
+ * @param target_edge_length the edge length that is targeted in the remeshed patch. If 0 is passed then only the edge-flip, tangential relaxation, and projection steps will be done. 
+ * @param nb_iter the number of iterations for the sequence of atomic operations performed. 
+ * @param protect_border If true, constraint edges cannot be modified at all during the remeshing process. 
+ * @return void 
+ */
+inline void Surface::isotropic_remeshing(double target_edge_length, unsigned int nb_iter, bool protect_border)
 {
 
      CGAL::Polygon_mesh_processing::split_long_edges(edges(mesh), target_edge_length,mesh);
@@ -1007,16 +1158,36 @@ void Surface::isotropic_remeshing(double target_edge_length, unsigned int nb_ite
 
 }
 
-
-inline
-void Surface::clip(double x1,double x2, double x3 ,double x4, bool clip)
+/**
+ * Wrapper: 
+ * CGAL function clip 
+ * @see [CGAL::Polygon_mesh_processing::clip]()
+ *
+ * Clips a surface mesh base on a plane defined with the equation 
+                      $ ax+by+cz +d = 0  $
+ * @param  a parameter in plane equation
+ * @param  b parameter in plane equation
+ * @param  c parameter in plane equation
+ * @param  d parameter in plane equation
+ * @param clip if true preserve manifold.  
+ * @return void 
+ * @note Setting plane equation parameters close to unit values produce better clip.
+ */
+inline void Surface::clip(double a,double b, double c ,double d, bool clip)
 {
-   CGAL::Polygon_mesh_processing::clip(mesh, Plane_3(x1,x2,x3,x4), CGAL::Polygon_mesh_processing::parameters::clip_volume(clip));
+   CGAL::Polygon_mesh_processing::clip(mesh, Plane_3(a,b,c,d), CGAL::Polygon_mesh_processing::parameters::clip_volume(clip));
 }
 
-
-inline
-int Surface::fill_holes()
+/**
+ * Wrapper:
+ * CGAL function triangulate_refine_and_fair_hole. 
+ * @see [triangulate_refine_and_fair_hole](https://doc.cgal.org/latest/Polygon_mesh_processing/group__hole__filling__grp.html)
+ *
+ * Finds and fills holes in surface mesh.
+ * @param none.
+ * @return nb_holes number of holes filled
+ */
+inline int Surface::fill_holes()
 {
     unsigned int nb_holes = 0;
     BOOST_FOREACH(halfedge_descriptor h, halfedges(mesh))
@@ -1046,8 +1217,16 @@ int Surface::fill_holes()
 
     return nb_holes;
 }
-inline
-bool Surface::triangulate_faces()
+/**
+ * Wrapper:
+ * CGAL function triangulate_faces.
+ * @see [triangulate_faces] (https://doc.cgal.org/latest/Polygon_mesh_processing/group__PMP__meshing__grp.html)
+ * 
+ * Triangulates faces of the surface mesh.
+ * @param none    
+ * @return true when done  
+ */
+inline bool Surface::triangulate_faces()
 {
     CGAL::Polygon_mesh_processing::triangulate_faces(mesh);
 
@@ -1058,23 +1237,35 @@ bool Surface::triangulate_faces()
     return true;
 }
 
-inline
-std::vector<Surface::Point_3>  Surface::get_points(Surface::vertex_vector &vertices) 
+/**
+ * Returns the points corresponding to vertices of the surfaces mesh.
+ * @param vertices a vector of vertices, 
+ * @return vector of surface points.
+ */
+inline std::vector<Surface::Point_3>  Surface::get_points(Surface::vertex_vector &vertices) 
 {
    point_vector result;
    for ( vertex_descriptor vit : vertices ){result.push_back(mesh.point(vit) );}
    return result;
 } 
-inline
-std::vector<Surface::Point_3>  Surface::get_points() 
+/**
+ * Returns the points of the surfaces mesh.
+ * @param none   
+ * @return vector of surface points.
+ */
+inline std::vector<Surface::Point_3>  Surface::get_points() 
 {
    point_vector result;
    for ( vertex_descriptor vit : mesh.vertices()){result.push_back(mesh.point(vit) );}
    return result;
 } 
 
-inline
-Surface::vertex_vector Surface::get_vertices() // FIXME 
+/**
+ * Returns the vertices of the surface mesh
+ * @param none 
+ * @return vector of surface vertices 
+ */
+inline Surface::vertex_vector Surface::get_vertices() 
 {
    vertex_vector result;
    for ( vertex_descriptor vit : mesh.vertices())
@@ -1083,8 +1274,12 @@ Surface::vertex_vector Surface::get_vertices() // FIXME
    }
    return result;
 }
-inline
-bool Surface::is_point_inside(Point_3 point_3) //FIXME
+/**
+ * Query if a point is inside the member surface mesh
+ * @param point_3 surface mesh point
+ * @return bool true if point is inside surface otherwise false  
+ */
+inline bool Surface::is_point_inside(Point_3 point_3) 
 {
      Surface::Inside is_inside_query(mesh);
      CGAL::Bounded_side res = is_inside_query(point_3);
@@ -1094,9 +1289,13 @@ bool Surface::is_point_inside(Point_3 point_3) //FIXME
          return false;
 
 }
-
-inline
-Surface::vertex_vector Surface::vertices_inside(Surface &other)
+/**
+ * Finds and return vertices that are inside another SVMTK Surface class
+ * @param other SVMTK Surface class   
+ * @return vertex vector 
+ * @overload 
+ */
+inline Surface::vertex_vector Surface::vertices_inside(Surface &other)
 {
 
    vertex_vector result;
@@ -1112,8 +1311,15 @@ Surface::vertex_vector Surface::vertices_inside(Surface &other)
   
    return result;
 }
-inline
-Surface::vertex_vector Surface::vertices_inside(Surface &other, Surface::vertex_vector &vertices)
+
+/**
+ * Finds and return vertices that are inside another SVMTK Surface class.
+ * @param other SVMTK Surface class 
+ * @param vertices vector of this-> surface mesh vertices   
+ * @return result vector of vertices 
+ * @overload 
+ */
+inline Surface::vertex_vector Surface::vertices_inside(Surface &other, Surface::vertex_vector &vertices)
 {
    vertex_vector result;
    Surface::Inside is_inside_query(other.get_mesh()); 
@@ -1125,8 +1331,14 @@ Surface::vertex_vector Surface::vertices_inside(Surface &other, Surface::vertex_
   
    return result;
 }
-inline
-Surface::vertex_vector Surface::vertices_outside(Surface &other) 
+
+/** 
+ * Finds and return vertices that are outside another SVMTK Surface class
+ * @param other SVMTK Surface class. 
+ * @param vertices vector of surface mesh vertices   
+ * @return result vector of vertices  
+ */
+inline Surface::vertex_vector Surface::vertices_outside(Surface &other) 
 {
    vertex_vector result;
    Surface::Inside is_inside_query(other.get_mesh());
@@ -1138,8 +1350,14 @@ Surface::vertex_vector Surface::vertices_outside(Surface &other)
    return result;
 }
 
-inline
-Surface::vertex_vector Surface::vertices_outside(Surface &other ,Surface::vertex_vector &vertices)
+/** 
+ * Finds and returns vertices that are outside another SVMTK Surface class.
+ * @param other SVMTK Surface class
+ * @param vertices vector of surface mesh vertices   
+ * @return result vector of vertices 
+ * @overload 
+ */
+inline Surface::vertex_vector Surface::vertices_outside(Surface &other ,Surface::vertex_vector &vertices)
 {
 
    vertex_vector result;
@@ -1152,16 +1370,29 @@ Surface::vertex_vector Surface::vertices_outside(Surface &other ,Surface::vertex
    return result;
 }
 
-
-inline
-void Surface::adjust_boundary(const double c)
+/** 
+ * Adjust surface mesh vertex coordinates in the normal vertex direction multiplied with an 
+ * input value. 
+ * @param c a double value multiplier  
+ * @return none
+ */
+inline void Surface::adjust_boundary(const double c)
 {
     Mesh::Vertex_range::iterator  vb = mesh.vertices().begin(), ve=mesh.vertices().end();
     Surface::adjust_vertices_in_region(vb, ve,c);
 
 }
-inline
-void Surface::smooth_laplacian(const double c, int iter)
+
+/** 
+ * Smooths all vertices of surface mesh using the smooth laplacian region function.  
+ * @see Surface::smooth_laplacian_region
+ * @param c a double multipler of the displacment vector that decides the new vertex coordinate.   
+ * @param iter integer that decides the number of iterations of algorithm
+ * @note zero and negative integer will have no effect, and should therfore be avoided.     
+ * @return void, updated vertex coordinates 
+ *  
+ */
+inline void Surface::smooth_laplacian(const double c, int iter)
 {
     Mesh::Vertex_range::iterator  vb = mesh.vertices().begin(), ve=mesh.vertices().end();
     for ( int i = 0 ; i< iter ; ++i)
@@ -1169,15 +1400,27 @@ void Surface::smooth_laplacian(const double c, int iter)
         Surface::smooth_laplacian_region(vb, ve,c);
     }
 }
-inline
-void Surface::smooth_shape(double time,int nb_iterations)
+/**
+ * Wrapper: 
+ * CGAL method for smoothing the shape of a surface. It ensures that the topological dimension is equvialent to a shpere. 
+ * Therefore the resulting surface mesh can have holes that needs to be filled.
+ * @param time TODO
+ * @param nb_iterations TODO 
+ * @see [CGAL::Polygon_mesh_processing::smooth_shape](https://doc.cgal.org/latest/Polygon_mesh_processing/group__PMP__meshing__grp.html)
+ * @return result vector of vertices  
+ */
+inline void Surface::smooth_shape(double time,int nb_iterations)
 {
        CGAL::Polygon_mesh_processing::smooth_shape(mesh, time, CGAL::Polygon_mesh_processing::parameters::number_of_iterations(nb_iterations));
 }
 
-
-inline
-Surface::Polylines Surface::mean_curvature_flow() 
+/** 
+ * Computes the centerline of the surface.
+ * @param none    
+ * @return Polylines vector of points. TODO FIXME polylines or std::vector<Point_3>  
+ * @see [CGAL::extract_mean_curvature_flow_skeleton](https://doc.cgal.org/latest/Surface_mesh_skeletonization/index.html)
+ */
+inline Surface::Polylines Surface::mean_curvature_flow() 
 {
     typedef CGAL::Mean_curvature_flow_skeletonization<Surface::Mesh> Skeletonization;
     typedef Skeletonization::Skeleton                             Skeleton;
@@ -1219,17 +1462,32 @@ Surface::Polylines Surface::mean_curvature_flow()
 
 }
 
-
-inline
-Surface::Polyline Surface::shortest_surface_path(double x0, double y0, double z0, double x1, double y1, double z1)
+/**
+* Computes and returns the shortest surface path between two points.
+* @param x0 first point x coordinate
+* @param y0 first point y coordinate
+* @param z0 first point z coordinate
+* @param x1 second point x coordinate
+* @param y1 second point y coordinate
+* @param z1 second point z coordinate
+* @return a vector of points 
+* @overload 
+*/
+inline Surface::Polyline Surface::shortest_surface_path(double x0, double y0, double z0, double x1, double y1, double z1)
 {
    Point_3 source(x0,y0,z0) ;
    Point_3 target(x1,y1,z1) ;
    return shortest_surface_path(source, target); 
 }
 
-inline
-Surface::Polyline Surface::shortest_surface_path(Point_3 source, Point_3 target) 
+/**
+* Computes and returns the shortest surface path between two points.
+* @param source first point 
+* @param target second point.
+* @return a vector of points 
+* @overload 
+*/
+inline Surface::Polyline Surface::shortest_surface_path(Point_3 source, Point_3 target) 
 { 
       std::vector<Surface::Point_3> points;
 
@@ -1255,13 +1513,40 @@ Surface::Polyline Surface::shortest_surface_path(Point_3 source, Point_3 target)
       return points ;
 } 
 
-inline
-void Surface::make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1, int N ){
+// TODO tilted cube
+
+
+/**
+* Creates a surface mesh structure with vertices and factes connecting vertices for a cube.
+* @param x0 first point x coordinate
+* @param y0 first point y coordinate
+* @param z0 first point z coordinate
+* @param x1 second point x coordinate
+* @param y1 second point y coordinate
+* @param z1 second point z coordinate
+* @param N the number of vertices in x,y and z direction,  
+* @return a vector of points 
+* @overload 
+*/
+inline void Surface::make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1, int N ){
               make_cube( x0,y0,z0,x1,y1,z1, N , N , N );
 }
 
-inline
-void Surface::make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1, int Nx , int Ny , int Nz) 
+/**
+* Creates a surface mesh structure with vertices and factes connecting vertices for a cube.
+* @param x0 first point x coordinate
+* @param y0 first point y coordinate
+* @param z0 first point z coordinate
+* @param x1 second point x coordinate
+* @param y1 second point y coordinate
+* @param z1 second point z coordinate
+* @param Nx the number of vertices in x direction
+* @param Ny the number of vertices in y direction, 
+* @param Nz the number of vertices in z direction, 
+* @return a vector of points 
+* @overload 
+*/
+inline void Surface::make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1, int Nx , int Ny , int Nz) 
 {
      clear(); // FIXME
      assert(x0!=x1);
@@ -1337,16 +1622,38 @@ void Surface::make_cube( double x0, double y0, double  z0,  double x1, double y1
  
      return;
 }
-
-inline
-void Surface::make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1, double radius,  int number_of_segments)
+/**
+ * Creates a surface mesh structure with vertices and factes connecting vertices for a cylinder
+ * @param x0 x coordinate of the first cylinder center 
+ * @param y0 y coordinate 0f the first cylinder center
+ * @param z0 z coordinate 0f the first cylinder center
+ * @param x1 x coordinate of the second cylinder center 
+ * @param y1 y coordinate 0f the second cylinder center
+ * @param z1 z coordinate 0f the second cylinder center
+ * @param radius the radius of the cylinder 
+ * @param number_of_segments integer of the approximation of the 
+ * @return none
+ */
+inline void Surface::make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1, double radius,  int number_of_segments)
 {    
      clear();
      Surface::make_cone( x0, y0,z0, x1,y1, z1, radius , radius,  number_of_segments ) ;
 }
 
-inline
-void Surface::make_cone_( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0, int number_of_segments) 
+/**
+ * Creates a surface mesh structure with vertices and factes connecting vertices for a cone with
+ * radius equal zero. 
+ * @param x0 x coordinate of the first cylinder center 
+ * @param y0 y coordinate 0f the first cylinder center
+ * @param z0 z coordinate 0f the first  cylinder center
+ * @param x1 x coordinate of the second cylinder center 
+ * @param y1 y coordinate 0f the second cylinder center
+ * @param z1 z coordinate 0f the second cylinder center
+ * @param radius the none-zero radius of the cone, corresponding to the first cylinder center.  
+ * @param number_of_segments integer of the number of points to approximation of the curved surface
+ * @return none
+ */
+inline void Surface::make_cone_( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0, int number_of_segments) 
 {
      clear();
      face_vector fv1,fv3;
@@ -1405,8 +1712,23 @@ void Surface::make_cone_( double x0, double y0, double  z0,  double x1, double y
 
 }
 
-inline
-void Surface::make_cone( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0, double r1,   int number_of_segments) 
+/**
+ * Creates a surface mesh structure with vertices and factes connecting vertices for a cone.
+ * The function also handles the special cases of:
+                                                 sharp cone  
+                                                 cylinder. 
+ * @param x0 x coordinate of the first cylinder center 
+ * @param y0 y coordinate 0f the first cylinder center
+ * @param z0 z coordinate 0f the first cylinder center
+ * @param x1 x coordinate of the second cylinder center 
+ * @param y1 y coordinate 0f the second cylinder center
+ * @param z1 z coordinate 0f the second cylinder center
+ * @param r0 the radius corresponding to the first cylinder center.   
+ * @param  r0 the radius corresponding to the second cylinder center. 
+ * @param number_of_segments integer of the number of points to approximation of the curved surface
+ * @return none 
+ */
+inline void Surface::make_cone( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0, double r1,   int number_of_segments) 
 {
      assert( number_of_segments>2  && "Choose 3 or more segments");
      assert((r0*r0+r1*r1)!=0);
@@ -1491,7 +1813,10 @@ void Surface::make_cone( double x0, double y0, double  z0,  double x1, double y1
 
 }
 
-
+/**
+ * Struct Wrapper: 
+ * Implicit function for a sphere with static center and radius.
+ */
 struct sphere_wrapper{
         
      public:
@@ -1502,14 +1827,26 @@ struct sphere_wrapper{
         static double function(double x, double y , double z) { return  (x-x0)*(x -x0) +  (y-y0)*(y -y0) + (z-z0)*(z -z0) -radius*radius; }
 };
 
-inline double sphere_wrapper::radius = 0;
-inline double sphere_wrapper::x0 = 0;
-inline double sphere_wrapper::y0 = 0;
-inline double sphere_wrapper::z0 = 0;
 
+/**
+* @note inline declaration of static variables in header files requrie c++ version equal or greate than 7 
+*       with the compiler option c++1z/c++17
+*/
+inline double sphere_wrapper::radius = 0; // inline declaration of static variable radius for sphere wrapper 
+inline double sphere_wrapper::x0 = 0;     // inline declaration of static variable radius for sphere wrapper
+inline double sphere_wrapper::y0 = 0;     // inline declaration of static variable radius for sphere wrapper
+inline double sphere_wrapper::z0 = 0;     // inline declaration of static variable radius for sphere wrapper
 
-inline
-void Surface::make_sphere( double x0, double y0, double  z0,double r0, double edge_size) 
+/**
+ * Uses an implicit function to construct a structure of vertices and facets connecting vertices in the shape of 
+ * a sphere. 
+ * @param x0 the x-coordinate of the center
+ * @param y0 the y-coordinate of the center
+ * @param z0 the z-coordinate of the center
+ * @param r0 the radius  of  the sphere
+ * @param edge_size the maximum edge size of the resulting surface mesh.
+ */
+inline void Surface::make_sphere( double x0, double y0, double  z0,double r0, double edge_size) 
 {
   sphere_wrapper sphere;
    
@@ -1521,13 +1858,23 @@ void Surface::make_sphere( double x0, double y0, double  z0,double r0, double ed
 
 }
 
-inline
-void Surface::split_edges(double  target_edge_length){
+/** 
+ * Wrapper:  
+ * CGAL function for splitting long edges.
+ * @see []()
+ * @param target_edge_length the maximum edge legnth that the longer edges can split into.
+ * @return void 
+ */
+inline void Surface::split_edges(double  target_edge_length){
      CGAL::Polygon_mesh_processing::split_long_edges(edges(mesh), target_edge_length,mesh);
 }
 
-inline
-void Surface::save(const std::string outpath)
+/**
+ * Saves the surface mesh to file.
+ * Valid file formats: off and stl. 
+ * @param outpath string path to save file.
+ */
+inline void Surface::save(const std::string outpath)
 {    
      std::string extension = outpath.substr(outpath.find_last_of(".")+1);
      std::ofstream out(outpath);
@@ -1542,13 +1889,25 @@ void Surface::save(const std::string outpath)
      }
 }
 
-inline
-void Surface::reconstruct( double angular_bound, double radius_bound, double distance_bound ){ 
+/**
+ * Wrapper: 
+ * CGAL function for poisson_reconstruction.
+ * @see []() 
+ * @param angular_bound 
+ * @param radius_bound 
+ * @param distance_bound
+ * @return void. 
+ */
+inline void Surface::reconstruct( double angular_bound, double radius_bound, double distance_bound ){ 
      poisson_reconstruction(*this,angular_bound, radius_bound, distance_bound);
 }
 
-inline
-int Surface::separate_narrow_gaps(double adjustment) 
+/**
+ * Seperates non-adjacent surface mesh vertices so that the nearest surface mesh vertices are adjacent. 
+ * @param adjustment multiplier of the edge movement.
+ * @return number of adjusted vertices.  
+ */
+inline int Surface::separate_narrow_gaps(double adjustment) 
 {
    if ( num_self_intersections() >0 )
    {
@@ -1597,8 +1956,12 @@ int Surface::separate_narrow_gaps(double adjustment)
    return results.size();
 }
 
-inline
-Surface::vertex_vector Surface::get_close_vertices(Surface &other)
+/**
+ * Finds and returns surface mesh vertices that are close to another SVMTK Surface Class
+ * @param other SVMTK Surface Class.
+ * @return results a vector of vertices. 
+ */
+inline Surface::vertex_vector Surface::get_close_vertices(Surface &other)
 {
    Surface::vertex_vector results;
    Vertex_point_pmap vppmap = get(CGAL::vertex_point,other.get_mesh());  
@@ -1639,8 +2002,15 @@ Surface::vertex_vector Surface::get_close_vertices(Surface &other)
  
    return results;
 }
-inline 
-std::map<Surface::vertex_descriptor,double> Surface::separate_close_surfaces(Surface& other)
+/**
+ * FIXME rename 
+ * Seperate close surface
+
+ * @param other SVMTK Surface Class
+ * @return results a std::map with vertices as keys and edge multipler as value.  
+ *  
+ */
+inline std::map<Surface::vertex_descriptor,double> Surface::separate_close_surfaces(Surface& other)
 {
    std::map<vertex_descriptor,double> results;
    Vertex_point_pmap vppmap = get(CGAL::vertex_point,other.get_mesh());
@@ -1683,8 +2053,14 @@ std::map<Surface::vertex_descriptor,double> Surface::separate_close_surfaces(Sur
    return  results;
    
 }
-inline
-std::shared_ptr< Surface > Surface::convex_hull()
+
+/**
+ * Computes the convex hull of the points.
+ * @see CGAL::convex_hull_3
+ * @param none
+ * @param result SVMTK Surface class.  
+ */
+inline std::shared_ptr< Surface > Surface::convex_hull()
 {
     Polyhedron poly;
     auto point_vector = get_points(); 
@@ -1694,8 +2070,12 @@ std::shared_ptr< Surface > Surface::convex_hull()
     return result;
 }
 
-inline
-std::vector<std::pair<Surface::Point_3, Surface::Vector_3>> Surface::get_points_with_normal()
+/** TODO better english 
+ * Computes and returns a vector of pairs with  point and the corresponding normal.
+ * @param none 
+ * @return 
+ */
+inline std::vector<std::pair<Surface::Point_3, Surface::Vector_3>> Surface::get_points_with_normal()
 {
    
    std::vector<std::pair<Point_3, Vector_3>> result;

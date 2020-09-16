@@ -69,6 +69,12 @@
 
 
 
+/**
+ * Function to compute the length of an polyline 
+ * 
+ * @param begin iterator for an vector of points 
+ * @param end iterator for an vector of points   
+ */
 template< typename InputIterator> 
 double length_polyline( InputIterator begin , InputIterator end)
 {
@@ -83,6 +89,10 @@ double length_polyline( InputIterator begin , InputIterator end)
 
 } 
 
+
+/**
+ * Adds polyline points to the struct, and computes the minimum bounding radius.
+ */
 template< typename Kernel>
 struct Minimum_sphere_2
 {
@@ -125,6 +135,9 @@ struct Minimum_sphere_2
 
 
 
+/**
+ *  
+ */
 class Slice
 {
 
@@ -231,9 +244,13 @@ class Slice
        std::map<Edge,int> edges; 
 
 };
-
-inline
-std::set<int> Slice::get_subdomains()
+/**
+ * Returns a set of integer that represents the subdomains in the mesh.   
+ * 
+ * @param none 
+ * @return result a set of integers that represents the subdomain tags in the mesh.
+ */
+inline std::set<int> Slice::get_subdomains()
 {
    std::set<int> result;
    for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
@@ -243,15 +260,28 @@ std::set<int> Slice::get_subdomains()
    }
    return result;
 }
-inline
-void Slice::remove_subdomains(int tag) 
+
+/**
+ * Removes all cells in the mesh with a specified integer tag   
+ * 
+ * @param tag removes cells with this integer tag
+ * @overload
+ */
+inline void Slice::remove_subdomains(int tag) 
 {
     std::vector<int> tags; 
     tags.push_back(tag);
     remove_subdomains(tags);
 }
-inline
-void Slice::remove_subdomains(std::vector<int> tags) 
+
+
+/**
+ * Removes all cells in the mesh with tags in a vector.  
+ * 
+ * @param tags vector of cell tag to be removed. 
+ * @overload
+ */
+inline void Slice::remove_subdomains(std::vector<int> tags) 
 {
     for(CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
     {
@@ -259,11 +289,12 @@ void Slice::remove_subdomains(std::vector<int> tags)
            cdt.delete_face(fit);
     } 
 }
-/** Based on CGAL output_to_medit, but for 2D meshes
- *
+/** 
+ * Based on CGAL output_to_medit, but for 2D meshes.
+ * @see [output_to_medit] (https://github.com/CGAL/cgal/blob/master/Mesh_3/include/CGAL/IO/File_medit.h) 
+ * @param os ostream of the output file  
  */
-inline
-void Slice::output_slice_to_medit_(std::ostream& os)
+inline void Slice::output_slice_to_medit_(std::ostream& os)
 {
    
  
@@ -319,41 +350,68 @@ void Slice::output_slice_to_medit_(std::ostream& os)
 
 }
 
-inline
-Slice::Slice(Plane_3 plane_3,Polylines_2 &polylines) : plane(plane_3)
+
+/** 
+ * Constructor: 
+ * Stores plane_3 and polylines to member variables. 
+ * @param plane_3 3D plane that represents the slice    
+ * @param polylines the constraints that determines the 2D mesh.
+ */
+inline Slice::Slice(Plane_3 plane_3,Polylines_2 &polylines) : plane(plane_3)
 {
     min_sphere.add_polylines(polylines);
 
     constraints.insert( constraints.end(),polylines.begin(),polylines.end());
 }
 
-
-inline
-void Slice::add_constraints(Slice &slice) 
+/** 
+ * Adds constraints from another Slice object .
+ * @param slice another Slice object
+ */
+inline void Slice::add_constraints(Slice &slice) 
 {  
   add_constraints(slice.get_constraints());
 }
 
-inline
-void Slice::add_constraint(Polyline_2 &polyline) 
+/** 
+ * Adds polyline to constraints .
+ * @param polyline vector of points in 2D.
+ */
+inline void Slice::add_constraint(Polyline_2 &polyline) 
 {  
      min_sphere.add_polyline(polyline);
      constraints.push_back( polyline );
 }
 
-inline
-void Slice::add_constraints(Polylines_2 &polylines) 
+
+/** 
+ * Adds polylines to constraints .
+ * @param polylines vector of vector of points in 2D.
+ */
+inline void Slice::add_constraints(Polylines_2 &polylines) 
 {  
      min_sphere.add_polylines(polylines);
      constraints.insert( constraints.end(),polylines.begin(),polylines.end());
 }
-inline
-void Slice::set_constraints() 
+
+
+/** 
+ * Adds constraints to the triangulation,
+ * @param none
+ */
+inline void Slice::set_constraints() 
 {    
      for (auto pol: constraints){cdt.insert_constraint(pol.begin(), pol.end());}
 }
-inline
-void Slice::create_mesh(double mesh_resolution) 
+
+
+
+/** 
+ * Creates 2D mesh.
+ * @param mesh_resolution a double value divisor used with the  
+          minimum bounding radius to determine the maximum  edge size.  
+ */
+inline void Slice::create_mesh(double mesh_resolution) 
 {
      set_constraints(); 
      double r = min_sphere.get_bounding_sphere_radius();
@@ -380,6 +438,10 @@ void Slice::create_mesh(double mesh_resolution)
 
 }
 
+/** 
+ * Slice a number of surfaces with the same plane, and store the constraints.
+ * @param surfaces a vector of SVMTK Surface objects defined in Surface.h 
+ */
 template<typename Surface > 
 void Slice::slice_surfaces(std::vector<Surface> surfaces) 
 {
@@ -390,6 +452,12 @@ void Slice::slice_surfaces(std::vector<Surface> surfaces)
          this->add_constraints(*temp.get()); 
    }
 }  
+
+
+/** 
+ * Transforms the 2D mesh to 3D surface mesh stores in a SVMTK Surface object.
+ * @return surf SVMTK Surface object defined in Surface.h 
+ */
 template<typename Surface> 
 std::shared_ptr<Surface> Slice::as_surface() 
 {
@@ -417,6 +485,16 @@ std::shared_ptr<Surface> Slice::as_surface()
    std::shared_ptr<Surface> surf(new  Surface(points, faces)); 
    return surf;  
 }
+
+
+
+
+/** 
+ * Add tags to the facets in the 2D mesh based on overlapping surfaces and DefaultMap.                                      
+ * @param surfaces a vector of SVMTK surface objects 
+ * @return void
+ * @see SubdomainMap.h 
+ */
 template<typename Surface> 
 void Slice::add_surface_domains(std::vector<Surface> surfaces)
 {
@@ -430,6 +508,13 @@ void Slice::add_surface_domains(std::vector<Surface> surfaces)
 
 }
 
+
+/** 
+ * Add tags to the facets in the 2D mesh based on overlapping surfaces and SubdomainMaps.                                      
+ * @param surfaces a vector of SVMTK surface objects 
+ * @param map derived from SVMTK AbstractMap objects, @see SubdomainMap.h 
+ * @return 
+ */
 template<typename Surface> 
 void Slice::add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map) 
 {
@@ -508,8 +593,13 @@ void Slice::add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map)
         
 }
 
-inline
-void Slice::simplify(const double point_density )
+
+/** 
+ * Simplify constraints to a specific point density.
+ * @param point_density the number of points pr. length
+ * @return void. 
+ */
+inline void Slice::simplify(const double point_density )
 {       
     Polylines_2 result;
     for ( auto c = this->constraints.begin(); c !=this->constraints.end(); ++c ) 
@@ -526,8 +616,12 @@ void Slice::simplify(const double point_density )
 
 }
 
-inline
-void Slice::keep_largest_connected_component() 
+/** 
+ * Calculates and keeps the largest connected component.                                          
+ * @param none 
+ * @return void removes other connected components from stored mesh.  
+ */
+inline void Slice::keep_largest_connected_component() 
 {
    std::vector<Face_handle> queue;
    std::map<Face_handle,bool> handled; 
@@ -575,9 +669,12 @@ void Slice::keep_largest_connected_component()
 
 }
 
-
-inline
-int Slice::connected_components() 
+/** 
+ * Calculates and returns the number of connected components.                                         
+ * @param none 
+ * @return num_cc number of connected components. 
+ */
+inline int Slice::connected_components() 
 {
    std::vector<Face_handle> queue;
    std::map<Face_handle,bool> handled; 
@@ -611,9 +708,12 @@ int Slice::connected_components()
 }
 
 
-
-inline
-void Slice::save(std::string outpath)
+/** 
+ * Saves the 2D mesh to file. 
+ * Valid format are: off, stl, vtu and mesh(with tags)                                          
+ * @param filename where the 2D mesh is to be stored
+ */
+inline void Slice::save(std::string outpath)
 {
      std::string extension = outpath.substr(outpath.find_last_of(".")+1);
    
@@ -648,8 +748,12 @@ void Slice::save(std::string outpath)
 
 }
 
-inline
-void Slice::write_STL(const std::string filename)// TODO : ofstream input
+
+/** 
+ * Saves the 2D mesh to file in the stl format 
+ * @param filename where the 2D mesh is to be stored
+ */
+inline void Slice::write_STL(const std::string filename)// TODO : ofstream input
 {
     std::ofstream file(filename);
     file.precision(6);

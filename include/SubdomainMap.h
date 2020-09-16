@@ -16,7 +16,6 @@
 // along with SVM-Tk.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef SubdomainMap_H
 
-
 #define SubdomainMap_H
 
 #include <boost/dynamic_bitset.hpp>
@@ -25,6 +24,10 @@
 #include <vector>
 #include <iostream>
 
+
+/**
+ * 
+ */
 class AbstractMap
 {
    public:
@@ -39,6 +42,10 @@ class AbstractMap
 };
 
 
+
+/**
+ *  
+ */
 class DefaultMap : virtual public AbstractMap
 {
    public:
@@ -73,6 +80,9 @@ class DefaultMap : virtual public AbstractMap
 
 };
 
+/**
+ *  
+ */
 class SubdomainMap :virtual public AbstractMap
 {
 

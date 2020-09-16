@@ -5,12 +5,13 @@ set(SVMKT_VERSION_MAJOR "2")
 set(SVMTK_VERSION_MINOR "0")
 set(SVMTK_VERSION_MICRO "0")
 set(SVMTK_VERSION "${SVMTK_VERSION_MAJOR}.${SVMTK_VERSION_MINOR}.${SVMTK_VERSION_MICRO}")
+set(SVMTK_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include) 
 set(CMAKE_BUILD_TYPE Release)
 include(FeatureSummary)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
+set(BUILD_TESTING ON)
 
 if (CMAKE_COMPILER_IS_GNUCXX)
   if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7)
@@ -29,7 +30,6 @@ set_package_properties(PythonInterp PROPERTIES TYPE REQUIRED
 
 find_package (Eigen3 3.2 REQUIRED NO_MODULE)
 include(${EIGEN3_USE_FILE})
-
 set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Lightweight C++ template library for linear algebra"
   URL "http://eigen.tuxfamily.org")
@@ -37,7 +37,6 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
 set(CGAL_DIR external/cgal)
 find_package(CGAL REQUIRED COMPONENTS Core)
 include(${CGAL_USE_FILE})
-
 set_package_properties(CGAL PROPERTIES TYPE REQUIRED
   DESCRIPTION "C++ template library for efficient and reliable algorithms in computational geometry"
   URL "http://www.cgal.org")
@@ -50,7 +49,6 @@ set_package_properties(GMP PROPERTIES TYPE REQUIRED
 
 find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
-
 set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")

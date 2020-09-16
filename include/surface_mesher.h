@@ -32,6 +32,10 @@
 #include <functional>
 #include <cstdlib>
 
+
+/**
+ * @see 
+ */
 template <typename FT, typename P>
 class FT_to_point_function_wrapper : public std::unary_function<P, FT>
 {
@@ -46,6 +50,10 @@ public:
 };
 
 
+/**
+ * @see
+ * @overload  
+ */
 template<typename Mesh , typename Implicit_Function> 
 void surface_mesher(Mesh& mesh, Implicit_Function func, double& x0 ,double& y0, double& z0 , double bounding_sphere_radius, double angular_bound, double radius_bound, double distance_bound ) 
 {
@@ -75,6 +83,10 @@ void surface_mesher(Mesh& mesh, Implicit_Function func, double& x0 ,double& y0, 
     CGAL::facets_in_complex_2_to_triangle_mesh(c2t3,mesh);
 
 }
+
+/**
+ * @see 
+ */
 template<typename Mesh , typename Implicit_Function>
 void surface_mesher(Mesh& mesh, Implicit_Function func,  double bounding_sphere_radius, double angular_bound, double radius_bound, double distance_bound )
 {
@@ -104,6 +116,11 @@ void surface_mesher(Mesh& mesh, Implicit_Function func,  double bounding_sphere_
     CGAL::facets_in_complex_2_to_triangle_mesh(c2t3,mesh);
 
 }
+
+
+/**
+ * @see 
+ */
 template<typename Surface>
 void poisson_reconstruction(Surface &surface,double angular_bound, double radius_bound, double distance_bound)
 { 
