@@ -91,6 +91,7 @@ respectively.
 If the test is successful you should see the following output 
 
 `----------------------------------------------------------------------`
+
 `Ran 43 tests in XXXX s`
 
 `OK`
