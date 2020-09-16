@@ -33,7 +33,7 @@ ADD examples examples
 ADD include include
 ADD python python
 # ADD source source
-ADD test test
+ADD tests tests
 ADD CMakeLists.txt .
 ADD setup.py .
 
