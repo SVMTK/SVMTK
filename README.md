@@ -1,57 +1,5 @@
 # SurfaceVolumeMeshingToolKit
 
-Clone SVMTK with the flag '--recursive' to also clone the submodules Pybind11 and CGAL.
-Alternatively run `git submodule update --init`.
-
-## Additional requirements
-
-The installation of SVMTK requires the following:  
- - Python>=3.6
- - EIGEN >= 3.2
- - CMake >= 3.5 
- - GMP   
- - MPFR
- - boost   
- - C++>=7
-
-## Installing requirements
-   see [REQUIREMENTS.md](REQUIREMENTS.md)
-
-
-## Configure Pybind11
-
-The relevant files can be found in external/pybind11 after
-
-`git clone --recursive https://github.com/SVMTK/SVMTK`
-
-The submodule can be updated with
-
-`git submodule update` --init
-
-or submodule version switched with
-
-`cd external/pybind11`
-`git checkout version`
-
-### Configure CGAL
-
-The relevant files can be found in external/cgal after 
-
-`git clone --recursive https://github.com/SVMTK/SVMTK`
-
-The submodule can be updated with 
-
-`git submodule update`
-
-or submodule version switched with 
-
-`cd external/cgal`
-`git checkout releases/CGAL-5.0.3`
-
-Tested CGAL versions 
-  - 5.0.3
-  - 5.0.2
-
 ## Installation
 
 First, ensure that all of the prerequisites needed by SVMTK are installed. 
@@ -70,7 +18,7 @@ Third, you will need to setup SVMTK. To do this you can execute
 
 `python3 setup.py install`
 
-from within the SVMTK directory.
+from within the SVMTK directory. 
 
 You may see warnings as the setup process runs; these warnings arise from the CGAL source code, which is used by SVMTK, and are no cause for concern.
 
@@ -78,7 +26,7 @@ Finally, you can test your SVMTK installation by running
  
 `python3 setup.py test`
 
-Note that, if you do not use a virtual environment, you may need to preface the above commands, for setting up and testing SVMTK, with the `sudo' keyword.  Thus, 
+Note that, if you do not use a virtual environment, you may need to preface the above commands, for setting up and testing SVMTK, with the `sudo` keyword.  Thus, 
 
 `sudo python3 setup.py install`
 
@@ -86,7 +34,7 @@ and
 
 `sudo python3 setup.py test`
 
-respectively.
+respectively. 
 
 If the test is successful you should see the following output 
 
@@ -100,7 +48,7 @@ Also check the installation with any of the examples in `examples/`
 
 ## Docker
 
-There is a Dockerfile in `docker/`
+There is a Dockerfile in the directory `docker/`.
 
 For more information on how to use docker, take a look at the docker tutorial:
 [https://docs.docker.com/get-started/]

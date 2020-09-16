@@ -1,4 +1,4 @@
-## Installing additional requirements 
+# Installing additional requirements 
 The installation script of SVMTK will automatically try to find 
 the necessary packages. Some of the packages can already be installed, 
 so it can be practical to run the install script first to get an overview 
@@ -7,9 +7,43 @@ of the missing requirements.
 Administrator privileges can be avoided by installing in a local directory. 
 
 The user can also opt for the usage of docker images that was described in
-the README.md
+the [README.md](README.md)
 
-# Python>=3.6 
+## Configure Pybind11
+
+The relevant files can be found in external/pybind11 after
+
+`git clone --recursive https://github.com/SVMTK/SVMTK`
+
+The submodule can be updated with
+
+`git submodule update --init`
+
+or submodule version switched with
+
+`cd external/pybind11`
+`git checkout version`
+
+## Configure CGAL
+
+The relevant files can be found in external/cgal after 
+
+`git clone --recursive https://github.com/SVMTK/SVMTK`
+
+The submodule can be updated with 
+
+`git submodule update`
+
+or submodule version switched with 
+
+`cd external/cgal`
+`git checkout releases/CGAL-5.0.3`
+
+Tested CGAL versions 
+  - 5.0.3
+  - 5.0.2
+
+## Python>=3.6 
 Installing python3.6
  
 `sudo apt-get update`
@@ -30,7 +64,7 @@ can change the default version python3 with
 Additional information regarding python can be read at
 <https://www.python.org>
 
-# C++>7 requriement 
+## C++>7 requriement 
 The compiler requirement c++1z require that gcc>=7. 
 
 `sudo apt-get install -y software-properties-common`
@@ -77,7 +111,7 @@ Complete the installation with
 
 Further details can be found at <http://www.boost.org>
 
-# GMP 
+## GMP 
 Installing the GMP using terminal
 
 `sudo apt-get install -y libgmp3-dev`
@@ -102,7 +136,7 @@ Complete the installation with
 
 Further details can be found at <https://gmplib.org>
 
-# MPFR
+## MPFR
 MPFR requires GMP version 5.0.0 or later.
 Installing MPFR using terminal 
 
@@ -128,7 +162,7 @@ Complete the installation with
 
 Further details can be found at <http://www.mpfr.org>
 
-# CMake >=3.5
+## CMake >=3.5
 Installing CMake using terminal 
 
 `sudo apt-get install -y cmake`
@@ -147,7 +181,7 @@ Change the install folder with
 
 There are more information regarding CMake at <http://cmake.org>
 
-# Eigen>=3.2
+## Eigen>=3.2
 Installing Eigen using terminal
 
 `sudo apt-get install -y libeigen3-dev`
