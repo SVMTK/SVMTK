@@ -268,20 +268,6 @@ void output_to_medit_(std::ostream& os,
     {
        os << facet_pmap.at(key) << '\n';
     }
-    // c3t3.surfacefit
-    // s
-    // 
-    //if ( facet_pmap.find(temp) == face_pmap.end() )
-    // else 
-    /*if (get(facet_pmap, *fit)<0)
-    {
-      os << 0 << '\n'; 
-    }
-    else 
-    {
-      os << get(facet_pmap, *fit) << '\n'; 
-
-    } */
 
     }
 
@@ -313,7 +299,10 @@ void output_to_medit_(std::ostream& os,
 }
 
 /**
- * Adds surface points to the struct, and computes the minimum bounding radius.
+ * @struct:
+ * Used to store surface points and compute 
+ * the minimum bounding radius required to 
+ * enclose all of the added surface points 
  */
 template<typename Kernel>
 struct Minimum_sphere
@@ -323,6 +312,11 @@ struct Minimum_sphere
            typedef typename CGAL::Min_sphere_of_spheres_d<MinSphereTraits> Min_sphere;
            typedef typename MinSphereTraits::Sphere Sphere;
 
+           /**
+            * Adds surface points to the struct  
+            * @param polyhedron triangulated surface structure.
+            * @return none 
+            */            
            template< typename MeshPolyhedron_3>  
            void add_polyhedron(const MeshPolyhedron_3 &polyhedron)
            {
@@ -332,6 +326,11 @@ struct Minimum_sphere
                 }
             } 
 
+           /**
+            * Computes the minimum bounding radius required to enclose the added surface points
+            * @param none   
+            * @return the radius that encloses all added surface points  
+            */
            double get_bounding_sphere_radius()
            {
                Min_sphere ms(S.begin(), S.end());
@@ -343,9 +342,9 @@ struct Minimum_sphere
 
 /**
  * Removes vertices that is not connected to any cells in the mesh.
- * @note 
  * @param c3t3 the mesh structure stored in the Domain class Obejct
  * @param remove_domain indication if a subdomain is removed, avoiding warning. 
+ * @return integer number of vertices removed.
  */
 template<typename C3T3> 
 int remove_isolated_vertices(C3T3& c3t3, bool remove_domain=false)
@@ -395,6 +394,10 @@ int remove_isolated_vertices(C3T3& c3t3, bool remove_domain=false)
 
 }
 
+/**
+ * @Class 
+ * Used to create and store the resulting tetrahedra mesh.
+ */
 class Domain {
     public :
 
@@ -460,26 +463,20 @@ class Domain {
         void add_sharp_border_edges(Polyhedron& polyhedron, double threshold);
         template<typename Surface>
         void add_sharp_border_edges(Surface& surface, double threshold=60);
-        //template<typename Surface> 
-        //void add_surface_points(Surface &surface); // FIXME operator ?? 
 
-        void set_borders();
-        void set_features();
-
-        void clear_borders(){this->borders.clear();}
-        void clear_features(){this->features.clear();}
         template<typename Surface>
         std::vector<std::shared_ptr<Surface> > get_boundaries();
         template<typename Surface>
         std::shared_ptr<Surface> get_boundary(int tag); 
 
         std::set<std::pair<int,int>> get_patches();
-        std::set<int>  get_subdomains(); // TODO: rename to subdomain tags, and write number of subdomains with retrun int 
+        std::set<int>  get_subdomains(); 
         std::set<int> get_curves();
 
-        Polylines& get_features() {return features; }  
-        Polylines& get_borders() {return borders; }
-
+        /**
+         * The following functions returns an integer of a query.
+         *  
+         */
         int number_of_subdomains(){return get_subdomains().size() ;}
         int number_of_curves(){return get_curves().size() ;}
         int number_of_patches(){return get_patches().size() ;} 
@@ -487,15 +484,38 @@ class Domain {
         int number_of_surfaces(){return v.size();}
         
         void remove_subdomain(std::vector<int> tags);
-        void remove_subdomain(int tag);              // tags 
+        void remove_subdomain(int tag);              
+
+        void set_borders();
+        void set_features();
+
+        void clear_borders(){this->borders.clear();}
+        void clear_features(){this->features.clear();}
 
         void add_border(Polyline_3 polyline) { borders.push_back(polyline);} 
         void add_feature(Polyline_3 polyline){ features.push_back(polyline);} 
 
+        Polylines& get_features() {return features; }  
+        Polylines& get_borders() {return borders; }
         
         void lloyd(double time_limit= 0, int max_iteration_number = 0, double convergence = 0.02,double freeze_bound = 0.01, bool do_freeze = true);
-        void odt(double time_limit= 0, int max_iteration_number = 0, double convergence = 0.02,double freeze_bound = 0.01, bool do_freeze = true);  
+        void odt(double time_limit= 0, int max_iteration_number = 0, double convergence = 0.02,double freeze_bound = 0.01, bool do_freeze = true); 
+          
+        /**
+         * Wrapper CGAL function for odt optimazation of the constructed mesh.  
+         * @see  (excude_optimize_mesh)[https://doc.cgal.org/latest/Mesh_3/group__PkgMesh3Functions.html]
+         * @param time_limit 
+         * @param sliver_bound 
+         * @return none 
+         */
         void exude(double time_limit = 0, double sliver_bound = 0 ){ CGAL::exude_mesh_3(c3t3, sliver_bound=sliver_bound, time_limit=time_limit);} 
+        /**
+         * Wrapper CGAL function for odt optimazation of the constructed mesh.  
+         * @see  (perturb_mesh)[https://doc.cgal.org/latest/Mesh_3/group__PkgMesh3Functions.html]
+         * @param time_limit 
+         * @param sliver_bound 
+         * @return none 
+         */
         void perturb(double time_limit=0, double sliver_bound=0){CGAL::perturb_mesh_3 ( c3t3, *domain_ptr.get(), time_limit=time_limit, sliver_bound=sliver_bound) ;} 
 
 
@@ -530,7 +550,7 @@ inline void Domain::set_borders()
  */
 inline void Domain::set_features()
 {
-  if (this->borders.size()>0)
+  if (this->features.size()>0)
   { 
      domain_ptr.get()->add_features(this->features.begin(), this->features.end());
   }
@@ -556,8 +576,7 @@ inline std::set<int> Domain::get_curves()
 
 /**
  * Constructor:
- * 
- * @param surface a vector of templated input Surface defined 
+ * @param surface a vector of templated input Surface defined in Surface.h 
  * 
  */
 template<typename Surface>
@@ -629,9 +648,9 @@ Domain::Domain(Surface &surface)
 }
 
 /**
- * TODO check
- *  Creates the mesh stored in the class member variable c3t3. 
- *  Specific mesh
+ * 
+ * Creates the mesh stored in the class member variable c3t3. 
+ * Specific CGAL mesh criteria parameters.
  * @param edge_size mesh criteria for the maximum edge size 
  * @param cell_size mesh criteria for the maximum cell size  
  * @param facet_size mesh criteria for the maximum facet size 
@@ -676,7 +695,6 @@ inline void Domain::create_mesh(double edge_size,double cell_size, double facet_
  *  @see [CGAL::Mesh_criteria](https://doc.cgal.org/latest/Mesh_3/classCGAL_1_1Mesh__criteria__3.html) 
  *  @overload
  */
-
 inline void Domain::create_mesh(const double mesh_resolution )
 {
     
@@ -719,14 +737,13 @@ inline void Domain::save(std::string outpath,bool save_1Dfeatures)
     typedef typename Generator::Facet_pmap_twice Facet_pmap_twice;
     typedef typename Generator::Vertex_pmap Vertex_pmap;
  
-    //std::map<std::pair<int,int>,int> facet_pmap = map_ptr->get_pacthes(); 
+
     Cell_pmap cell_pmap(c3t3);
     Facet_pmap facet_pmap(c3t3, cell_pmap); 
     Facet_pmap_twice  facet_twice_pmap(c3t3,cell_pmap);
     Vertex_pmap vertex_pmap(c3t3, cell_pmap,facet_pmap); // 
 
     std::map<std::pair<int,int>,int> facet_map = this->map_ptr->get_interfaces(this->number_of_surfaces() ); 
-
     output_to_medit_(medit_file,c3t3, vertex_pmap, facet_map, cell_pmap, facet_twice_pmap , false, save_1Dfeatures) ;
     medit_file.close();
 
@@ -815,7 +832,6 @@ inline void Domain::remove_subdomain(std::vector<int> tags)
         }
       }
   }
-  // rebind leftovers
   for ( auto cit = rebind.begin(); cit!=rebind.end(); ++cit)
   {
       Cell_handle cn = std::get<0>(*cit);
@@ -851,10 +867,11 @@ inline void Domain::add_sharp_border_edges(Polyhedron& polyhedron, double thresh
        Polyline_3 polyline;
        polyline.push_back(he->vertex()->point());
        polyline.push_back(he->opposite()->vertex()->point());     
-       temp.push_back(polyline);
+       this->borders.push_back(polyline);
+       //temp.push_back(polyline);
    }    
  }  
- polylines_to_protect(temp, borders.begin() , borders.end()); // REMOVE?? optional  
+ //polylines_to_protect(temp, borders.begin() , borders.end()); // REMOVE?? optional  
 }
 
 /**
@@ -959,7 +976,7 @@ std::vector<std::shared_ptr<Surface>> Domain::get_boundaries()
  * @param convergence 
  * @param freeze_bound 
  * @param do_freeze
- * @return patches vector of Surface objects
+ * @return none
  * @note Do not use lloyd after excude optimazation, since it will cause failure. 
  */
 inline void Domain::lloyd(double time_limit, int max_iteration_number, double convergence,double freeze_bound, bool do_freeze )
@@ -973,7 +990,7 @@ inline void Domain::lloyd(double time_limit, int max_iteration_number, double co
  * @param convergence 
  * @param freeze_bound 
  * @param do_freeze
- * @return patches vector of Surface objects
+ * @return none 
  * @note Do not use lloyd after excude optimazation, since it will cause failure. 
  */
 inline void Domain::odt(double time_limit, int max_iteration_number, double convergence,double freeze_bound, bool do_freeze) 

@@ -28,9 +28,9 @@ if __name__ == "__main__":
    for k in lines:
        maker.add_feature(k)
    
-   maker.add_sharp_border_edges(surf,70)
+   #maker.add_sharp_border_edges(surf,70)
    maker.create_mesh(22.)
-
+   print(maker.get_curves())
    maker.save("Helixfeature.mesh",True)
 
 

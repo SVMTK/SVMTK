@@ -2,9 +2,6 @@
 import SVMTK as svm
 
 
-def pvs(x,y,z) : 
-    return x**2 +4.*y**2 + x**2*y**2 -4.
-
 if __name__ == "__main__":
     
 
@@ -12,13 +9,13 @@ if __name__ == "__main__":
    surf2 = svm.Surface();
  
 
-   surf.make_cylinder(0.,0.,-3.,0.,0.,3.,0.8,60)
-
+   surf.make_cylinder(0.,0.,-3.,0.,0.,3.,4,180)
+   surf.save("cylinder.stl")
    maker = svm.Domain(surf)
 
-   maker.add_sharp_border_edges(surf,90)
+   maker.add_sharp_border_edges(surf,60)
 
-   maker.create_mesh(42)
-
+   maker.create_mesh(28)
+   maker.exude(10,0) 
 
    maker.save("cylinder.mesh")

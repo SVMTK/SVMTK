@@ -152,7 +152,9 @@ PYBIND11_MODULE(SVMTK, m) {
 
     py::class_<SubdomainMap,AbstractMap,std::shared_ptr<SubdomainMap>>(m, "SubdomainMap")
         .def(py::init<>())
+        //.def(py::init<int>())
         .def("print",  &SubdomainMap::print)
+        .def("set_number_of_surfaces", &SubdomainMap::set_number_of_surfaces)
         .def("add_interface", &SubdomainMap::add_interface)
         .def("add", &SubdomainMap::add);
        
@@ -257,7 +259,7 @@ PYBIND11_MODULE(SVMTK, m) {
 
         .def("get_boundary", &Domain::get_boundary<Surface>, py::arg("tag")=0)
         .def("get_boundaries", &Domain::get_boundaries<Surface>)
-        .def("get_curves", &Domain::get_curves)
+        //.def("get_curves", &Domain::get_curves)
         .def("get_patches", &Domain::get_patches)
         .def("get_subdomains", &Domain::get_subdomains)
 

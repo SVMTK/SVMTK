@@ -49,6 +49,7 @@ class Domain_Test(unittest.TestCase):
         surface = domain.get_boundary(3) 
         self.assertTrue(surface.num_vertices()==128 and surface.num_faces()==235 and surface.num_edges()==366) 
         surfaces =  domain.get_boundaries()  
+        print(len(surfaces))
         self.assertEqual(len(surfaces),2) 
 
 

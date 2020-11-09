@@ -1,40 +1,44 @@
 # SurfaceVolumeMeshingToolKit
 
+Surface Volume Meshing Toolkit (SVMTK) is a Python frontend for specific 2D and 3D mesh generation methods in the Computational Geometry Algorithms Library [(CGAL)](https://www.cgal.org/) . 
+
+SVMTK was designed to create volume meshes of soft organic tissue surfaces, like the human brain, with the option to repair unphysical errors on the surfaces.
+
+
 ## Installation
 
-First, ensure that all of the prerequisites needed by SVMTK are installed. 
+First, ensure that all of the prerequisites needed by SVMTK are installed.  Installation instructions for all of the SVMTK requirements can be found in [REQUIREMENTS.md](REQUIREMENTS.md)
 
-Installation instructions for all of the SVMTK requirements can be found in [REQUIREMENTS.md](REQUIREMENTS.md)
-
-Next, clone the SVMTK repository by 
+Next, clone the SVMT repository by 
 
 `git clone --recursive https://github.com/SVMTK/SVMTK`
 
 If you have already installed SVMTK you can update your installation with the following command executed in the /SVMTK directory
 
+`git pull origin master`
 `git submodule update --init`
 
-Third, you will need to setup SVMTK. To do this you can execute 
+Third, you will need to setup SVMTK if you have not already done so.  To do this you can execute 
 
 `python3 setup.py install`
 
-from within the SVMTK directory. 
+from within the SVMT directory.  If you have, instead, updated an existing SVMT installation 
+you should first clean any residual files by issuing the following command
+
+`python3 setup.py clean`
+
+It is advised, but not required, that you use a virtual environment for python.  (see [https://docs.python.org/3/tutorial/venv.html] for instructions on using a python virtual environment)
 
 You may see warnings as the setup process runs; these warnings arise from the CGAL source code, which is used by SVMTK, and are no cause for concern.
 
-Finally, you can test your SVMTK installation by running
- 
+Finally, you can test your SVMTK installation by running 
+
 `python3 setup.py test`
 
-Note that, if you do not use a virtual environment, you may need to preface the above commands, for setting up and testing SVMTK, with the `sudo` keyword.  Thus, 
+Note that, if you do not use a virtual environment, you may need to preface the above commands, for setting up and testing SVMTK, with the `sudo' keyword.  Thus, 
 
 `sudo python3 setup.py install`
-
-and
-
-`sudo python3 setup.py test`
-
-respectively. 
+`sudo python3 setup.py clean`
 
 If the test is successful you should see the following output 
 
