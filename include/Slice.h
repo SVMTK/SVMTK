@@ -16,9 +16,8 @@
 // along with SVM-Tk.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef __Slice_H
 
-
 #define __Slice_H
-#include "SubdomainMap.h" // need to template 
+#include "SubdomainMap.h" 
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
@@ -46,10 +45,7 @@
 
 #include <CGAL/IO/write_off_points.h>
 #include <CGAL/IO/write_xyz_points.h>
-
 #include <CGAL/IO/write_vtu.h>
-
-
 #include <CGAL/IO/Triangulation_off_ostream_2.h>
 
 #include <CGAL/utils.h>
@@ -67,11 +63,9 @@
 #include <iterator>
 #include <fstream>
 
-
-
 /**
  * Function to compute the length of an polyline 
- * 
+ * i.e. vector of points
  * @param begin iterator for an vector of points 
  * @param end iterator for an vector of points   
  */
@@ -82,16 +76,15 @@ double length_polyline( InputIterator begin , InputIterator end)
   for ( ; begin != end; ++begin)
   {
      length += static_cast<double>( CGAL::sqrt(CGAL::squared_distance(*begin, *(begin+1) ) ) ); 
-
-  } 
-        
+  }         
   return length; 
-
 } 
 
-
 /**
- * Adds polyline points to the struct, and computes the minimum bounding radius.
+ * @struct:
+ * Used to store points and compute 
+ * the minimum bounding radius required to 
+ * enclose all of the added points 
  */
 template< typename Kernel>
 struct Minimum_sphere_2
@@ -104,7 +97,11 @@ struct Minimum_sphere_2
     typedef typename std::vector<typename Kernel::Point_2> Polyline_2;
     typedef typename std::vector<Polyline_2> Polylines_2;  
   
-
+    /**
+     * Adds vector of points to the struct  
+     * @param polyline a vector of points in 2D.
+     * @return none 
+    */     
     void add_polyline( const Polyline_2 &polyline) 
     {
          for (auto it=polyline.begin();it != polyline.end(); ++it)
@@ -112,7 +109,12 @@ struct Minimum_sphere_2
              S.push_back(Sphere(*it, 0.0));
          }
     }
-
+    
+    /**
+     * Adds  vector of vector of points to the struct  
+     * @param polylines a vector of vector of points in 2D.
+     * @return none 
+    */  
     void add_polylines(const Polylines_2 &polylines)
     {
          for (auto it=polylines.begin();it != polylines.end(); ++it)
@@ -123,7 +125,12 @@ struct Minimum_sphere_2
              }
          }
      } 
-
+     
+     /**
+      * Computes the minimum bounding radius required to enclose the added points.
+      * @param none   
+      * @return the radius that encloses all added points  
+      */
      double get_bounding_sphere_radius()
      {
           Min_sphere ms(S.begin(), S.end());
@@ -133,22 +140,18 @@ struct Minimum_sphere_2
          std::vector<Sphere> S;
 };
 
-
-
 /**
  *  
  */
 class Slice
 {
-
     public :
-     
+       // See (https://doc.cgal.org/latest/Kernel_23/group__kernel__predef.html)
        typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
  
        typedef Kernel::Plane_3   Plane_3;
        typedef Kernel::Point_2   Point_2;
        typedef Kernel::Point_3   Point_3;
-
 
        typedef CGAL::Triangulation_vertex_base_with_info_2<int,Kernel>    Vb;
        typedef CGAL::Triangulation_face_base_with_info_2<int,Kernel>      Fb_w_i;
@@ -159,7 +162,7 @@ class Slice
 
        typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
 
-       typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, Tds,CGAL::Exact_predicates_tag> CDT1; //??
+       typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, Tds,CGAL::Exact_predicates_tag> CDT1; 
        typedef CGAL::Constrained_triangulation_plus_2<CDT1> CDT;
        
        typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
@@ -167,7 +170,6 @@ class Slice
 
        typedef CGAL::Polyline_simplification_2::Stop_below_count_ratio_threshold Stop;
        typedef CGAL::Polyline_simplification_2::Squared_distance_cost Cost;
-
 
        typedef CDT::Face_handle     Face_handle;
        typedef CDT::Vertex_handle   Vertex_handle;
@@ -183,7 +185,6 @@ class Slice
        Slice(){}
        ~Slice(){} 
 
-
        void set_plane(Plane_3 inplane){ this->plane = inplane;}
        Plane_3& get_plane(){return this->plane;}
        template<typename Surface> 
@@ -198,13 +199,12 @@ class Slice
 
        void create_mesh(double mesh_resolution);    
        void simplify( const double point_density=0.4 );
-       int connected_components(); 
+       int  connected_components(); 
        void keep_largest_connected_component(); 
 
        void add_constraints(Polylines_2 &polylines); 
        void add_constraints(Slice &slice);
        void add_constraint(Polyline_2 &polyline);
-
 
        Polylines_2& get_constraints() { return constraints;}
 
@@ -218,24 +218,19 @@ class Slice
        std::set<int> get_subdomains();
        std::map<Edge,int>& get_edges(){return this->edges;}  
 
-        
        template<typename Surface> 
        std::shared_ptr<Surface> as_surface();
-
 
        double get_bounding_circle_radius(){return min_sphere.get_bounding_sphere_radius();} 
        void save(std::string outpath);
        void output_slice_to_medit_(std::ostream& os);
        void write_STL(const std::string filename);
 
-
        struct sort_vectors_by_size {
                   template<typename T>
                   bool operator()(const std::vector<T> & a, const std::vector<T> & b)
-                       { return a.size() > b.size(); }
-                   
+                       { return a.size() > b.size(); }                   
        };
-
     private:
        Minimum_sphere_2<Kernel> min_sphere;
        Polylines_2 constraints;
@@ -244,6 +239,7 @@ class Slice
        std::map<Edge,int> edges; 
 
 };
+
 /**
  * Returns a set of integer that represents the subdomains in the mesh.   
  * 
@@ -256,14 +252,12 @@ inline std::set<int> Slice::get_subdomains()
    for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
    {
        result.insert( static_cast<int>(fit->info()));
-
    }
    return result;
 }
 
 /**
  * Removes all cells in the mesh with a specified integer tag   
- * 
  * @param tag removes cells with this integer tag
  * @overload
  */
@@ -274,10 +268,8 @@ inline void Slice::remove_subdomains(int tag)
     remove_subdomains(tags);
 }
 
-
 /**
  * Removes all cells in the mesh with tags in a vector.  
- * 
  * @param tags vector of cell tag to be removed. 
  * @overload
  */
@@ -289,6 +281,7 @@ inline void Slice::remove_subdomains(std::vector<int> tags)
            cdt.delete_face(fit);
     } 
 }
+
 /** 
  * Based on CGAL output_to_medit, but for 2D meshes.
  * @see [output_to_medit] (https://github.com/CGAL/cgal/blob/master/Mesh_3/include/CGAL/IO/File_medit.h) 
@@ -296,8 +289,6 @@ inline void Slice::remove_subdomains(std::vector<int> tags)
  */
 inline void Slice::output_slice_to_medit_(std::ostream& os)
 {
-   
- 
   Tds tds = cdt.tds();
   os << std::setprecision(17);
   os << "MeshVersionFormatted 1\n"
@@ -305,7 +296,6 @@ inline void Slice::output_slice_to_medit_(std::ostream& os)
   //-------------------------------------------------------
   // Vertices
   //-------------------------------------------------------
-
   os << "Vertices\n" << cdt.number_of_vertices() << '\n';
   boost::unordered_map<Vertex_handle, int> V;
   int inum = 1;
@@ -315,9 +305,7 @@ inline void Slice::output_slice_to_medit_(std::ostream& os)
     vit->info() = 0; 
     os << *vit <<" "<< 0 <<'\n';
   }
-  
   std::map<std::pair<Vertex_handle,Vertex_handle>,int> set_edges; 
-
   for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
   {
      for( int i =0; i<3; ++i)
@@ -342,14 +330,10 @@ inline void Slice::output_slice_to_medit_(std::ostream& os)
   << cdt.number_of_faces()<< '\n';
   for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
   {
-     
         os << V[fit->vertex(0)]<< " " <<V[fit->vertex(1)]<<" " <<V[fit->vertex(2)]<< " " <<fit->info() <<"\n";
-   
   }
   os << "End\n";
-
 }
-
 
 /** 
  * Constructor: 
@@ -360,7 +344,6 @@ inline void Slice::output_slice_to_medit_(std::ostream& os)
 inline Slice::Slice(Plane_3 plane_3,Polylines_2 &polylines) : plane(plane_3)
 {
     min_sphere.add_polylines(polylines);
-
     constraints.insert( constraints.end(),polylines.begin(),polylines.end());
 }
 
@@ -383,7 +366,6 @@ inline void Slice::add_constraint(Polyline_2 &polyline)
      constraints.push_back( polyline );
 }
 
-
 /** 
  * Adds polylines to constraints .
  * @param polylines vector of vector of points in 2D.
@@ -394,17 +376,14 @@ inline void Slice::add_constraints(Polylines_2 &polylines)
      constraints.insert( constraints.end(),polylines.begin(),polylines.end());
 }
 
-
 /** 
- * Adds constraints to the triangulation,
+ * Adds constraints to the CGAL triangulation object cdt,
  * @param none
  */
 inline void Slice::set_constraints() 
 {    
      for (auto pol: constraints){cdt.insert_constraint(pol.begin(), pol.end());}
 }
-
-
 
 /** 
  * Creates 2D mesh.
@@ -417,13 +396,10 @@ inline void Slice::create_mesh(double mesh_resolution)
      double r = min_sphere.get_bounding_sphere_radius();
      double longest_edge = r/mesh_resolution;
      Mesher mesher(cdt);    
-     
-
      mesher.set_criteria(Criteria(0.125, longest_edge));
 
      std::cout << "Start  meshing."  << std::endl;
      mesher.refine_mesh(); 	
-
      std::cout << "Done  meshing."   << std::endl;
     
      for(CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit)
@@ -434,8 +410,6 @@ inline void Slice::create_mesh(double mesh_resolution)
             fit->vertex(i)->info()=0;
          }
      }
-
-
 }
 
 /** 
@@ -448,11 +422,9 @@ void Slice::slice_surfaces(std::vector<Surface> surfaces)
    for ( auto surf : surfaces ) 
    {
          std::shared_ptr<Slice> temp = surf.template mesh_slice<Slice>(this->plane);     
-
          this->add_constraints(*temp.get()); 
    }
 }  
-
 
 /** 
  * Transforms the 2D mesh to 3D surface mesh stores in a SVMTK Surface object.
@@ -461,7 +433,6 @@ void Slice::slice_surfaces(std::vector<Surface> surfaces)
 template<typename Surface> 
 std::shared_ptr<Surface> Slice::as_surface() 
 {
- 
   typedef std::vector<std::size_t> Face;
   typedef CDT::Vertex_handle Vertex_handle;
 
@@ -486,9 +457,6 @@ std::shared_ptr<Surface> Slice::as_surface()
    return surf;  
 }
 
-
-
-
 /** 
  * Add tags to the facets in the 2D mesh based on overlapping surfaces and DefaultMap.                                      
  * @param surfaces a vector of SVMTK surface objects 
@@ -505,9 +473,7 @@ void Slice::add_surface_domains(std::vector<Surface> surfaces)
    }
    DefaultMap map =DefaultMap();
    add_surface_domains(surfaces,map);
-
 }
-
 
 /** 
  * Add tags to the facets in the 2D mesh based on overlapping surfaces and SubdomainMaps.                                      
@@ -527,11 +493,11 @@ void Slice::add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map)
    typedef std::pair<int,int>  Pid; 
    typedef std::map<Pid,int> Pid_map;
    int fn,fi;
-   
    Pid_map pid_map_;
    Pid spp;
    std::map<Face_handle,Bmask> masks;
    int index_counter=1;
+   
    for ( auto surf :  surfaces) 
    {
        typename Surface::Inside inside(surf.get_mesh());
@@ -545,15 +511,12 @@ void Slice::add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map)
           else
              masks[fit].push_back(0);
        }
-
    } 
    for (auto bit : masks)
    {
        bit.first->info()=map.index(bit.second);
        if (bit.first->info()==0)
           cdt.delete_face(bit.first);
-  
-   
    }
    Edge ei;
    for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
@@ -580,19 +543,14 @@ void Slice::add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map)
                 index_counter++;
             }
             this->edges[ei] = pid_map_[spp];    
-            }
-            else
-            {
-               this->edges[ei] =  0;
-            }          
-         }
-       
-
-
+        }
+        else
+        {
+           this->edges[ei] =  0;
+        }          
      }
-        
+  }        
 }
-
 
 /** 
  * Simplify constraints to a specific point density.
@@ -612,8 +570,6 @@ inline void Slice::simplify(const double point_density )
     }
     this->constraints.clear();
     this->constraints=result;
-
-
 }
 
 /** 
@@ -664,9 +620,7 @@ inline void Slice::keep_largest_connected_component()
               cdt.delete_face(*fit);
 
           }
-
     } 
-
 }
 
 /** 
@@ -701,12 +655,10 @@ inline int Slice::connected_components()
             queue.push_back(fin);
          }
       }
-     num_cc++;
-      
+     num_cc++;      
    }
    return num_cc;
 }
-
 
 /** 
  * Saves the 2D mesh to file. 
@@ -716,7 +668,6 @@ inline int Slice::connected_components()
 inline void Slice::save(std::string outpath)
 {
      std::string extension = outpath.substr(outpath.find_last_of(".")+1);
-   
      if ( cdt.number_of_faces()==0 ) 
      {
         std::cout <<"The resulting mesh has no facet, and will not be saved"<< std::endl;
@@ -735,31 +686,25 @@ inline void Slice::save(std::string outpath)
      else if ( extension=="vtu")
      {
         std::ofstream out(outpath);
-        CGAL::write_vtu(out,cdt);
-
-        
+        CGAL::write_vtu(out,cdt);  
      }
      else if ( extension=="mesh")
      {
          std::ofstream out(outpath);
          output_slice_to_medit_(out);
      }
-
-
 }
-
 
 /** 
  * Saves the 2D mesh to file in the stl format 
  * @param filename where the 2D mesh is to be stored
  */
-inline void Slice::write_STL(const std::string filename)// TODO : ofstream input
+inline void Slice::write_STL(const std::string filename)
 {
     std::ofstream file(filename);
     file.precision(6);
 
     file << "solid "<< filename << std::endl;
-
     for (CDT::Face_iterator fit = cdt.faces_begin(); fit != cdt.faces_end(); ++fit )
     {
        Point_3 p1 = plane.to_3d( fit->vertex(0)->point() );
@@ -778,7 +723,6 @@ inline void Slice::write_STL(const std::string filename)// TODO : ofstream input
        file <<"endfacet"<< std::endl;
     }
     file << "endsolid"  << std::endl;
-
 }
 
 

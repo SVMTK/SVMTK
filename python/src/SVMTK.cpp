@@ -151,11 +151,13 @@ PYBIND11_MODULE(SVMTK, m) {
     py::class_<AbstractMap,PyAbstractMap,std::shared_ptr<AbstractMap>>(m,"AbstractMap");
 
     py::class_<SubdomainMap,AbstractMap,std::shared_ptr<SubdomainMap>>(m, "SubdomainMap")
-        .def(py::init<>())
-        //.def(py::init<int>())
+        //.def(py::init<>())
+        .def(py::init<int>(), py::arg("num_surfaces")=0)
         .def("print",  &SubdomainMap::print)
         .def("set_number_of_surfaces", &SubdomainMap::set_number_of_surfaces)
         .def("add_interface", &SubdomainMap::add_interface)
+        .def("get_interfaces", &SubdomainMap::get_interfaces,py::arg("number_of_surfaces")=0)
+        .def("erase", &SubdomainMap::erase)
         .def("add", &SubdomainMap::add);
        
 

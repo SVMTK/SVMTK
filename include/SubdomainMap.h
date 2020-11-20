@@ -19,6 +19,7 @@
 #define SubdomainMap_H
 
 #include <boost/dynamic_bitset.hpp>
+#include <boost/lexical_cast.hpp>
 #include <map>
 #include <string>
 #include <vector>
@@ -38,12 +39,12 @@ class AbstractMap
         virtual return_type index(const Bmask bits) = 0;
         //virtual return_type patch_index(const double s1,const double s2)=0;
         virtual const std::map<std::pair<int,int>,int> get_interfaces(const int number_of_surfaces)=0;
+        //AbstractMap(int num_surfaces) :  _num_surfaces(num_surfaces)   {}
         AbstractMap() {}
+        //get_num_surfaces() {return _num_surfaces;}
         virtual ~AbstractMap() {}
 
 };
-
-
 
 /**
  *  Class: 
@@ -57,11 +58,11 @@ class DefaultMap : virtual public AbstractMap
         typedef int return_type;
         typedef boost::dynamic_bitset<> Bmask;
     
-        DefaultMap() {}
+        DefaultMap()  {}
         ~DefaultMap() {} 
          
         /** 
-         * TODO: description 
+         * Maps bistring to an integer using binary conversion to integer
          * @param bits a bitstring of the form boost::dynamic_bitset.
          * @return long conversion of the bit string.
          */
@@ -71,7 +72,8 @@ class DefaultMap : virtual public AbstractMap
         }
               
         /** 
-         * TODO: description 
+         * Return all possbile combination of a binarystring with number of elements  
+         * equal to the number of surfaces.
          * @param integer of the number of surfaces 
          * @return patches a map of unique combination of pairs with an unique integer. 
          */      
@@ -90,8 +92,6 @@ class DefaultMap : virtual public AbstractMap
            } 
            return patches;
         }
-
-
 };
 
 /**
@@ -103,9 +103,6 @@ class DefaultMap : virtual public AbstractMap
 inline 
 void generate_binary_strings(std::string string, std::vector<std::string>& strings, int max_elements) 
 {
-
-
-
     if( static_cast<int>(string.length())<max_elements)
     {
        generate_binary_strings(string+"0", strings, max_elements); 
@@ -114,8 +111,7 @@ void generate_binary_strings(std::string string, std::vector<std::string>& strin
     else if ( static_cast<int>(string.length())==max_elements) 
     {
        strings.push_back(string);
-    } 
-    
+    }    
     return;
 }
 
@@ -126,10 +122,13 @@ class SubdomainMap :virtual public AbstractMap
         typedef int return_type;
         typedef boost::dynamic_bitset<> Bmask;
        
-       // SubdomainMap(int number_of_surfaces) : num_surfaces(number_of_surfaces) {}
+        SubdomainMap(int number_of_surfaces) : num_surfaces(number_of_surfaces) 
+        {
+            std::string zero_tag = std::string(number_of_surfaces , '0');
+            add(zero_tag,0);        
+        }
         SubdomainMap() : num_surfaces(0) {}
-        ~SubdomainMap() {} 
-
+         ~SubdomainMap() {} 
 
         /**
          * Set the number of surfaces, optional 
@@ -138,7 +137,9 @@ class SubdomainMap :virtual public AbstractMap
          */
         void set_number_of_surfaces(int number_of_surfaces) 
         {
-            this->num_surfaces = number_of_surfaces;
+            this->num_surfaces= number_of_surfaces;
+            std::string zero_tag = std::string(number_of_surfaces , '0');
+            add(zero_tag,0);
         }
 
         /**
@@ -156,33 +157,20 @@ class SubdomainMap :virtual public AbstractMap
          */
         void fill(std::string istring, int pos, int tag)
         {
-
              std::vector<std::string>  strings; 
              std::string dummy;
-             generate_binary_strings(dummy, strings, this->num_surfaces - static_cast<int>(istring.length())  ); 
-                                  
+             generate_binary_strings(dummy, strings, this->num_surfaces - static_cast<int>(istring.length())  );  
              for ( auto i : strings)
-             {
-                
+             {   
                 if (pos==0)
                 { 
                    this->add(i+istring,tag); 
-
                 }
                 else 
                 {  
                    this->add(istring+i,tag); 
-
                 }
              }
-
-             std::string zero_tag;
-             for( int j =0 ; j<this->num_surfaces ; j++) 
-             {
-             zero_tag.append("0");
-             }
-             
-             add(zero_tag,0);
         }
 
         /**
@@ -200,7 +188,10 @@ class SubdomainMap :virtual public AbstractMap
               if ( string.find("*") !=std::string::npos)
               {
                   int pos = static_cast<int>(string.find("*"));  
-                  string.erase(pos);
+                  if (pos==0)
+                     string.erase(pos,1);
+                  else
+                     string.erase(pos);                     
                   fill(string,pos,subdomain);
               }
               else 
@@ -210,11 +201,24 @@ class SubdomainMap :virtual public AbstractMap
            }  
            else 
            {
+           // reverse the string since boost dyamic bitset reads the string in reverse
            std::reverse( string.begin(), string.end());
-           subdmap[Bmask(string)]=subdomain;
+           if (subdmap.find(Bmask(string)) == subdmap.end() )
+               subdmap[Bmask(string)]=subdomain;
            }
         } 
-
+        
+        /**
+         * Erase binary string from SubdomainMap 
+         * @param string a bitstring to remove from SubdomainMap 
+         * @return void
+         */
+        void erase(std::string string)
+        {
+           // reverse the string since boost dyamic bitset reads the string in reverse
+           std::reverse( string.begin(), string.end());
+           subdmap.erase(Bmask(string));
+        }
         /** 
          * Checks wether a point is inside a series of surfaces and returns 
          * a bitstring indicating with 1 if point is inside surface or 0 if not.
@@ -234,7 +238,10 @@ class SubdomainMap :virtual public AbstractMap
         {
            for(std::map<boost::dynamic_bitset<>,int>::iterator it=subdmap.begin();it!=subdmap.end();++it )
            {
-              std::cout<< "Subdomain: " << it->first << " " << it->second << " " << std::endl;
+              // Reversed so to look like what was added
+              std::string dummy = boost::lexical_cast<std::string>(it->first);
+              std::reverse(dummy.begin(),dummy.end());
+              std::cout<< "Subdomain: " << dummy << " " << it->second << " " << std::endl;
            }
            for(std::map<std::pair<int,int>,int>::iterator it=patches.begin();it!=patches.end();++it )
            {
@@ -307,7 +314,5 @@ class SubdomainMap :virtual public AbstractMap
    protected:
         std::map<std::pair<int,int> ,int> patches;
 };
-
-
 
 #endif

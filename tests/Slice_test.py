@@ -36,7 +36,7 @@ class Slice_Test(unittest.TestCase):
         surface2.make_cube(-2.,-2.,-2.,2.,2.,2.,1)
 
 
-        sf= SVMTK.SubdomainMap() 
+        sf= SVMTK.SubdomainMap(0) 
         sf.add("11",2)
         sf.add("11",2)
         slice_ = SVMTK.Slice(SVMTK.Plane_3(0,0,1,0))

@@ -32,9 +32,10 @@
 #include <functional>
 #include <cstdlib>
 
-
 /**
- * @see 
+ * Wrapper: 
+ * Wraps a function with structure : double functions( double, double,double) 
+ * to a function with structure : FT functions(Point p) 
  */
 template <typename FT, typename P>
 class FT_to_point_function_wrapper : public std::unary_function<P, FT>
@@ -49,9 +50,18 @@ public:
   FT_to_point_function_wrapper();
 };
 
-
 /**
- * @see
+ * Used to mesh a implicit surfaces of a sphere i.e. SVMTK class Surface function make_sphere.
+ * Has origin as input, thus it will mesh for an arbitary origin.
+ * @see [Surface_mesher](https://doc.cgal.org/latest/Surface_mesher/index.html)
+ * @param Surface mesh CGAL surface mesh object
+ * @param x0 indicating origin in cartesian coordinates x-direction
+ * @param y0 indicating origin in cartesian coordinates y-direction
+ * @param z0 indicating origin in cartesian coordinates z-direction
+ * @para bounding_sphere_radius indicating the radius of a sphere bounding the meshing operations
+ * @para angular_bound bounds for the minimum facet angle in degrees.
+ * @para radius_bound bound for the minimum for the radius of the surface Delaunay balls and the center-center distances respectively.
+ * @para distance_bound bound for the minimum center-center distances respectively.
  * @overload  
  */
 template<typename Mesh , typename Implicit_Function> 
@@ -81,11 +91,17 @@ void surface_mesher(Mesh& mesh, Implicit_Function func, double& x0 ,double& y0, 
     CGAL::make_surface_mesh(c2t3, surface, criteria, CGAL::Non_manifold_tag());
 
     CGAL::facets_in_complex_2_to_triangle_mesh(c2t3,mesh);
-
 }
 
 /**
- * @see 
+ * Used to mesh a implicit surfaces based on a function with structure double function( double,double,double )
+ * @see [Surface_mesher](https://doc.cgal.org/latest/Surface_mesher/index.html)
+ * @param mesh a CGAL surface mesh object
+ * @para bounding_sphere_radius indicating the radius of a sphere bounding the meshing operations
+ * @para angular_bound bounds for the minimum facet angle in degrees.
+ * @para radius_bound bound for the minimum for the radius of the surface Delaunay balls and the center-center distances respectively.
+ * @para distance_bound bound for the minimum center-center distances respectively.
+ * @overload  
  */
 template<typename Mesh , typename Implicit_Function>
 void surface_mesher(Mesh& mesh, Implicit_Function func,  double bounding_sphere_radius, double angular_bound, double radius_bound, double distance_bound )
@@ -114,12 +130,17 @@ void surface_mesher(Mesh& mesh, Implicit_Function func,  double bounding_sphere_
 
     CGAL::make_surface_mesh(c2t3, surface, criteria, CGAL::Non_manifold_tag());
     CGAL::facets_in_complex_2_to_triangle_mesh(c2t3,mesh);
-
 }
 
-
 /**
- * @see 
+ * Reconstruct a surface based on a CGAL surface mesh object with points using CGAL poisson_reconstruction algorithm.
+ * @see [poisson_reconstruction](https://doc.cgal.org/latest/Poisson_surface_reconstruction_3/index.html)
+ * @param surface CGAL surface mesh object
+ * @para bounding_sphere_radius indicating the radius of a sphere bounding the meshing operations
+ * @para angular_bound bounds for the minimum facet angle in degrees.
+ * @para radius_bound bound for the minimum for the radius of the surface Delaunay balls and the center-center distances respectively.
+ * @para distance_bound bound for the minimum center-center distances respectively.
+ * @overload  
  */
 template<typename Surface>
 void poisson_reconstruction(Surface &surface,double angular_bound, double radius_bound, double distance_bound)
@@ -139,8 +160,6 @@ void poisson_reconstruction(Surface &surface,double angular_bound, double radius
      typedef CGAL::Complex_2_in_triangulation_3<Tr> C2t3;
 
      FT sm_distance(distance_bound) ;
-
-
 
      PointList points;
      Tr tr;
@@ -167,10 +186,8 @@ void poisson_reconstruction(Surface &surface,double angular_bound, double radius
                       Sphere_3(inner_point,sm_sphere_radius*sm_sphere_radius),
                       sm_dichotomy_error/sm_sphere_radius);
   
-
      CGAL::Surface_mesh_default_criteria_3<Tr> criteria(angular_bound,radius_bound,distance_bound);
      CGAL::make_surface_mesh(c2t3, implicit_surface, criteria, CGAL::Manifold_tag());
      CGAL::facets_in_complex_2_to_triangle_mesh(c2t3,surface.get_mesh());
- 
 }
 #endif
