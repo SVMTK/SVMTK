@@ -1,9 +1,9 @@
-// Copyright (C) 2018-2019 Lars Magnus Valnes and 
+// Copyright (C) 2018-2021 Lars Magnus Valnes 
 //
 // This file is part of Surface Volume Meshing Toolkit (SVM-TK).
 //
 // SVM-Tk is free software: you can redistribute it and/or modify
-// it undXFV4GHXgEzjYPm9er the terms of the GNU General Public License as published by
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
@@ -38,7 +38,7 @@ class AbstractMap
         
         virtual return_type index(const Bmask bits) = 0;
         //virtual return_type patch_index(const double s1,const double s2)=0;
-        virtual const std::map<std::pair<int,int>,int> get_interfaces(const int number_of_surfaces)=0;
+        virtual const std::map<std::pair<int,int>,int> get_interfaces(std::vector<std::pair<int,int>> interfaces)=0;
         //AbstractMap(int num_surfaces) :  _num_surfaces(num_surfaces)   {}
         AbstractMap() {}
         //get_num_surfaces() {return _num_surfaces;}
@@ -70,25 +70,30 @@ class DefaultMap : virtual public AbstractMap
         {
            return static_cast<return_type>(bits.to_ulong());
         }
-              
+        struct sort_pairs{
+                  template<typename T>
+                  bool operator()(const std::vector<T> & a, const std::vector<T> & b)
+                       { return a.size() > b.size(); }                   
+       };           
         /** 
-         * Return all possbile combination of a binarystring with number of elements  
-         * equal to the number of surfaces.
-         * @param integer of the number of surfaces 
+         * Gives each interfaces an unique tag based on presence in mesh and 
+         * from the highest cell tag. Ex:(Cell tags 1 2 -> Interface tags 3 4 5)
+         * @param interfaces a vector of integer pairs that represent cell tag between a facet.
          * @return patches a map of unique combination of pairs with an unique integer. 
          */      
-        const std::map<std::pair<int,int>,int> get_interfaces(const int number_of_surfaces)
+        const std::map<std::pair<int,int>,int> get_interfaces(std::vector<std::pair<int,int>> interfaces)
         { 
-             
-           int ulim =  pow (2,number_of_surfaces )+1; 
-           std::map<std::pair<int,int> ,int> patches;
-           int iter=1;
-           for(int i =1; i< ulim; i++ )
-           {
-              for(int j=0; j< i ; j++)
-              {
-                 patches[std::pair<int,int>(i,j)]=iter++;
-              }
+           std::map<std::pair<int,int> ,int> patches;  
+           int iter =0;
+           for( auto interface : interfaces )  
+           {  
+               if (interface.first > iter)
+                    iter = interface.first ;                 
+           } 
+           iter++;
+           for( auto interface : interfaces )  
+           {  
+               patches[std::pair<int,int>(interface.first,interface.second)]=iter++;
            } 
            return patches;
         }
@@ -279,31 +284,30 @@ class SubdomainMap :virtual public AbstractMap
 
         /**    
          * Returns the content of class member variable patches between subdomains with 
-         * the corresponding tag value. If patches is empty, it will return all combinations 
-         * of surfaces patches dependent on the number of surfaces.
-         * @param number_of_surfaces an integer that indicates the number of surfaces 
+         * the corresponding tag value. If patches is empty, gives each interfaces an unique 
+         * tag based on presence in mesh and the highest cell tag 
+         * @param interfaces contains a set of all interfaces between cells used in the mesh. 
          * @return patches a map  with pair of integers as key and a integer tag value.
          */
-        const std::map<std::pair<int,int>, int> get_interfaces(const int number_of_surfaces)
+        const std::map<std::pair<int,int>, int> get_interfaces(std::vector<std::pair<int,int>> interfaces)
         {
            if (!patches.empty()) 
            {
               return patches;
            }
            else
-           {
-              int iter=1;
-              std::vector<int> tags = get_tags();
-              for( auto i : tags )
-              {
-                 for(auto j : tags)
-                 {
-                    if( j>i )
-                    {
-                      patches[std::pair<int,int>(j,i)]=iter++;
-                    }
-                 } 
-              }
+           {  
+              int iter =0;
+              for( auto interface : interfaces )  
+              {  
+                  if (interface.first > iter)
+                      iter = interface.first;                  
+              } 
+              iter++;
+              for( auto interface : interfaces )  
+              {  
+                      patches[std::pair<int,int>(interface.first,interface.second)]=iter++;
+              } 
               return patches;
            } 
         }

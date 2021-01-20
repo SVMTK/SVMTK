@@ -6,12 +6,15 @@ of the missing requirements.
 
 Administrator privileges can be avoided by installing in a local directory. 
 
+Be aware that the installation may fail if multiple versions of packages exists. 
+
 The user can also opt for the usage of docker images that was described in
 the [README.md](README.md)
 
+
 ## Configure Pybind11
 
-The relevant files can be found in external/pybind11 after
+The relevant files can be found in the folder external/pybind11 after
 
 `git clone --recursive https://github.com/SVMTK/SVMTK`
 
@@ -19,10 +22,11 @@ The submodule can be updated with
 
 `git submodule update --init`
 
-or submodule version switched with
+and the submodule version can be switched with
 
 `cd external/pybind11`
-`git checkout version`
+
+`git checkout <version>`
 
 ## Configure CGAL
 
@@ -32,16 +36,21 @@ The relevant files can be found in external/cgal after
 
 The submodule can be updated with 
 
-`git submodule update`
+`git submodule update --init`
 
-or submodule version switched with 
+and the submodule version can be switched with 
 
 `cd external/cgal`
+
 `git checkout releases/CGAL-5.0.3`
 
 Tested CGAL versions 
+  - 5.0.4
   - 5.0.3
   - 5.0.2
+
+Failed CGAL versions 
+  - 5.1.0>
 
 ## Python>=3.6 
 Installing python3.6
@@ -71,9 +80,9 @@ The compiler requirement c++1z require that gcc>=7.
 
 `sudo add-apt-repository ppa:ubuntu-toolchain-r/test`
 
-`sudo apt update`
+`sudo apt-get update`
 
-`sudo apt install -y g++-7`
+`sudo apt-get install -y g++-7`
 
 `sudo apt-get install -y build-essential`
 

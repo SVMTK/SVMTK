@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2020 Lars Magnus Valnes 
+// Copyright (C) 2018-2021 Lars Magnus Valnes and Jakob Schreiner
 //
 // This file is part of Surface Volume Meshing Toolkit (SVM-TK).
 //
@@ -59,7 +59,14 @@
 #include <CGAL/Surface_mesh_shortest_path.h>
 #include <CGAL/Surface_mesh_simplification/edge_collapse.h>
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_ratio_stop_predicate.h>
+
+
+
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_and_length.h>
+
+
+
+
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Edge_length_stop_predicate.h>
 
 #include <CGAL/IO/OFF_reader.h>
@@ -98,6 +105,7 @@ class Cost_stop_predicate
  * Loads surface mesh as a polygon soup, and 
  * reassembles it according to CGAL structure
  * of faces and vertices.
+ * 
  * @param[in} file string of the fileaneme 
  * @param[out] mesh triangulated surface mesh.
  * @return true if loaded  
@@ -497,15 +505,18 @@ class Surface
     bool is_point_inside(Point_3 point_3);
 
     void make_cone_(    double x0, double y0, double  z0,  double x1, double y1, double z1, double r0, int number_of_segments=360) ;
-    void make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1,       double radius,  int number_of_segments=360) ;
+    void make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0, int number_of_segments=360) ;
     void make_cone(     double x0, double y0, double  z0,  double x1, double y1, double z1, double r0,double r1,  int number_of_segments=360) ; 
     void make_cube(     double x0, double y0, double  z0,  double x1, double y1, double z1, int N=10);
     void make_cube(     double x0, double y0, double  z0,  double x1, double y1, double z1, int Nx , int Ny, int Nz);
-    void make_sphere(   double x0, double y0, double  z0,  double r0, double edge_size);
+    void make_sphere(   double x0, double y0, double  z0,  double r0, double mesh_resolution);
 
-    void surface_intersection( Surface other){CGAL::Polygon_mesh_processing::corefine_and_compute_intersection(mesh, other.get_mesh(),mesh);}
-    void surface_difference(   Surface other){CGAL::Polygon_mesh_processing::corefine_and_compute_difference(mesh , other.get_mesh(), mesh);}
-    void surface_union(        Surface other){CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh, other.get_mesh(), mesh);}   
+
+
+    bool surface_intersection(Surface other);
+
+    bool surface_difference(Surface other);
+    bool surface_union(Surface other);
 
     Mesh& get_mesh() {return mesh;}
     void clear(){ mesh.clear();}
@@ -590,6 +601,9 @@ class Surface
              double radius_bound=0.1 ,
              double distance_bound=0.1   );
 
+
+
+    
     Surface cylindric_extension(const Point_3& p1,double radius, double length, bool normal=true ); 
     Surface cylindric_extension(double x, double y ,double z, double radius, double length, bool normal)
                    { return cylindric_extension(Point_3(x,y,z),radius,length,normal);}
@@ -602,8 +616,44 @@ class Surface
 };
 
 /**
+ * Computes the intersection between two triangulated surface mesh.
+ * @param other SVMTK Surface object
+ * @return success true if intersection computation is successful  
+ */
+inline bool Surface::surface_intersection(Surface other)
+{
+   bool success = CGAL::Polygon_mesh_processing::corefine_and_compute_intersection(mesh, other.get_mesh(),mesh);
+   if (!success)
+      std::cout<<"Faild to compute intersection."<<std::endl; 
+   return success; 
+}  
+/**
+ * Computes the difference between two triangulated surface mesh.
+ * @param other SVMTK Surface object
+ * @return success true if intersection computation is successful  
+ */
+inline bool Surface::surface_difference(Surface other)
+{    
+   bool success= CGAL::Polygon_mesh_processing::corefine_and_compute_difference(mesh , other.get_mesh(), mesh);
+   if (!success)
+      std::cout<<"Faild to compute difference."<<std::endl; 
+   return success;  
+}
+/**
+ * Computes the union between two triangulated surface mesh.
+ * @param other SVMTK Surface object
+ * @return success true if intersection computation is successful  
+ */
+inline bool Surface::surface_union(Surface other)
+{
+   bool success= CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh, other.get_mesh(), mesh);
+   if (!success)
+      std::cout<<"Faild to compute union."<<std::endl; 
+   return success;  
+}  
+
+/**
  * Moves all vertices so that all is inside another surface. 
- *
  * @param other SVMTK Surface class (assert non-empty)  
  * @return the number of vertices not inside surface.
  */
@@ -664,6 +714,7 @@ inline Surface::vertex_vector Surface::closest_vertices(Point_3 p1, int num)
 } 
 
 /**
+ * @Experimental
  * Constructs a cylindric extension, which is a cylinder surface mesh combined with a sphere 
  * on the end closest to the mesh. 
  * The user can use the union operation to combine it with the main mesh. 
@@ -678,7 +729,7 @@ inline Surface::vertex_vector Surface::closest_vertices(Point_3 p1, int num)
  */
 inline Surface Surface::cylindric_extension(const Point_3& p1, double radius, double length, bool normal)
 {
-   assert(  is_inside_query(p1)==false );
+   assert(  is_point_inside(p1)==false );
    
    Point_3 p3, p4;
    FT distance; 
@@ -1500,6 +1551,7 @@ inline void Surface::make_cube( double x0, double y0, double  z0,  double x1, do
 {
      typedef boost::multi_array<int, 3> array_type;
      
+     std::vector<face_vector> sides;
      clear(); 
      assert(x0!=x1);
      assert(y0!=y1);
@@ -1508,9 +1560,13 @@ inline void Surface::make_cube( double x0, double y0, double  z0,  double x1, do
      double dx =(x1-x0);  
      double dy =(y1-y0);
      double dz =(z1-z0);
- 
-     array_type map(boost::extents[Nx+1][Ny+1][Nz+1]);
+     
+     double ddx = dx/static_cast<double>(Nx); 
+     double ddy = dy/static_cast<double>(Ny); 
+     double ddz = dz/static_cast<double>(Nz);  
       
+     array_type map(boost::extents[Nx+1][Ny+1][Nz+1]);
+         
      int index =0;
      for ( int i = 0 ; i< Nx+1 ; ++i)
      {
@@ -1521,9 +1577,9 @@ inline void Surface::make_cube( double x0, double y0, double  z0,  double x1, do
                   if ( i==0 or i==Nx or j==0 or j==Ny or k==0 or k==Nz )
                   {     
                   mesh.add_vertex(
-                       Point_3(x0+ static_cast<double>(i)*dx/static_cast<double>(Nx),
-                               y0+ static_cast<double>(j)*dy/static_cast<double>(Ny),
-                               z0+ static_cast<double>(k)*dz/static_cast<double>(Nz) ) ) ;
+                       Point_3(x0+ static_cast<double>(i)*ddx,
+                               y0+ static_cast<double>(j)*ddy,
+                               z0+ static_cast<double>(k)*ddz) );
                      map[i][j][k] = index++;    
                   }     
               }
@@ -1543,6 +1599,7 @@ inline void Surface::make_cube( double x0, double y0, double  z0,  double x1, do
              s2.push_back(mesh.add_face(Index(map[Nx][j+1][k]), Index(map[Nx][j+1][k+1]) , Index(map[Nx][j][k+1])   ));
          }
      }
+
 
      face_vector s3;
      face_vector s4;
@@ -1569,6 +1626,22 @@ inline void Surface::make_cube( double x0, double y0, double  z0,  double x1, do
               s6.push_back(mesh.add_face(Index(map[i][j][Nz]), Index(map[i+1][j+1][Nz]), Index(map[i][j+1][Nz])   ));
          } 
      } 
+     
+     sides.push_back(s1);
+     sides.push_back(s2);
+     sides.push_back(s3);
+     sides.push_back(s4);
+     sides.push_back(s5);
+     sides.push_back(s6);     
+
+     
+     if (CGAL::is_closed(mesh) && (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)))
+     {
+        std::cout<< "reverse_face_orientation"<< std::endl;
+        CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
+     }
+     
+     
      return;
 }
 
@@ -1580,14 +1653,14 @@ inline void Surface::make_cube( double x0, double y0, double  z0,  double x1, do
  * @param x1 x coordinate of the second cylinder center 
  * @param y1 y coordinate 0f the second cylinder center
  * @param z1 z coordinate 0f the second cylinder center
- * @param radius the radius of the cylinder 
+ * @param r0 the radius of the cylinder 
  * @param number_of_segments integer of the approximation of the 
  * @return none
  */
-inline void Surface::make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1, double radius,  int number_of_segments)
+inline void Surface::make_cylinder( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0,  int number_of_segments)
 {    
      clear();
-     Surface::make_cone( x0, y0,z0, x1,y1, z1, radius , radius,  number_of_segments ) ;
+     Surface::make_cone( x0, y0,z0, x1,y1, z1, r0 , r0,  number_of_segments ) ;
 }
 
 /**
@@ -1599,7 +1672,7 @@ inline void Surface::make_cylinder( double x0, double y0, double  z0,  double x1
  * @param x1 x coordinate of the second cylinder center 
  * @param y1 y coordinate 0f the second cylinder center
  * @param z1 z coordinate 0f the second cylinder center
- * @param radius the none-zero radius of the cone, corresponding to the first cylinder center.  
+ * @param r0 the none-zero radius of the cone, corresponding to the first cylinder center.  
  * @param number_of_segments integer of the number of points to approximation of the curved surface
  * @return none
  */
@@ -1639,7 +1712,8 @@ inline void Surface::make_cone_( double x0, double y0, double  z0,  double x1, d
     fv1.push_back(mesh.add_face(Index(2),vb,v0 ) );
     fv3.push_back(mesh.add_face(vb,Index(2),v1) );
 
-    double edge_length = r0/10; 
+    double edge_length = std::min(r0,l1)/10.; 
+    
 
     CGAL::Polygon_mesh_processing::isotropic_remeshing(fv1,
                               edge_length,
@@ -1666,11 +1740,11 @@ inline void Surface::make_cone_( double x0, double y0, double  z0,  double x1, d
  * @param y1 y coordinate 0f the second cylinder center
  * @param z1 z coordinate 0f the second cylinder center
  * @param r0 the radius corresponding to the first cylinder center.   
- * @param  r0 the radius corresponding to the second cylinder center. 
+ * @param r1 the radius corresponding to the second cylinder center. 
  * @param number_of_segments integer of the number of points to approximation of the curved surface
  * @return none 
  */
-inline void Surface::make_cone( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0, double r1,   int number_of_segments) 
+inline void Surface::make_cone( double x0, double y0, double  z0,  double x1, double y1, double z1, double r0, double r1,  int number_of_segments) 
 {
      assert( number_of_segments>2  && "Choose 3 or more segments");
      assert((r0*r0+r1*r1)!=0);
@@ -1725,7 +1799,7 @@ inline void Surface::make_cone( double x0, double y0, double  z0,  double x1, do
     fv3.push_back(mesh.add_face(vt, vb, Index(3))       );
     fv3.push_back(mesh.add_face(Index(2), Index(3), vb) );
 
-    double edge_length = std::min(r1,r0)/10.0; 
+    double edge_length =std::min(std::min(r0,r1),l1)/10.; 
     CGAL::Polygon_mesh_processing::isotropic_remeshing(fv1,
                               edge_length,
                               mesh,
@@ -1776,12 +1850,13 @@ inline double sphere_wrapper::z0 = 0;     // inline declaration of static variab
  * @param y0 the y-coordinate of the center
  * @param z0 the z-coordinate of the center
  * @param r0 the radius  of  the sphere
- * @param edge_size the maximum edge size of the resulting surface mesh.
+ * @param mesh_resolution ratio between the sphere radius divided by the maximum edge size of the resulting surface mesh. 
+ * @return void
  */
-inline void Surface::make_sphere( double x0, double y0, double  z0,double r0, double edge_size) 
+inline void Surface::make_sphere( double x0, double y0, double  z0,double r0, double mesh_resolution) 
 {
   sphere_wrapper sphere;
-   
+  double edge_size = r0/mesh_resolution;
   sphere.radius = r0;
   sphere.x0=x0;
   sphere.y0=y0;
@@ -1807,7 +1882,7 @@ inline void Surface::split_edges(double  target_edge_length){
  * Valid file formats: off and stl. 
  * @param outpath string path to save file.
  *        @extensions : stl and off.
- * @return none
+ * @return void
  */
 inline void Surface::save(const std::string outpath)
 {    

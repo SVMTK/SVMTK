@@ -29,7 +29,7 @@ class Surface_Test(unittest.TestCase):
         self.assertTrue(surface.num_vertices()==8 and surface.num_faces()==12 and surface.num_edges()==18) 
         surface.clear() 
         self.assertEqual( surface.num_vertices(), 0) 
-        surface.make_cone(0.,0.,0.,0,0.,2., 1.0,0.0,3) 
+        surface.make_cone(0.,0.,0.,0,0.,2.,1.0,0.0,3) 
         self.assertTrue(surface.num_vertices()==20 and surface.num_faces()==36 and surface.num_edges()==54) 
         surface.clear() 
         self.assertEqual( surface.num_vertices(), 0) 

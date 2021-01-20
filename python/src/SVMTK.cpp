@@ -156,7 +156,6 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("print",  &SubdomainMap::print)
         .def("set_number_of_surfaces", &SubdomainMap::set_number_of_surfaces)
         .def("add_interface", &SubdomainMap::add_interface)
-        .def("get_interfaces", &SubdomainMap::get_interfaces,py::arg("number_of_surfaces")=0)
         .def("erase", &SubdomainMap::erase)
         .def("add", &SubdomainMap::add);
        

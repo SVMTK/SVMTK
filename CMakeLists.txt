@@ -11,7 +11,8 @@ include(FeatureSummary)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(BUILD_TESTING ON)
+set(BUILD_TESTING OFF)
+
 
 if (CMAKE_COMPILER_IS_GNUCXX)
   if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7)
@@ -24,7 +25,6 @@ if (${BUILD_TESTING})
    add_subdirectory(tests)
 endif()
 
-
 find_package(PythonInterp 3.6)
 set_package_properties(PythonInterp PROPERTIES TYPE REQUIRED
   DESCRIPTION "Interactive high-level object-oriented language"
@@ -33,7 +33,6 @@ set_package_properties(PythonInterp PROPERTIES TYPE REQUIRED
 find_package (Eigen3 3.2 REQUIRED NO_MODULE)
 include(${EIGEN3_USE_FILE})
 include_directories(${EIGEN_INCLUDE_DIRS})
-
 set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Lightweight C++ template library for linear algebra"
   URL "http://eigen.tuxfamily.org")
@@ -41,6 +40,7 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
 set(CGAL_DIR external/cgal)
 find_package(CGAL REQUIRED COMPONENTS Core)
 include(${CGAL_USE_FILE})
+#include_directories(${CGAL_INCLUDE_DIRS})
 message( STATUS "CGAL USE FILE ${CGAL_USE_FILE}") 
 set_package_properties(CGAL PROPERTIES TYPE REQUIRED
   DESCRIPTION "C++ template library for efficient and reliable algorithms in computational geometry"
@@ -57,14 +57,17 @@ include_directories(${Boost_INCLUDE_DIRS})
 set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")
-message(STATUS " boost dir ${Boost_INCLUDE_DIRS}")
+
 add_subdirectory(external/pybind11)
 
-
-set( CMAKE_CXX_FLAGS "-fPIC -std=gnu++1z -frounding-math -lgmpxx -lgmp -Wall")
+set( CMAKE_CXX_FLAGS "-fPIC -std=gnu++1z -frounding-math -lgmpxx -lgmp -Wall -I${Boost_INCLUDE_DIRS}")
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(/usr/include)
 pybind11_add_module(SVMTK SHARED python/src/SVMTK.cpp)
 target_link_libraries(SVMTK PRIVATE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${GMP_LIBRARIES}
-                            ${MPFR_LIBRARIES} ${OpenMesh} ${Eigen3} ${Boost})
+                            ${MPFR_LIBRARIES} ${Eigen3} ${Boost})
 
+
+get_target_property(OUT SVMTK LINK_LIBRARIES)
+message(STATUS ${OUT})
