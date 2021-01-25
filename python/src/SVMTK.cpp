@@ -212,9 +212,15 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("make_cube", py::overload_cast<double,double,double,double,double,double,int,int,int>( &Surface::make_cube))
         .def("make_cube", py::overload_cast<double,double,double,double,double,double,int>(&Surface::make_cube),
                           py::arg("x0"),py::arg("y0"),py::arg("z0"),py::arg("x1"),py::arg("y1"),py::arg("z1"),  py::arg("N")=10)
-	.def("make_cone", &Surface::make_cone)
-	.def("make_cylinder", &Surface::make_cylinder)
-        .def("make_sphere", &Surface::make_sphere )
+                          
+	.def("make_cone", py::overload_cast<double,double,double,double,double,double,double,double,int>(&Surface::make_cone))
+	.def("make_cone", py::overload_cast<Point_3,Point_3,double,double,int>(&Surface::make_cone))
+	.def("make_cylinder", py::overload_cast<double,double,double,double,double,double,double,int>(&Surface::make_cylinder))	
+	.def("make_cylinder", py::overload_cast<Point_3,Point_3,double,int>(&Surface::make_cylinder))
+        .def("make_sphere", py::overload_cast<double,double,double,double,double>(&Surface::make_sphere ))
+        .def("make_sphere", py::overload_cast<Point_3,double,double>(&Surface::make_sphere ))
+        
+        
 
         .def("mean_curvature_flow", &Surface::mean_curvature_flow)
         .def("shortest_surface_path", py::overload_cast<double , double, double , double,double,double>( &Surface::shortest_surface_path) )
@@ -230,6 +236,7 @@ PYBIND11_MODULE(SVMTK, m) {
 
         .def("extension", py::overload_cast<double , double, double , double,double,bool>(&Surface::cylindric_extension) )
         .def("extension", py::overload_cast<const Point_3&, double,double,bool>( &Surface::cylindric_extension) )
+        .def("connection", &Surface::cylindric_connection)
 
         .def("separate_narrow_gaps", &Surface::separate_narrow_gaps, py::arg("adjustment")=-0.33)
 

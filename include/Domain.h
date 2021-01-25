@@ -492,7 +492,7 @@ class Domain {
          */
         void perturb(double time_limit=0, double sliver_bound=0){CGAL::perturb_mesh_3 ( c3t3, *domain_ptr.get(), time_limit=time_limit, sliver_bound=sliver_bound) ;} 
 
-
+        void protect_borders();
     private :
         Function_vector v; 
         std::shared_ptr<AbstractMap> map_ptr;
@@ -514,6 +514,7 @@ inline void Domain::set_borders()
 {
   if (this->borders.size()>0)
   { 
+     protect_borders();
      domain_ptr.get()->add_features(this->borders.begin(), this->borders.end());
   }
 }
@@ -824,7 +825,6 @@ inline void Domain::add_sharp_border_edges(Polyhedron& polyhedron, double thresh
 { 
  typedef boost::property_map<Polyhedron, CGAL::edge_is_feature_t>::type EIF_map;
  EIF_map eif = get(CGAL::edge_is_feature, polyhedron);
- Polylines temp;
  CGAL::Polygon_mesh_processing::detect_sharp_edges(polyhedron,threshold, eif); 
  for( Polyhedron::Edge_iterator he = polyhedron.edges_begin(); he != polyhedron.edges_end() ; ++he)
  {
@@ -833,14 +833,13 @@ inline void Domain::add_sharp_border_edges(Polyhedron& polyhedron, double thresh
        Polyline_3 polyline;
        polyline.push_back(he->vertex()->point());
        polyline.push_back(he->opposite()->vertex()->point());     
-       this->borders.push_back(polyline);
+       this->borders.push_back(polyline); 
    }    
- }  
-
+ }     
 }
 
 /**
- * Checks Surface object for sharp edges, and store this as 1-D border features.   
+ * After simplification of edges, checks Surface object for sharp edges, and store this as 1-D border features.   
  * @note In combination with ill-posed meshing paramteres can cause segmentation fault (crash). 
  * @param surface Surface object defined in Surface.h .
  * @param threshold angle in degree (0-90) bewteen to connected edges.
@@ -849,9 +848,22 @@ inline void Domain::add_sharp_border_edges(Polyhedron& polyhedron, double thresh
 template<typename Surface>
 void Domain::add_sharp_border_edges(Surface& surface, double threshold) 
 { 
+  surface.collapse_edges();
   Polyhedron polyhedron;
   surface.get_polyhedron(polyhedron);
   add_sharp_border_edges(polyhedron, threshold);
+}
+
+/**
+ * Combines borders edges to a connected polyline.
+ * @param none 
+ * @return void updates borders variable 
+ */
+inline void Domain::protect_borders() 
+{
+   Polylines temp=this->borders;
+   clear_borders();
+   polylines_to_protect(this->borders, temp.begin() , temp.end()) ;
 }
 
 /**
@@ -869,7 +881,6 @@ std::set<int>  Domain::get_subdomains()
    return sd_indices;
 }
 
-
 /**
  * Returns a set of integer pairs that represents the surface facet tags in the mesh. 
   * @param none 
@@ -877,7 +888,6 @@ std::set<int>  Domain::get_subdomains()
  */
 std::vector<std::pair<int,int>>  Domain::get_patches()
 {
-
    std::vector<std::pair<int,int>> sf_indices;
    std::set<std::pair<int,int>> dummy;
    for(Cell_iterator cit = c3t3.cells_in_complex_begin();cit != c3t3.cells_in_complex_end(); ++cit)
@@ -889,7 +899,6 @@ std::vector<std::pair<int,int>>  Domain::get_patches()
          if (dummy.insert(std::pair<int,int>(static_cast<int>(spi.first) , static_cast<int>(spi.second) )).second 
                  and spi.first!=spi.second )
             sf_indices.push_back(std::pair<int,int>(static_cast<int>(spi.first) , static_cast<int>(spi.second) ));
-
       }
    }
    std::sort(sf_indices.begin() ,sf_indices.end()) ;

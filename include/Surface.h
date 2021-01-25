@@ -402,6 +402,8 @@ bool separate_close_surfaces(Surface& surf1 , Surface& surf2, double edge_moveme
 
 
 
+
+
 /**
  * Takes surface union of surfaces that partially overlapp each other. It will expand 
  * the surfaces so that the region with    
@@ -601,19 +603,64 @@ class Surface
              double radius_bound=0.1 ,
              double distance_bound=0.1   );
 
-
+    void set_outward_face_orientation();
 
     
     Surface cylindric_extension(const Point_3& p1,double radius, double length, bool normal=true ); 
-    Surface cylindric_extension(double x, double y ,double z, double radius, double length, bool normal)
-                   { return cylindric_extension(Point_3(x,y,z),radius,length,normal);}
+    
+    Surface cylindric_connection(Surface other, double radius) ;              
+                   
     vertex_vector closest_vertices(Point_3 p1, int num = 8);
+    
+    /**
+     * @overloaded make functions 
+     */
+    void make_cylinder(Point_3 p0,Point_3 p1, double r0, int number_of_segments)
+    {
+                 make_cylinder(CGAL::to_double(p0.x()), CGAL::to_double(p0.y()),CGAL::to_double(p0.z()),
+                               CGAL::to_double(p1.x()), CGAL::to_double(p1.y()),CGAL::to_double(p1.z()),
+                                                                                r0,number_of_segments);
+    }
+
+
+    void make_cone(Point_3 p0,Point_3 p1, double r0, double r1, int number_of_segments)
+    {
+                make_cone(CGAL::to_double(p0.x()), CGAL::to_double(p0.y()),CGAL::to_double(p0.z()),
+                              CGAL::to_double(p1.x()), CGAL::to_double(p1.y()),CGAL::to_double(p1.z()),
+                                                                            r0,r1,number_of_segments);
+    }
+
+   void make_sphere(Point_3 p0, double r0, double mesh_resolution)
+   {
+                make_sphere(CGAL::to_double(p0.x()), CGAL::to_double(p0.y()),CGAL::to_double(p0.z()), 
+                                                                              r0, mesh_resolution);
+   }
+
+   Surface cylindric_extension(double x, double y ,double z, double radius, double length, bool normal)
+                   { return cylindric_extension(Point_3(x,y,z),radius,length,normal);}
+                      
+    
+    
    protected:
     Mesh mesh;
 
 
 
 };
+
+/**
+ * Sets the face oritentiaton to outwards 
+ * @note 
+ */
+inline void Surface::set_outward_face_orientation()
+{
+  if (CGAL::is_closed(mesh) && (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)))
+  {
+    std::cout<< "reverse_face_orientation"<< std::endl;
+    CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
+  }
+}
+  
 
 /**
  * Computes the intersection between two triangulated surface mesh.
@@ -714,7 +761,7 @@ inline Surface::vertex_vector Surface::closest_vertices(Point_3 p1, int num)
 } 
 
 /**
- * @Experimental
+ * @Experimental TODO
  * Constructs a cylindric extension, which is a cylinder surface mesh combined with a sphere 
  * on the end closest to the mesh. 
  * The user can use the union operation to combine it with the main mesh. 
@@ -774,14 +821,94 @@ inline Surface Surface::cylindric_extension(const Point_3& p1, double radius, do
    Surface cylinder;
    cylinder.make_cylinder(x0,y0,z0,x1,y1,z1,radius,90); // NOTE
    Surface sphere; 
-  // sphere.make_sphere(x0,y0,z0,radius,0.2); 
-  // cylinder.surface_union(sphere);
-   // FIXME: 
+   // sphere.make_sphere(x0,y0,z0,radius,0.2); 
+   // cylinder.surface_union(sphere);
+   
    //vertex_vector vec1  = cylinder.closest_vertices(p3,1);
     
    //cylinder.normal_vector_cluster(vec1);
    return cylinder; 
 }
+
+
+/**
+ * @Experimental TODO
+ * Constructs a cylindric connection bridge between the shortests line between two points 
+ * in each surface.   
+ * The user can use the union operation to combine it with the main mesh. 
+ * The cylinder surface mesh is determined by user 
+ * arguments radius, length and the option of normal to the surface mesh or not. 
+ * Works best on convex surfaces.
+ * @param other SVMTK Surface class obejct.
+ * @param radius of the cylinder surface
+ * @return a SVMTK Surface class object.
+ */
+
+inline Surface Surface::cylindric_connection(Surface other, double radius)
+{
+
+   Surface::vertex_vector results;
+   Vertex_point_pmap vppmap = get(CGAL::vertex_point,other.get_mesh());  
+
+   Tree tree(vertices(other.get_mesh()).begin(),
+            vertices(other.get_mesh()).end(),
+            Splitter(),
+            Traits(vppmap)
+   );
+   Distance tr_dist(vppmap);
+   FT distance;
+   FT min_distance = FT(std::numeric_limits<double>::max());
+   Point_3 query_point,p0,p1,p2,p3;
+   Vector_3 normal;
+   
+   
+   for (vertex_descriptor v_it : mesh.vertices())
+   {
+        K_neighbor_search search(tree, mesh.point(v_it), 2,0,true,tr_dist); 
+        
+        query_point = other.get_mesh().point((search.begin())->first);
+
+        Point_3 current = mesh.point(v_it);
+        distance = CGAL::squared_distance(current,query_point);
+        
+        if (distance < min_distance)
+        {
+             min_distance = distance;
+             p1 = query_point;
+             p0 =  mesh.point(v_it);
+        }
+   }
+   normal = p1-p0; 
+   FT length = CGAL::sqrt(normal.squared_length());
+   normal=normal/length;  
+  
+   p2 = p0-normal*radius; 
+   p3 = p1+normal*radius;
+  
+   double x0  = CGAL::to_double(p2.x());
+   double y0  = CGAL::to_double(p2.y());
+   double z0  = CGAL::to_double(p2.z());
+   double x1  = CGAL::to_double(p3.x());
+   double y1  = CGAL::to_double(p3.y());
+   double z1  = CGAL::to_double(p3.z());
+   
+   
+  Surface cylinder;
+  cylinder.make_cylinder(x0,y0,z0,x1,y1,z1,radius,90); 
+
+  return cylinder;
+
+
+
+
+
+
+}
+
+
+
+
+
 
 /**
  * Finds the shorest edge connected to a vertex for each vertex in the input.    
@@ -1915,16 +2042,13 @@ inline void Surface::reconstruct( double angular_bound, double radius_bound, dou
 
 /**
  * Seperates non-adjacent surface mesh vertices so that the nearest surface mesh vertices are adjacent. 
+ * @note In case of inside-out surfaces with self-intersections, the algorithm may fail to produce  For the algorithm to have optimal effect.
  * @param adjustment multiplier of the edge movement.
  * @return number of adjusted vertices.  
  */
 inline int Surface::separate_narrow_gaps(double adjustment) 
 {
-   if ( num_self_intersections() >0 )
-   {
-   std::cout << "Warning " <<  num_self_intersections() << " self-intersections detected" <<std::endl;
-   std::cout << "This may impact the end result." << std::endl; 
-   }
+
    std::map<vertex_descriptor, double> results;
    Vertex_point_pmap vppmap = get(CGAL::vertex_point,mesh);
 

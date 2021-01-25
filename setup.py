@@ -47,9 +47,6 @@ class CMakeBuild(build_ext):
             "-DPYTHON_EXECUTABLE={}".format(sys.executable)
         ]
         
-        # Build c++ test if setup.py test
-        if sys.argv[1]=="test":
-           cmake_args.append("-DBUILD_TESTING=ON")     
         
         cfg = "Debug" if self.debug else "Release"
         build_args = ["--config", cfg]
