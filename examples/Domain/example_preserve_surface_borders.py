@@ -2,7 +2,6 @@ import SVMTK as svm
 
 
 if __name__ == "__main__":
-
    surf1 = svm.Surface()
    
    surf1.make_cube(0,0,0,20,20,20) 

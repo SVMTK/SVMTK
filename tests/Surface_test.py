@@ -3,7 +3,6 @@ import SVMTK
 def ellipsoid_function( x, y, z):
   return x*x + 4.*y*y +4.*z*z-1.;
 
-
 def torus_function(x,y,z):
      return ((x**2+y**2)**0.5 - 1)**2 + z**2 -4  
  

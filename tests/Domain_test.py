@@ -19,7 +19,6 @@ class Domain_Test(unittest.TestCase):
         domain = SVMTK.Domain([surface_1,surface_2])
         self.assertEqual(domain.number_of_surfaces(),2)
 
-
     def test_mehsing_domains_with_map(self): 
         surface_1 = SVMTK.Surface() 
         surface_1.make_cube(-1.,-1.,-1.,1.,1.,1.,1) 
@@ -52,9 +51,6 @@ class Domain_Test(unittest.TestCase):
         print(len(surfaces))
         self.assertEqual(len(surfaces),2) 
 
-
-
-
     def test_domain_with_polyline_meshing(self):
         surface = SVMTK.Surface();
         surface.make_sphere(0.0,0.0,0.0,3.0,1.0)
@@ -65,7 +61,6 @@ class Domain_Test(unittest.TestCase):
         domain.create_mesh(1.)
         self.assertTrue(domain.number_of_curves() >0) 
 
-
     def test_domain_meshing(self):
         surface_1 = SVMTK.Surface() 
         surface_1.make_cube(-1.,-1.,-1.,1.,1.,1.,1) 
@@ -73,23 +68,20 @@ class Domain_Test(unittest.TestCase):
         domain.create_mesh(1)
         self.assertTrue(domain.number_of_cells() >0) 
 
-
     def test_domainmeshing_with_borders(self):
         surface = SVMTK.Surface()
         surface.make_cube(0.0,0.0,0.0,1.0,1.0,1.0,1)
         domain = SVMTK.Domain(surface)
-        domain.add_sharp_border_edges(surface,85)
+        domain.add_sharp_border_edges(surface)
         domain.create_mesh(1.)
         self.assertTrue(domain.number_of_curves() > 0) 
-
 
     def test_mesh_lloyd(self):
         surface_1 = SVMTK.Surface() 
         surface_1.make_cube(-1.,-1.,-1.,1.,1.,1.,1) 
         domain = SVMTK.Domain(surface_1)
         domain.create_mesh(1)
-        domain.lloyd() 
-        
+        domain.lloyd()        
        
     def test_mesh_excude(self):
         surface_1 = SVMTK.Surface() 

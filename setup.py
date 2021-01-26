@@ -14,11 +14,9 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 
-
-#from pybind11.setup_helpers import Pybind11Extension, build_ext
 # Version number
-MAJOR = 0
-MINOR = 1
+MAJOR = 1
+MINOR = 0
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=""):

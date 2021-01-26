@@ -856,14 +856,21 @@ void Domain::add_sharp_border_edges(Surface& surface, double threshold)
 
 /**
  * Combines borders edges to a connected polyline.
+ * @note If the number polylines remains the same, 
+ * then the borders are not updated, this is to 
+ * avoid core dump.  
+ * 
  * @param none 
  * @return void updates borders variable 
  */
 inline void Domain::protect_borders() 
 {
-   Polylines temp=this->borders;
-   clear_borders();
-   polylines_to_protect(this->borders, temp.begin() , temp.end()) ;
+   Polylines temp;
+   polylines_to_protect(temp, this->borders.begin() ,this->borders.end());
+   if ( temp.size() == this->borders.size())
+      return;
+   else 
+      this->borders = temp;
 }
 
 /**

@@ -4,7 +4,6 @@ import SVMTK
 
 class Slice_Test(unittest.TestCase):
 
-
     def test_slice_add_constrains(self):
         slice1 = SVMTK.Slice()
         slice1.add_constraint([SVMTK.Point_2(0,0),SVMTK.Point_2(1,1)]) 
@@ -27,15 +26,13 @@ class Slice_Test(unittest.TestCase):
         slice_.save("tests/Data/slice.off")
         slice_.save("tests/Data/slice.mesh")
 
-
     def test_slice_subdomains(self):
         slice_ = SVMTK.Slice(SVMTK.Plane_3(0,0,1,0))
         surface1 = SVMTK.Surface() 
         surface1.make_cube(-1.,-1.,-1.,1.,1.,1.,1) 
         surface2 = SVMTK.Surface() 
         surface2.make_cube(-2.,-2.,-2.,2.,2.,2.,1)
-
-
+        
         sf= SVMTK.SubdomainMap(0) 
         sf.add("11",2)
         sf.add("11",2)
@@ -62,7 +59,6 @@ class Slice_Test(unittest.TestCase):
         self.assertEqual(slice_.connected_components(), 2) 
         slice_.keep_largest_connected_component() 
         self.assertEqual(slice_.connected_components(), 1) 
-
 
     def test_simplify(self):
         slice1 = SVMTK.Slice()
