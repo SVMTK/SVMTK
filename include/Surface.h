@@ -551,7 +551,8 @@ class Surface
     int separate_narrow_gaps(double adjustment);
 
     void clip(double a,double b, double c ,double d, bool clip);
-    
+    void clip(Point_3 point, Vector_3 vector , bool clip);
+    void clip(Plane_3 plane , bool clip);
     std::vector<std::pair<Point_3, Vector_3>> get_points_with_normal();
 
     template< typename Slice>
@@ -564,6 +565,7 @@ class Surface
     std::shared_ptr< Surface > convex_hull();
     
     int strictly_inside(Surface& other, double adjustment=-0.5); 
+    int encapsulate(Surface& other, double adjustment=0.5); 
     int separate_enclosed_surface(Surface& other, double adjustment=-0.5);
 
     void adjust_vertices_in_region(std::map<vertex_descriptor,double>::iterator begin, std::map<vertex_descriptor,double>::iterator end );
@@ -611,7 +613,7 @@ class Surface
     Surface cylindric_connection(Surface other, double radius) ;              
                    
     vertex_vector closest_vertices(Point_3 p1, int num = 8);
-    
+    point_vector  closest_points(Point_3 p1, int num=8);
     /**
      * @overloaded make functions 
      */
@@ -660,7 +662,9 @@ inline void Surface::set_outward_face_orientation()
     CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
   }
 }
-  
+
+//FIXME #(closest_vertices)
+
 
 /**
  * Computes the intersection between two triangulated surface mesh.
@@ -692,7 +696,8 @@ inline bool Surface::surface_difference(Surface other)
  * @return success true if intersection computation is successful  
  */
 inline bool Surface::surface_union(Surface other)
-{
+{  //CGAL::Polygon_mesh_processing::stitch_borders(mesh);
+   //CGAL::Polygon_mesh_processing::stitch_borders(other.get_mesh());
    bool success= CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh, other.get_mesh(), mesh);
    if (!success)
       std::cout<<"Faild to compute union."<<std::endl; 
@@ -700,6 +705,7 @@ inline bool Surface::surface_union(Surface other)
 }  
 
 /**
+ * TODO : Fix for self intersections, add assertion
  * Moves all vertices so that all is inside another surface. 
  * @param other SVMTK Surface class (assert non-empty)  
  * @return the number of vertices not inside surface.
@@ -707,10 +713,32 @@ inline bool Surface::surface_union(Surface other)
 
 inline int Surface::strictly_inside(Surface& other, double adjustment) 
 {
+   
    vertex_vector vertices = vertices_outside(other); 
+   if (vertices.size()==0)
+       return 0;
    std::map< vertex_descriptor, double> map = shortest_edge_map(vertices,adjustment);
    adjust_vertices_in_region(map.begin(),map.end()) ;
    vertices = vertices_outside(other, vertices ); 
+
+   return vertices.size();
+}
+
+/**
+ * TODO : Fix for self intersections, add assertion 
+ * Moves all vertices so that all vertices of another surface are inside this surface 
+ * @param other SVMTK Surface class (assert non-empty)  
+ * @return the number of vertices not inside surface.
+ */
+inline int Surface::encapsulate(Surface& other, double adjustment) 
+{
+   vertex_vector vertices = vertices_inside(other); 
+   if (vertices.size()==0)
+       return 0;
+    
+   std::map< vertex_descriptor, double> map = shortest_edge_map(vertices,adjustment);
+   adjust_vertices_in_region(map.begin(),map.end()) ;
+   vertices = vertices_inside(other, vertices ); 
 
    return vertices.size();
 }
@@ -724,6 +752,9 @@ inline int Surface::separate_enclosed_surface(Surface& other, double adjustment)
 {
    
    vertex_vector vertices = get_close_vertices(other);
+   if (vertices.size()==0)
+       return 0;
+       
    std::map< vertex_descriptor, double> map = shortest_edge_map(vertices,adjustment);
    adjust_vertices_in_region(map.begin() ,map.end());
    vertices = get_close_vertices(other);
@@ -759,6 +790,21 @@ inline Surface::vertex_vector Surface::closest_vertices(Point_3 p1, int num)
    }
    return results;
 } 
+
+/**
+ * Finds a specified number mesh points that are closest to a point not on the mesh. 
+ *
+ * @param p1 is an arbiraty point not on the surface mesh 
+ * @param num the maximum number of points that are added to the result
+ * @return a point_vector that holds sum of `values`, or 0.0 if `values` is empty.
+ */
+inline Surface::point_vector Surface::closest_points(Point_3 p1, int num)
+{
+   vertex_vector vertices = closest_vertices( p1, num);
+   return get_points(vertices);
+} 
+
+
 
 /**
  * @Experimental TODO
@@ -846,7 +892,6 @@ inline Surface Surface::cylindric_extension(const Point_3& p1, double radius, do
 
 inline Surface Surface::cylindric_connection(Surface other, double radius)
 {
-
    Surface::vertex_vector results;
    Vertex_point_pmap vppmap = get(CGAL::vertex_point,other.get_mesh());  
 
@@ -912,12 +957,15 @@ inline Surface Surface::cylindric_connection(Surface other, double radius)
 
 /**
  * Finds the shorest edge connected to a vertex for each vertex in the input.    
+ * @note removes all isolated vertices to avoid error in algorithm
  * @param vector contains a subset of the surface mesh vertices. 
  * @param adjusmtent mulitplier of the shortest edge length. 
  * @return A map of the vertex and the movment of the vertex ( mostly used in relation of the vertex normal) 
  */
 inline std::map<Surface::vertex_descriptor, double> Surface::shortest_edge_map(const Surface::vertex_vector &vector, const double adjustment )
 {
+   CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);
+   
    std::map< vertex_descriptor, double> results;
    for (vertex_descriptor vit : vector)
    {
@@ -1034,7 +1082,8 @@ void Surface::adjust_vertices_in_region(std::map<vertex_descriptor,Vector_3>::it
 
 /**
  * Smooths the vertices in the iterator input. This is done by taking the sum of the vector edges for each vertex, and
- * multipled with the constant double input.       
+ * multipled with the constant double input.  
+ * @note removes all isolated vertices to avoid error in algorithm     
  * @param template iterator begin.
  * @param template iterator end.
  * @param const double c 
@@ -1043,6 +1092,7 @@ void Surface::adjust_vertices_in_region(std::map<vertex_descriptor,Vector_3>::it
 template<typename InputIterator >
 void Surface::smooth_laplacian_region(InputIterator begin , InputIterator end ,const double c)
 {
+  CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);
   std::vector<std::pair<vertex_descriptor, Point_3> > smoothed;
   for ( ; begin != end; ++begin)
   {
@@ -1317,6 +1367,14 @@ inline void Surface::isotropic_remeshing(double target_edge_length, unsigned int
 inline void Surface::clip(double a,double b, double c ,double d, bool clip)
 {
    CGAL::Polygon_mesh_processing::clip(mesh, Plane_3(a,b,c,d), CGAL::Polygon_mesh_processing::parameters::clip_volume(clip));
+}
+inline void Surface::clip(Point_3 point, Vector_3 vector , bool clip)
+{
+   CGAL::Polygon_mesh_processing::clip(mesh, Plane_3(point,vector), CGAL::Polygon_mesh_processing::parameters::clip_volume(clip));
+}
+inline void Surface::clip(Plane_3 plane, bool clip)
+{
+   CGAL::Polygon_mesh_processing::clip(mesh, plane, CGAL::Polygon_mesh_processing::parameters::clip_volume(clip));
 }
 
 /**
@@ -2042,13 +2100,15 @@ inline void Surface::reconstruct( double angular_bound, double radius_bound, dou
 
 /**
  * Seperates non-adjacent surface mesh vertices so that the nearest surface mesh vertices are adjacent. 
- * @note In case of inside-out surfaces with self-intersections, the algorithm may fail to produce  For the algorithm to have optimal effect.
+ * @note1 In case of inside-out surfaces with self-intersections, the algorithm may fail to produce  For the algorithm to have optimal effect.
+ * @note2 removes all isolated vertices to avoid error in algorithm
  * @param adjustment multiplier of the edge movement.
  * @return number of adjusted vertices.  
  */
 inline int Surface::separate_narrow_gaps(double adjustment) 
 {
-
+   CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);
+   
    std::map<vertex_descriptor, double> results;
    Vertex_point_pmap vppmap = get(CGAL::vertex_point,mesh);
 
@@ -2093,11 +2153,15 @@ inline int Surface::separate_narrow_gaps(double adjustment)
 
 /**
  * Finds and returns surface mesh vertices that are close to another SVMTK Surface Class
+ * @note removes all isolated vertices to avoid error in algorithm
  * @param other SVMTK Surface Class.
  * @return results a vector of vertices. 
  */
 inline Surface::vertex_vector Surface::get_close_vertices(Surface &other)
 {
+
+   CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);
+   
    Surface::vertex_vector results;
    Vertex_point_pmap vppmap = get(CGAL::vertex_point,other.get_mesh());  
 
@@ -2119,11 +2183,15 @@ inline Surface::vertex_vector Surface::get_close_vertices(Surface &other)
         closest = other.get_mesh().point((search.begin())->first);
 
         Point_3 current = mesh.point(v_it);
+
         distance = CGAL::squared_distance(current, closest);
+     
         CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(v_it), mesh), done(vbegin);
+
         do
         {
-           edgeL = CGAL::squared_distance(current, mesh.point(*vbegin) ); 
+           edgeL = CGAL::squared_distance(current, mesh.point(*vbegin) );  //segmentation dump
+
            if ( distance >= edgeL ) 
            {
               flag=false;
@@ -2131,7 +2199,7 @@ inline Surface::vertex_vector Surface::get_close_vertices(Surface &other)
            }
          *vbegin++;
         }while(vbegin!=done);
-    
+
         if (flag){ results.push_back(v_it) ;} // both vertices are affected
    }
    return results;
@@ -2139,12 +2207,15 @@ inline Surface::vertex_vector Surface::get_close_vertices(Surface &other)
 
 /**
  * Returns vertices that are closer to another SVMTK surface object than any of the edge connected adjacent vertices.
+ * @note removes all isolated vertices to avoid error in algorithm
  * @param other a SVMTK Surface class object 
  * @return results a std::map with vertices as keys and edge multipler as value.  
  *  
  */
 inline std::map<Surface::vertex_descriptor,double> Surface::get_close_vertices_with_multipler(Surface& other)
 {
+   CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh); 
+   
    std::map<vertex_descriptor,double> results;
    Vertex_point_pmap vppmap = get(CGAL::vertex_point,other.get_mesh());
    Tree tree(vertices(other.get_mesh()).begin(),
@@ -2209,6 +2280,7 @@ inline std::shared_ptr< Surface > Surface::convex_hull()
  */
 inline std::vector<std::pair<Surface::Point_3, Surface::Vector_3>> Surface::get_points_with_normal()
 {
+   
    std::vector<std::pair<Point_3, Vector_3>> result;
    
    for ( vertex_descriptor vit : mesh.vertices())

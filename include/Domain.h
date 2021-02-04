@@ -355,8 +355,8 @@ int remove_isolated_vertices(C3T3& c3t3, bool remove_domain=false)
   std::cout<<"Number of isolated vertices removed: "<< before - after << std::endl;
   if ((before - after) > 10 and !remove_domain)   
   {
-       std::cout<<"There were a substantial number of isolated vertices, and the user should inspect the mesh."<< std::endl;  
-       std::cout<<"Try: 1.isotropic remeshing, 2.increase the mesh resolution or \n 3. specific mesh parameters to decrease number of isolated vertices."<< std::endl;  
+       std::cout<<"There were a number of isolated vertices, and the user should inspect the mesh."<< std::endl;  
+       std::cout<<"Methods to decrease number of isolated vertices : \n \t 1.isotropic remeshing \n \t 2.increase the mesh resolution or \n \t 3. specific mesh parameters to decrease number of isolated vertices."<< std::endl;  
   }
   return (before - after);
 }

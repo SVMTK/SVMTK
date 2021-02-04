@@ -3,7 +3,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
-
+#include <pybind11/operators.h>
 #include <pybind11/complex.h>
 #include <pybind11/chrono.h>
 
@@ -89,6 +89,7 @@ PYBIND11_MODULE(SVMTK, m) {
    m.doc() = "Surface Volume Meshing Toolkit";
    py::class_<Vector_3,std::shared_ptr<Vector_3>>(m, "Vector_3")
        .def(py::init<double,double,double>())
+        .def(py::init<Point_3,Point_3>())
        .def("__repr__",[](Vector_3 const & self)   
         {
            std::ostringstream os;
@@ -96,6 +97,8 @@ PYBIND11_MODULE(SVMTK, m) {
            return os.str();
 
         })
+       .def(py::self + py::self)
+       .def("squared_length", &Vector_3::squared_length)
        .def("x", &Vector_3::x)
        .def("y", &Vector_3::y)
        .def("z", &Vector_3::z);
@@ -131,6 +134,8 @@ PYBIND11_MODULE(SVMTK, m) {
         {
            return (self.x()!=other.x() and self.y()!=other.y() and self.z()!=other.z())   ; 
         }  ,py::is_operator() ) 
+
+       .def("__add__", [](const Point_3 p1, const Vector_3 v1) { p1 + v1; })
 
        .def("x", &Point_3::x)
        .def("y", &Point_3::y)
@@ -189,7 +194,10 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("implicit_surface",  &Surface::implicit_surface<Surface_implicit_function>, py::arg("implicit_function") ,py::arg("bounding_sphere_radius"),
                                                              py::arg("angular_bound")=30,py::arg("radius_bound")=0.1,py::arg("distance_bound")=0.1)
 
-        .def("clip",&Surface::clip , py::arg("x0"),py::arg("x1"),py::arg("x2"),py::arg("x3"),py::arg("clip")=true ) 
+        .def("clip", py::overload_cast<double,double,double,double,bool>( &Surface::clip ), py::arg("x0"),py::arg("x1"),py::arg("x2"),py::arg("x3"),py::arg("clip")=true ) 
+        .def("clip",py::overload_cast<Point_3,Vector_3,bool>( &Surface::clip ), py::arg("point"),py::arg("vector"),py::arg("clip")=true ) 
+        .def("clip",py::overload_cast<Plane_3,bool>( &Surface::clip ), py::arg("plane"),py::arg("clip")=true )        
+        
         .def("slice", py::overload_cast<double , double, double , double>(&Surface::mesh_slice<Slice>)) 
 
         .def("clear" , &Surface::clear) 
@@ -220,13 +228,15 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("make_sphere", py::overload_cast<double,double,double,double,double>(&Surface::make_sphere ))
         .def("make_sphere", py::overload_cast<Point_3,double,double>(&Surface::make_sphere ))
         
-        
+        .def("is_point_inside", &Surface::is_point_inside)
+        .def("closest_points", &Surface::closest_points, py::arg("p1"),py::arg("num")=8)
 
         .def("mean_curvature_flow", &Surface::mean_curvature_flow)
         .def("shortest_surface_path", py::overload_cast<double , double, double , double,double,double>( &Surface::shortest_surface_path) )
         .def("shortest_surface_path", py::overload_cast<Point_3,Point_3>( &Surface::shortest_surface_path) )
 
         .def("strictly_inside", &Surface::strictly_inside, py::arg("other") , py::arg("adjustment")=-0.5)
+        .def("encapsulate", &Surface::encapsulate,py::arg("other") , py::arg("adjustment")=0.5)
         .def("separate_enclosed_surface", &Surface::separate_enclosed_surface, py::arg("other") , py::arg("adjustment")=-0.5)
 
 

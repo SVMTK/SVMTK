@@ -2,7 +2,7 @@ FROM debian:buster
 
 WORKDIR /svmtk
 
-RUN apt update && apt install -y \
+RUN apt-get update && apt-get install -y \
     bzip2 \
     cmake \
     curl \
@@ -16,17 +16,14 @@ RUN apt update && apt install -y \
     git \
     python3-pip
 
-# Istall and compile CGAL
-ARG CGAL_VERSION
-ENV CGAL_VERSION 5.0.2
-RUN curl -sL https://github.com/CGAL/cgal/releases/download/releases/CGAL-${CGAL_VERSION}/CGAL-${CGAL_VERSION}.tar.xz | tar xpvfJ -
-RUN cd CGAL-${CGAL_VERSION} && cmake -DWITH_Eigen3:BOOL=ON . && make && make install
-
+# Downlod CGAL and pybind
 RUN mkdir external && cd external && \
-    git clone https://github.com/pybind/pybind11.git --branch=v2.4.3 && \
-    git clone https://github.com/catchorg/Catch2.git
+    git clone https://github.com/pybind/pybind11.git --branch=v2.6.1 && \
+    git clone https://github.com/CGAL/cgal.git --branch=v5.0.4
 
 RUN python3 -m pip install setuptools
+
+RUN python3 -m pip install numpy
 
 # ADD demos demos
 ADD examples examples
@@ -36,5 +33,8 @@ ADD python python
 ADD tests tests
 ADD CMakeLists.txt .
 ADD setup.py .
+ADD README.md .
+ADD REQUIREMENTS.md .
 
 RUN python3 setup.py install
+
