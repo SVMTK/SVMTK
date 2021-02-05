@@ -696,8 +696,7 @@ inline bool Surface::surface_difference(Surface other)
  * @return success true if intersection computation is successful  
  */
 inline bool Surface::surface_union(Surface other)
-{  //CGAL::Polygon_mesh_processing::stitch_borders(mesh);
-   //CGAL::Polygon_mesh_processing::stitch_borders(other.get_mesh());
+{  
    bool success= CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh, other.get_mesh(), mesh);
    if (!success)
       std::cout<<"Faild to compute union."<<std::endl; 
@@ -1167,7 +1166,7 @@ inline Surface::Surface(std::vector<Point_3>& points,  std::vector<Face>& faces)
  */
 inline void Surface::normal_vector_cluster(Surface::vertex_vector &vertices, double cos_angle)  
 {
-
+  CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);
   int size = vertices.size();
   for (int i = 0 ; i < size ; ++i)
   {
