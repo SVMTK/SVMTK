@@ -2,16 +2,19 @@
 
 #define __Polyhedral_vector_to_labeled_function_wrapper_H
 
-
+/* --- Includes -- */
 #include "SubdomainMap.h" 
+
+/* -- CGAL Polygon Mesh Processing -- */
 #include <CGAL/Polygon_mesh_processing/bbox.h>
 
 
 /*
- * Wrapper : 
+ * 
  * CGAL Polyhedron to CGAL labeled mesh.
  * Combines the option of using CGAL polyhedrons to create mesh 
- * with specific tags for overlapping surfaces. (CGAL version 4.11) 
+ * with specific tags for overlapping surfaces.
+ * 
  */
 namespace CGAL {
         template<class Function_, class BGT>
@@ -23,10 +26,11 @@ namespace CGAL {
                 typedef std::vector<Function_*>   Function_vector;
                 typedef typename BGT::Point_3       Point_3;
                 typedef boost::dynamic_bitset<>   Bmask;
-            
+                typedef typename BGT::Sphere_3    Sphere_3;
+                
                 /**
-                 * Constructor: 
-                 * stores argument in member variables 
+                 * @brief TODO
+                 * 
                  * @param v a vector of functions i.e. surfaces with query is inside  
                  * @param map a smart pointer to a child class of SVMTK virtuell class AbstractMap
                  *       options : DefaultMap and SubdomainMap
@@ -40,6 +44,8 @@ namespace CGAL {
                 ~Polyhedral_vector_to_labeled_function_wrapper() {}
                 
                /**
+                 * @brief operator that returns the subdomain tag during construction of the mesh.
+                 * 
                  * This function determins the tag of a point and subsequent enclosed cell
                  * by evaluating a bitstring linked to the vector of surfaces. The bitstring has a length equal to the number 
                  * of surfaces, and for each bit the value "0" means the point is outside 
@@ -64,7 +70,8 @@ namespace CGAL {
                 }
                 
                /**
-                 * Constructs a bounding box of the surfaces.
+                 * @brief Constructs a bounding box of the surfaces.
+                 * @param none
                  * @return sum_bbox the summation of CGAL bounding boxes for each surfaces 
                  */
                 Bbox_3 bbox() const

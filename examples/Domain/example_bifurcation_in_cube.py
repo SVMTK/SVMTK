@@ -6,7 +6,7 @@ if __name__ == "__main__":
  
    surf = svm.Surface();
 
-   surf.make_cube(-2.,-2.,-2.,2.,2.,2.,16)
+   surf.make_cube(-2.,-2.,-2.,2.,2.,2.,0.5)
    surf.save("cube_.off")
    maker = svm.Domain(surf)
   

@@ -5,13 +5,9 @@ import SVMTK as svm
 
 
 if __name__ == "__main__":
-    
-
-   
+   print("Start ",__file__)    
 
    surf = svm.Surface("../Data/lh-pial.stl") 
-
-   while(surf.separate_narrow_gaps()):
-         surf.collapse_edges(0.3)
-         #surf.smooth_taubin(1) 
+   print(surf.separate_narrow_gaps(-0.6,0.4,50)) 
    surf.save("seperate_close_junctures.off")
+   print("Finish ",__file__)

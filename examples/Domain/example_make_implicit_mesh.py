@@ -18,7 +18,6 @@ if __name__ == "__main__":
 
    surf.implicit_surface(chair_function, 6.0,30,0.1,0.1)
 
-
    surf.save("chair.off")
 
    maker = svm.Domain(surf)

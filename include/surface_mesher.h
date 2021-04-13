@@ -18,39 +18,57 @@
 #ifndef __SURFACE_MESHER_H
 #define __SURFACE_MESHER_H
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Implicit_surface_3.h>
-#include <CGAL/Polyhedron_3.h>
-#include <CGAL/make_surface_mesh.h>
+// FIXME CLEAN UP
+/* --Includes -- */
 
-#include <CGAL/Surface_mesh_traits_generator_3.h>
-#include <CGAL/Surface_mesh_default_criteria_3.h>
-#include <CGAL/Surface_mesh_triangulation_generator_3.h>
-#include <CGAL/Surface_mesh_default_triangulation_3.h>
-
-#include <CGAL/Surface_mesh.h>
-#include <CGAL/Side_of_triangle_mesh.h>
-#include <CGAL/IO/Polyhedron_iostream.h>
-
-#include <CGAL/IO/output_surface_facets_to_polyhedron.h>
-#include <CGAL/Complex_2_in_triangulation_3.h>
-#include <CGAL/boost/graph/copy_face_graph.h>
-
-#include <CGAL/IO/facets_in_complex_2_to_triangle_mesh.h>
-#include <CGAL/Poisson_reconstruction_function.h>
-#include <CGAL/property_map.h>
-#include <CGAL/compute_average_spacing.h>
-#include <CGAL/Polygon_mesh_processing/distance.h>
-
+/* -- STL -- */
 #include <vector>
-#include <fstream>
 #include <fstream>
 #include <math.h>
 #include <functional>
 #include <cstdlib>
 
+/* -- CGAL 2D and 3D Linear Geometry Kernel  -- */
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+
+/* -- CGAL 3D Surface Mesh Generation -- */
+#include <CGAL/Implicit_surface_3.h>
+#include <CGAL/make_surface_mesh.h>
+#include <CGAL/Surface_mesh_traits_generator_3.h>
+#include <CGAL/Surface_mesh_default_criteria_3.h>
+#include <CGAL/Surface_mesh_triangulation_generator_3.h>
+#include <CGAL/Surface_mesh_default_triangulation_3.h>
+#include <CGAL/Complex_2_in_triangulation_3.h>
+
+/* -- CGAL 3D Polyhedral Surface -- */
+#include <CGAL/Polyhedron_3.h>
+
+/* -- CGAL Surface Mesh -- */
+#include <CGAL/Surface_mesh.h>
+
+/* -- CGAL Polygon Mesh Processing -- */
+#include <CGAL/Polygon_mesh_processing/distance.h>
+#include <CGAL/Side_of_triangle_mesh.h>
+
+/* -- CGAL and the Boost Graph Library -- */
+#include <CGAL/boost/graph/copy_face_graph.h>
+#include <CGAL/property_map.h>
+
+/* -- CGAL Poisson Surface Reconstruction -- */
+#include <CGAL/Poisson_reconstruction_function.h>
+
+/* -- CGAL Point Set Processing -- */
+#include <CGAL/compute_average_spacing.h>
+
+/* -- CGAL IO -- */
+#include <CGAL/IO/Polyhedron_iostream.h>
+#include <CGAL/IO/output_surface_facets_to_polyhedron.h>
+#include <CGAL/IO/facets_in_complex_2_to_triangle_mesh.h>
+
+
+
 /**
- * Wrapper: 
+ * \class
  * Wraps a function with structure : double functions( double, double,double) 
  * to a function with structure : FT functions(Point p) 
  */
@@ -68,17 +86,20 @@ public:
 };
 
 /**
+ * @brief Creates a triangulated surface mesh in 3D.
  * Used to mesh a implicit surfaces of a sphere i.e. SVMTK class Surface function make_sphere.
  * Has origin as input, thus it will mesh for an arbitary origin.
  * @see [Surface_mesher](https://doc.cgal.org/latest/Surface_mesher/index.html)
- * @param Surface mesh CGAL surface mesh object
+ *
+ * @tparam Mesh triangulated surface mesh, default CGAL Surface Mesh.
+ * @tparam Implicit_Function a surface function defined as f(x,y,z) = 0 with f(x,y,0) < 0 in the interior. 
  * @param x0 indicating origin in cartesian coordinates x-direction
  * @param y0 indicating origin in cartesian coordinates y-direction
  * @param z0 indicating origin in cartesian coordinates z-direction
- * @para bounding_sphere_radius indicating the radius of a sphere bounding the meshing operations
- * @para angular_bound bounds for the minimum facet angle in degrees.
- * @para radius_bound bound for the minimum for the radius of the surface Delaunay balls and the center-center distances respectively.
- * @para distance_bound bound for the minimum center-center distances respectively.
+ * @param bounding_sphere_radius indicating the radius of a sphere bounding the meshing operations
+ * @param angular_bound bounds for the minimum facet angle in degrees.
+ * @param radius_bound bound for the minimum for the radius of the surface Delaunay balls and the center-center distances respectively.
+ * @param distance_bound bound for the minimum center-center distances respectively.
  * @overload  
  */
 template<typename Mesh , typename Implicit_Function> 
@@ -111,7 +132,7 @@ void surface_mesher(Mesh& mesh, Implicit_Function func, double& x0 ,double& y0, 
 }
 
 /**
- * Used to mesh a implicit surfaces based on a function with structure double function( double,double,double )
+ * @brief Creates a triangulated surface in 3D given an implicit function.
  * @see [Surface_mesher](https://doc.cgal.org/latest/Surface_mesher/index.html)
  * @param mesh a CGAL surface mesh object
  * @para bounding_sphere_radius indicating the radius of a sphere bounding the meshing operations
@@ -150,14 +171,15 @@ void surface_mesher(Mesh& mesh, Implicit_Function func,  double bounding_sphere_
 }
 
 /**
- * Reconstruct a surface based on a CGAL surface mesh object with points using CGAL poisson_reconstruction algorithm.
+ * @brief Reconstruct a surface based on a CGAL surface mesh object with points using CGAL poisson_reconstruction algorithm.
  * @see [poisson_reconstruction](https://doc.cgal.org/latest/Poisson_surface_reconstruction_3/index.html)
- * @param surface CGAL surface mesh object
+ * @tparam SVMTK Surface class.
+ * @param surface a SVMTK Surface class object.
  * @para bounding_sphere_radius indicating the radius of a sphere bounding the meshing operations
  * @para angular_bound bounds for the minimum facet angle in degrees.
  * @para radius_bound bound for the minimum for the radius of the surface Delaunay balls and the center-center distances respectively.
  * @para distance_bound bound for the minimum center-center distances respectively.
- * @overload  
+ * @overload   
  */
 template<typename Surface>
 void poisson_reconstruction(Surface &surface,double angular_bound, double radius_bound, double distance_bound)

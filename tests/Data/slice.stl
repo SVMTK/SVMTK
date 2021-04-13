@@ -1,30 +1,16 @@
 solid tests/Data/slice.stl
 facet normal 1 1 1
 outer loop
-	vertex 0 0 0.5
-	vertex 0.176777 0 0.323223
-	vertex 0 0.125 0.375
-endloop
-endfacet
-facet normal 1 1 1
-outer loop
-	vertex 0.5 0 0
 	vertex 0 0.25 0.25
-	vertex 0.176777 0 0.323223
-endloop
-endfacet
-facet normal 1 1 1
-outer loop
+	vertex 0.5 0 0
 	vertex 0.25 0.25 0
-	vertex 0 0.25 0.25
-	vertex 0.5 0 0
 endloop
 endfacet
 facet normal 1 1 1
 outer loop
-	vertex 0.176777 0 0.323223
-	vertex 0 0.25 0.25
-	vertex 0 0.125 0.375
+	vertex 0 0.0883883 0.411612
+	vertex 0 0 0.5
+	vertex 0.125 0 0.375
 endloop
 endfacet
 facet normal 1 1 1
@@ -32,6 +18,13 @@ outer loop
 	vertex 0 0.411612 0.0883883
 	vertex 0.25 0.25 0
 	vertex 0.125 0.375 0
+endloop
+endfacet
+facet normal 1 1 1
+outer loop
+	vertex 0.5 0 0
+	vertex 0 0.25 0.25
+	vertex 0.25 0 0.25
 endloop
 endfacet
 facet normal 1 1 1
@@ -46,6 +39,20 @@ outer loop
 	vertex 0 0.5 0
 	vertex 0 0.411612 0.0883883
 	vertex 0.125 0.375 0
+endloop
+endfacet
+facet normal 1 1 1
+outer loop
+	vertex 0.25 0 0.25
+	vertex 0 0.0883883 0.411612
+	vertex 0.125 0 0.375
+endloop
+endfacet
+facet normal 1 1 1
+outer loop
+	vertex 0.25 0 0.25
+	vertex 0 0.25 0.25
+	vertex 0 0.0883883 0.411612
 endloop
 endfacet
 endsolid

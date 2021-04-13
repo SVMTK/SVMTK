@@ -41,14 +41,13 @@ class Domain_Test(unittest.TestCase):
         sf.add("11",2)     
         domain = SVMTK.Domain([surface_1,surface_2],sf)
         domain.create_mesh(1.) 
-        surface = domain.get_boundary(0) 
-        self.assertTrue(surface.num_vertices()==77 and surface.num_faces()==137 and surface.num_edges()==219)
+        surface = domain.get_boundary(0)
+        self.assertTrue(surface.num_vertices()==75 and surface.num_faces()==146 and surface.num_edges()==219)
         surface = domain.get_boundary(1) 
         self.assertEqual(surface.num_vertices(), 0) 
-        surface = domain.get_boundary(3) 
-        self.assertTrue(surface.num_vertices()==128 and surface.num_faces()==235 and surface.num_edges()==366) 
+        surface = domain.get_boundary(3)
+        self.assertTrue(surface.num_vertices()==126 and surface.num_faces()==244 and surface.num_edges()==366) 
         surfaces =  domain.get_boundaries()  
-        print(len(surfaces))
         self.assertEqual(len(surfaces),2) 
 
     def test_domain_with_polyline_meshing(self):
@@ -103,8 +102,37 @@ class Domain_Test(unittest.TestCase):
         domain = SVMTK.Domain(surface_1)
         domain.create_mesh(1)
         domain.perturb() 
+
     
     
+
+    
+    
+    def test_surface_segmentation(self): # NOTE: may occasionally fail.
+        surface_1 = SVMTK.Surface() 
+        surface_1.make_cube(0,0,0,1.,1.,1.,1) 
+        surface_2 = SVMTK.Surface() 
+        surface_2.make_cube(1.,0.,0.,2.,2,2.,1)
+        surface_3 = SVMTK.Surface() 
+        surface_3.make_cube(0.,1.,0.,2,2.,2.,1)        
+        sf= SVMTK.SubdomainMap()
+ 
+               
+        surface_1.union(surface_2)
+        surface_1.union(surface_3) 
+
+        domain = SVMTK.Domain(surface_1)
+        
+        domain.add_sharp_border_edges(surface_1,85)
+        
+        domain.create_mesh(1.) 
+
+
+        self.assertTrue(domain.number_of_patches()==1)   
+            
+        domain.boundary_segmentations()
+
+        self.assertTrue(domain.number_of_patches()==9)       
         
 
 

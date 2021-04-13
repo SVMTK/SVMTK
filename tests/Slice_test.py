@@ -29,9 +29,9 @@ class Slice_Test(unittest.TestCase):
     def test_slice_subdomains(self):
         slice_ = SVMTK.Slice(SVMTK.Plane_3(0,0,1,0))
         surface1 = SVMTK.Surface() 
-        surface1.make_cube(-1.,-1.,-1.,1.,1.,1.,1) 
+        surface1.make_cube(-1.,-1.,-1.,1.,1.,1.,2.) 
         surface2 = SVMTK.Surface() 
-        surface2.make_cube(-2.,-2.,-2.,2.,2.,2.,1)
+        surface2.make_cube(-2.,-2.,-2.,2.,2.,2.,4.)
         
         sf= SVMTK.SubdomainMap(0) 
         sf.add("11",2)
@@ -44,14 +44,17 @@ class Slice_Test(unittest.TestCase):
         self.assertEqual(slice_.number_of_subdomains(),2)
         slice_.add_surface_domains([ surface1 , surface2],sf)
         self.assertEqual(slice_.number_of_subdomains(),1)
-        slice_.remove_subdomains(2)
-        self.assertEqual(slice_.number_of_subdomains(),0)
+        slice_.remove_subdomain(2)
+        try:
+          self.assertEqual(slice_.number_of_subdomains(),0)
+        except SVMTK.EmptyMeshError:
+          self.assertTrue(True) 
 
     def test_connected_components(self):
         surface1 = SVMTK.Surface() 
-        surface1.make_cube(0.,0.,0.,1.,1.,1.,10)
+        surface1.make_cube(0.,0.,0.,1.,1.,1.,0.1)
         surface2 = SVMTK.Surface() 
-        surface2.make_cube(1.5,0,0,2.,1.,1.,10)
+        surface2.make_cube(1.5,0,0,2.,1.,1.,0.1)
         slice_ = SVMTK.Slice(SVMTK.Plane_3(0,0,1,-0.5))
         slice_.slice_surfaces([ surface1,surface2])  
         slice_.create_mesh(1.)

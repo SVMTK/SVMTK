@@ -58,7 +58,7 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
 
 add_subdirectory(external/pybind11)
 
-set( CMAKE_CXX_FLAGS "-fPIC -std=gnu++1z -frounding-math -lgmpxx -lgmp -Wall -I${Boost_INCLUDE_DIRS}")
+set( CMAKE_CXX_FLAGS "-fPIC -std=gnu++1z -frounding-math -lgmpxx -lgmp -Wall -I${Boost_INCLUDE_DIRS}") 
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 

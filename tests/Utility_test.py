@@ -42,30 +42,31 @@ class Utility_Test(unittest.TestCase):
     def test_seperate_close_surfaces(self):
         s1 =SVMTK.Surface()
         s2 =SVMTK.Surface()  
-        s3 =SVMTK.Surface()    
         s1.make_cube(1.,0.,1.,2.,1.,2.,1) 
         s2.make_cube(1.,1,1.,2.,2.,2.,1) 
         
         self.assertTrue(SVMTK.separate_close_surfaces(s1,s2))
-       
+
+
 
     def test_seperate_close_surfaces_2(self):
         s1 =SVMTK.Surface()
         s2 =SVMTK.Surface()  
         s3 =SVMTK.Surface()    
-        s1.make_cube(1.,0.,1.,2.,1.,2.,5) 
-        s2.make_cube(1.,1.,1.,2.,2.,2.,5) 
-        s3.make_cube(1.2,0.5,1.2,1.8,1.5,1.8,5) 
+        s1.make_cube(1.,0.,1.,2.,1.,2.,0.1) 
+        s2.make_cube(1.,1.,1.,2.,2.,2.,0.1) 
+        s3.make_cube(1.2,0.5,1.2,1.8,1.5,1.8,0.1)
+         
         self.assertTrue(SVMTK.separate_overlapping_surfaces(s1,s2,s3))
-       
+
 
     def test_seperate_overlapping_surfaces(self):
         s1 =SVMTK.Surface()
         s2 =SVMTK.Surface()  
         s3 =SVMTK.Surface()    
-        s1.make_cube(1.,0.,1.,2.,1.,2.,1) 
-        s2.make_cube(1.,1,1.,2.,2.,2.,1) 
-        s3.make_cube(1.2,0.5,1.2,1.8,1.5,1.8,1) 
+        s1.make_cube(1.,0.,1.,2.,1.,2.,0.5) 
+        s2.make_cube(1.,1,1.,2.,2.,2.,0.5) 
+        s3.make_cube(1.2,0.5,1.2,1.8,1.5,1.8,0.5) 
         s1.union(s3) 
         s1.adjust_boundary(-0.01) 
         s2.adjust_boundary(-0.01) 
@@ -76,19 +77,22 @@ class Utility_Test(unittest.TestCase):
         s1 =SVMTK.Surface()
         s2 =SVMTK.Surface()  
         s3 =SVMTK.Surface()    
-        s1.make_cube(1.,0.,1.,2.,1.,2.,5) 
-        s2.make_cube(1.,1.,1.,2.,2.,2.,5) 
-        s3.make_cube(1.2,0.5,1.2,1.8,1.5,1.8,5) 
+        s1.make_cube(1.,0.,1.,2.,1.,2.,.2) 
+        s2.make_cube(1.,1.,1.,2.,2.,2.,.2) 
+        s3.make_cube(1.2,0.5,1.2,1.8,1.5,1.8,.2) 
+
         self.assertTrue(SVMTK.separate_overlapping_surfaces(s1,s2,s3)) 
 
 
 
-    def test_morphological_surface_union(self):
-        s1 =SVMTK.Surface("tests/Data/s1.off")
+    def test_morphological_surface_union(self): 
+        s1 =SVMTK.Surface("tests/Data/s1.off") # Update ??
         s2 =SVMTK.Surface("tests/Data/s2.off")  
         s5  = SVMTK.union_partially_overlapping_surfaces(s1,s2,0.9,0.2)
         self.assertTrue(s5.num_faces()>0) 
-
+        s1.save("msu_s1.off")
+        s2.save("msu_s2.off")
+        s5.save("msu_s5.off")
 
 
 if __name__ == '__main__':
