@@ -171,7 +171,7 @@ Complete the installation with
 
 Further details can be found at <http://www.mpfr.org>
 
-## CMake >=3.5
+## CMake >=3.13
 Installing CMake using terminal 
 
 `sudo apt-get install -y cmake`
