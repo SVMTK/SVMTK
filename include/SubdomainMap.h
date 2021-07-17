@@ -87,6 +87,7 @@ class DefaultMap : virtual public AbstractMap
          */      
         const std::map<std::pair<int,int>,int> make_interfaces(std::vector<std::pair<int,int>> interfaces)
         { 
+        
            std::map<std::pair<int,int> ,int> patches;  
            int iter =0;
            for( auto interface : interfaces )  
@@ -349,16 +350,26 @@ class SubdomainMap :virtual public AbstractMap
            }
            else
            {  
+              //FIXME
+              
               int iter =0;
               for( auto interface : interfaces )  
               {  
+
                   if (interface.first > iter)
-                      iter = interface.first;                  
+                      iter = interface.first;  
               } 
+              /*auto tags =get_tags();
+              auto iter = *std::max_element(std::begin(tags), std::end(tags));   */    
               iter++;
+
+            
               for( auto interface : interfaces )  
               {  
-                      patches[std::pair<int,int>(interface.first,interface.second)]=iter++;
+                  if (patches.find(std::pair<int,int>(interface.first,interface.second)) == patches.end() )
+                  {
+                      patches[std::pair<int,int>(interface.first,interface.second)]=iter++;       
+                  }    
               } 
               return patches;
            } 

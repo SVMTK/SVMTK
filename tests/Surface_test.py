@@ -140,7 +140,7 @@ class Surface_Test(unittest.TestCase):
 
     def test_separate_narrow_gaps(self):
          s1=SVMTK.Surface("tests/Data/narrow_gap.off")
-         a = s1.separate_narrow_gaps(adjustment=-.4,smoothing=0.3)
+         a = s1.separate_narrow_gaps(adjustment=-.1,smoothing=0.1)
          self.assertTrue(a[0]) 
          self.assertEqual(a[1],0) 
 
@@ -171,7 +171,7 @@ class Surface_Test(unittest.TestCase):
         surface1.make_cube(0.,0.,0.,2.,2.,2.,1.0)         
         surface2 =SVMTK.Surface()  
         surface2.make_cube(0.05,0.05,0.05,1.95,1.95,1.95,1.0) 
-        a = surface2.separate(surface1, -0.1)
+        a = surface2.separate(surface1, 0.4)
         self.assertTrue( a[0])
         self.assertEqual( a[1],0)
 

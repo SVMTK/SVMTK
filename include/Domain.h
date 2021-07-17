@@ -39,11 +39,6 @@
 #include <CGAL/Mesh_3/Detect_polylines_in_polyhedra.h>
 #include <CGAL/Mesh_3/polylines_to_protect.h>
 
-
-
-//#include <CGAL/Triangulation_3.h>
-//#include <CGAL/refine_mesh_3.h>
-
 /**
  * @brief Transform facets with a specific tag to points and facet connections.
  *
@@ -390,11 +385,11 @@ class Domain {
 
 
         template<typename Surface>
-        Domain(Surface& surface,double accuracy=1.e-7);
+        Domain(Surface& surface,double error=1.e-7);
         template<typename Surface>
-        Domain(std::vector<Surface> surfaces,double accuracy=1.e-7);
+        Domain(std::vector<Surface> surfaces,double error=1.e-7);
         template<typename Surface>
-        Domain(std::vector<Surface> surfaces, std::shared_ptr<AbstractMap> map,  double accuracy=1.e-7);
+        Domain(std::vector<Surface> surfaces, std::shared_ptr<AbstractMap> map,  double error=1.e-7);
 
         ~Domain() { for( auto vit : this->v){delete vit;}v.clear();}        
 
@@ -415,6 +410,10 @@ class Domain {
 
         template<typename Surface>
         std::vector<std::shared_ptr<Surface> > get_boundaries();
+        
+        template<typename Surface>
+        std::shared_ptr<Surface> get_interface(std::pair<int,int> interface );
+
         template<typename Surface>
         std::shared_ptr<Surface> get_boundary(int tag); 
 
@@ -422,8 +421,12 @@ class Domain {
         std::set<int>  get_subdomains(); 
         std::set<int> get_curves();
 
+        // FIXME
+       template<typename Surface, typename Plane_3>
+       void add_sharp_border_edges(Surface& surface,Plane_3 plane); // add const
+       
         /**
-         * TODO FIXME
+         * 
          * The following functions returns an integer of a query.
          * number_of_subdomains() returns number of different cell tags 
          * number_of_curves() returns number of different edge tags 
@@ -489,7 +492,11 @@ class Domain {
         void boundary_segmentations(int subdomain_tag,double angle_in_degree);
         template <typename Surface>
         void boundary_segmentations(double angle_in_degree);
-
+        
+        template <typename Surface>
+        void boundary_segmentations(std::pair<int,int> interface, double angle_in_degree);
+        
+        
         std::vector<double> dihedral_angles();
         std::vector<double> radius_ratio();
         
@@ -636,7 +643,7 @@ inline std::vector<double> Domain::radius_ratio()
  * that this bug will only affect functions using facets_in_complex, i.e. no impact
  * regarding writing to file
  * 
- * @param none 
+ * @param none template<typename Surface>
  * @bool return true if none empty, and false if empty.
  */
 inline void Domain::rebind_missing_facets()
@@ -684,18 +691,125 @@ inline bool Domain::assert_non_empty_mesh_object()
         return true;
 }
 
+
 /**
  * @brief Segments the boundary of a specified subdomain tag.
  * 
  * Calls Surface::surface_segmentation on the boundary surfaces specifiec by input, and 
- * updates the boundary facets  with the segementation tags 
+ * updates the boundary facets with the segementation tags. 
+ * 
+ * @tparam SVMTK Surface object 
+ * @param subdmain_tag used to obtain the boundary of subdomain with tag.
+ * @param angle_in_degree the threshold angle used to detect sharp edges.
+ * @return none, updates surface_patches of mesh.  
+ * FIXME
+ */
+ 
+template <typename Surface>
+inline void Domain::boundary_segmentations(std::pair<int,int> interface, double angle_in_degree)
+{
+
+  assert_non_empty_mesh_object();
+  
+  const Tr& tr = c3t3.triangulation();
+  
+  auto patches = get_patches();
+
+  auto p = std::minmax_element(patches.begin(),patches.end()); //subdomain+1?
+
+  int tag_ = 1+p.second->first;
+
+  std::shared_ptr<Surface> surf;
+  
+  
+  surf =  get_interface<Surface>(interface); 
+  
+  
+    
+    
+  surf.get()->set_outward_face_orientation();
+  surf.get()->save("jfam.off");
+  surf.get()->fill_holes();
+  surf.get()->save("jfam2.off");
+  auto T2tagmap =surf.get()->surface_segmentation(tag_,angle_in_degree); // error
+
+  int i,j,k,n;
+  
+  Cell_handle ch,cn; 
+  Vertex_handle vh1,vh2,vh3;
+  
+  std::map<int,int> temp;
+  
+  for ( auto pit : T2tagmap) 
+  {  
+     Weighted_point wp1(pit.first[1]); 
+     Weighted_point wp2(pit.first[2]); 
+     Weighted_point wp3(pit.first[3]); 
+ 
+     tr.is_vertex(wp1,vh1);
+     tr.is_vertex(wp2,vh2);
+     tr.is_vertex(wp3,vh3);    
+               
+     if ( tr.is_facet(vh1,vh2,vh3,ch,i,j,k) ) 
+     {      
+     n = (6- (i+j+k) ); // 3+2+1 -> 0 , 3+1+0 -> 2 etc.
+     
+     cn = ch->neighbor(n);
+     
+     //Subdomain_index ci = static_cast<int>(c3t3.subdomain_index(ch));     
+     //Subdomain_index cj = static_cast<int>(c3t3.subdomain_index(cn)); 
+     
+     //if (!c3t3.is_in_complex(ch,n))
+     //   continue;
+     
+
+     //if ( ( ci!=interface.first and cj!=interface.second ) or (cj!=interface.first and ci!=interface.second ) )
+     //   continue;
+     
+     
+
+     c3t3.remove_from_complex(ch,n);
+     c3t3.add_to_complex(ch, n, Surface_patch_index(pit.second.first,pit.second.second) ); 
+     }
+     /*if( ci!=cj )
+     {   
+        if ( cj==0 ) 
+        {
+          
+           c3t3.remove_from_complex(ch,n); 
+           c3t3.add_to_complex(ch, n, Surface_patch_index(pit.second.first,pit.second.second)  ); 
+      
+        }   
+        else if ( ci==0)
+        {
+           
+           c3t3.remove_from_complex(ch,n);template<typename Surface>
+           c3t3.add_to_complex(ch, n, Surface_patch_index(pit.second.first,pit.second.second) ); 
+
+        }
+        
+    }*/
+     
+ 
+  }
+
+
+  return;
+}
+
+
+
+/**
+ * @brief Segments the boundary of a specified subdomain tag.
+ * 
+ * Calls Surface::surface_segmentation on the boundary surfaces specifiec by input, and 
+ * updates the boundary facets with the segementation tags. 
  * 
  * @tparam SVMTK Surface object 
  * @param subdmain_tag used to obtain the boundary of subdomain with tag.
  * @param angle_in_degree the threshold angle used to detect sharp edges.
  * @return none, updates surface_patches of mesh.  
  * 
- * TODO
  */
 template <typename Surface>
 inline void Domain::boundary_segmentations(int subdomain_tag, double angle_in_degree)
@@ -706,7 +820,8 @@ inline void Domain::boundary_segmentations(int subdomain_tag, double angle_in_de
   const Tr& tr = c3t3.triangulation();
   
   auto patches = get_patches();
-  
+
+
   auto p = std::minmax_element(patches.begin(),patches.end()); 
 
   int tag_ = 1+p.second->first;
@@ -715,7 +830,8 @@ inline void Domain::boundary_segmentations(int subdomain_tag, double angle_in_de
   
   surf =  get_boundary<Surface>(subdomain_tag);
  
-  auto T2tagmap =surf.get()->surface_segmentation(tag_,angle_in_degree); // 
+  
+  auto T2tagmap =surf.get()->surface_segmentation(tag_,angle_in_degree); // error
 
   int i,j,k,n;
   
@@ -740,23 +856,28 @@ inline void Domain::boundary_segmentations(int subdomain_tag, double angle_in_de
      Subdomain_index ci = static_cast<int>(c3t3.subdomain_index(ch));     
      Subdomain_index cj = static_cast<int>(c3t3.subdomain_index(cn)); 
 
+
      if( ci!=cj )
      {   
         if ( cj==0 ) 
-        {
+        {           
            c3t3.remove_from_complex(ch,n); 
            c3t3.add_to_complex(ch, n, Surface_patch_index(pit.second.first,pit.second.second)  ); 
+           
         }   
         else if ( ci==0)
         {
            c3t3.remove_from_complex(ch,n);
            c3t3.add_to_complex(ch, n, Surface_patch_index(pit.second.first,pit.second.second) ); 
+
         }
         
     } 
      
  
   }
+
+
   return;
 }
 
@@ -771,7 +892,6 @@ inline void Domain::boundary_segmentations(int subdomain_tag, double angle_in_de
  * @param angle_in_degree the threshold angle used to detect sharp edges.
  * @return none, updates surface_patches of mesh.  
  * 
- * TODO
  */
 template <typename Surface>
 inline void Domain::boundary_segmentations(double angle_in_degree)
@@ -805,7 +925,7 @@ inline void Domain::set_borders()
 /**
  * @brief Sets 1-D features located not on the boundary. This is done automatically 
  * in the function create_mesh.
- * @param none 
+ * @param none template<typename Surface>
  * @return none 
  */
 inline void Domain::set_features()
@@ -816,7 +936,8 @@ inline void Domain::set_features()
   }
 }
 
-/**TODO : rename 
+/**
+ * TODO : rename 
  * @brief Returns a set of integer of the curve tags in the triangulation.
  * @param none 
  * @return result a set of integers representing the curve tags.
@@ -833,17 +954,17 @@ inline std::set<int> Domain::get_curves()
 }
 
 /**
-  * FIXME : Precondtion 
+ * 
  * @param surface a vector of SVMTK class Surface objects defined in Surface.h 
  */
 template<typename Surface>
-Domain::Domain( std::vector<Surface> surfaces ,double accuracy)
+Domain::Domain( std::vector<Surface> surfaces ,double error)
 {
     for(typename std::vector<Surface>::iterator sit= surfaces.begin() ;sit!= surfaces.end();sit++)
     {
-       /*if (!sit->does_bound_a_volume())
-          throw PreconditionError("Surface does not bound a volume");
-       */
+       if (!sit->does_bound_a_volume())
+          sit->fill_holes();
+       
        
        Polyhedron polyhedron;
        sit->get_polyhedron(polyhedron);
@@ -856,23 +977,23 @@ Domain::Domain( std::vector<Surface> surfaces ,double accuracy)
     Function_wrapper wrapper(this->v, map_ptr);
 
     domain_ptr=std::unique_ptr<Mesh_domain>( new Mesh_domain(
-               Labeled_Mesh_Domain(wrapper,wrapper.bbox(),FT(accuracy) ))); 
+               Labeled_Mesh_Domain(wrapper,wrapper.bbox(),FT(error) ))); 
 }
 
 /**
- * FIXME : Precondtion 
+ *
  * @param surfaces a vector of SVMTK class Surface objects defined in local header Surface.h 
  * @param map a smart pointer to SVMTK virtuell class AbstractMap defind in local header SubdomainMap.h
  */
 template<typename Surface>
-Domain::Domain( std::vector<Surface> surfaces , std::shared_ptr<AbstractMap> map, double accuracy )
+Domain::Domain( std::vector<Surface> surfaces , std::shared_ptr<AbstractMap> map, double error )
 {
  
     for(typename std::vector<Surface>::iterator sit= surfaces.begin() ;sit!= surfaces.end();sit++)
     {
-       /*if (!sit->does_bound_a_volume())
-          throw PreconditionError("Surface does not bound a volume");
-        */ 
+       if (!sit->does_bound_a_volume())
+          sit->fill_holes();
+        
        
        Polyhedron polyhedron; 
        sit->get_polyhedron(polyhedron);
@@ -884,19 +1005,19 @@ Domain::Domain( std::vector<Surface> surfaces , std::shared_ptr<AbstractMap> map
     map_ptr = std::move(map);
     Function_wrapper wrapper(this->v,map_ptr);
 
-    domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain( Labeled_Mesh_Domain(wrapper,wrapper.bbox(),FT(accuracy ) ))); 
+    domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain( Labeled_Mesh_Domain(wrapper,wrapper.bbox(),FT(error) ))); 
 }
 
 /**
- * FIXME : Precondtion 
+ *
  * @param surface SVMTK class Surface object defined in local header Surface.h
  */
 template<typename Surface>
-Domain::Domain(Surface &surface,double accuracy) 
+Domain::Domain(Surface &surface,double error) 
 {
-    /*if (!surface.does_bound_a_volume())
-       throw PreconditionError("Surface does not bound a volume.");
-    */   
+    if (!surface.does_bound_a_volume())
+        surface.fill_holes();
+       
     Polyhedron polyhedron;
     surface.get_polyhedron(polyhedron);
 
@@ -909,7 +1030,7 @@ Domain::Domain(Surface &surface,double accuracy)
     Function_wrapper wrapper(this->v,map_ptr);
     //
 
-    domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain( Labeled_Mesh_Domain(wrapper,wrapper.bbox(),FT(accuracy) ))); 
+    domain_ptr=std::unique_ptr<Mesh_domain> (new Mesh_domain( Labeled_Mesh_Domain(wrapper,wrapper.bbox(),FT(error) ))); 
 }
 
 /** 
@@ -1009,7 +1130,9 @@ inline void Domain::save(std::string outpath,bool save_1Dfeatures)
     Facet_pmap_twice  facet_twice_pmap(c3t3,cell_pmap);
     Vertex_pmap vertex_pmap(c3t3, cell_pmap,facet_pmap); // 
 
-    std::map<std::pair<int,int>,int> facet_map = this->map_ptr->make_interfaces(this->get_patches() );
+    std::map<std::pair<int,int>,int> facet_map = this->map_ptr->make_interfaces(this->get_patches());
+    
+
     
     output_to_medit_(medit_file,c3t3, vertex_pmap, facet_map, cell_pmap, facet_twice_pmap , false, save_1Dfeatures) ;
     medit_file.close();
@@ -1105,14 +1228,14 @@ inline void Domain::remove_subdomain(std::vector<int> tags)
 
 
 /**
- * TODO : Make intersecting edges conform. 
- * @brief adds sharp border edges of polyhedron to mesh.
  *
+ * @brief adds sharp border edges of polyhedron to mesh.
  *
  * Checks polyhedron for sharp edges, if these edges do not conflict/intersect
  * previously stored edges, then the edges are stored in this->borders.
  *   
- * @note In combination with ill-posed meshing paramteres can cause segmentation fault (crash). 
+ * @note The use of 1D features in combination with ill-posed meshing paramteres can cause segmentation fault (crash). 
+ *
  * @param polyhedron triangulated surface mesh in 3D (@see Domain::polyhedron).
  * @param threshold that determines sharp edges.
  * @precondition edges can not intersect in a non conforming way.
@@ -1153,14 +1276,18 @@ inline void Domain::add_sharp_border_edges(Polyhedron& polyhedron, double thresh
  }
 
  if (temp.size()==0)
-   throw PreconditionError("No edges added, new edges intersects with existing edges."); //FIXME
+   std::cout <<"Warning, new edges intersects with existing edges."<<std::endl;
  else
    this->borders.insert(this->borders.end(),temp.begin(),temp.end());    
 }
 
+
+
+
 /**
  * @brief Adds sharp border edges from a SVMTK Surface object.
  *
+ * @tparam SVMTK Surface class
  * @param surface Surface object defined in Surface.h .
  * @param threshold angle in degree (0-90) bewteen to connected edges.
  * @overload
@@ -1176,10 +1303,34 @@ void Domain::add_sharp_border_edges(Surface& surface, double threshold) // add c
 }
 
 
+
+/**
+ * @brief Adds sharp border edges from a SVMTK Surface object.
+ *
+ * @tparam SVMTK Surface class
+ * @param surface Surface object defined in Surface.h .
+ * @param threshold angle in degree (0-90) bewteen to connected edges.
+ * @overload
+ */
+template<typename Surface, typename Plane_3>
+void Domain::add_sharp_border_edges(Surface& surface,Plane_3 plane) // add const
+{ 
+
+  surface.collapse_edges(); // FIXME
+  
+  auto polylines = surface.polylines_in_plane(plane);
+  for ( auto polyline : polylines) 
+  {
+    add_feature(polyline);
+  } 
+  
+}
+
+
 /**
  * @brief Combines borders edges to a connected polyline.
  *
- * TODO If the number polylines remains the same, 
+ * If the number polylines remains the same, 
  * then the borders are not updated, this is to 
  * avoid core dump.  
  * 
@@ -1225,20 +1376,20 @@ std::vector<std::pair<int,int>>  Domain::get_patches()
       for( int i =0 ; i<4 ; ++i)
       {
          Surface_patch_index spi = c3t3.surface_patch_index(cit,i) ;
-    
-         if (dummy.insert(std::pair<int,int>(static_cast<int>(spi.first) , static_cast<int>(spi.second) )).second 
-                 and spi.first!=spi.second )
-            sf_indices.push_back(std::pair<int,int>(static_cast<int>(spi.first) , static_cast<int>(spi.second) ));
+
+         if (dummy.insert(std::pair<int,int>(static_cast<int>(spi.first) , static_cast<int>(spi.second) )).second and spi.first!=spi.second )
+          {   sf_indices.push_back(std::pair<int,int>(static_cast<int>(spi.first) , static_cast<int>(spi.second) ));
+
+          }
       }
    }
    std::sort(sf_indices.begin() ,sf_indices.end()) ;
    return sf_indices;
 }
 
+// 
 /**
- * @briefReturns the boundary of a subdomain tag stored in a Surface object.
- *
- * TODO
+ * @brief Returns the boundary of a subdomain tag stored in a Surface object.
  *
  * @tparam SVMTK Surface object   
  * @param tag the subdomain tag 
@@ -1258,9 +1409,7 @@ std::shared_ptr<Surface> Domain::get_boundary(int tag)
 /**
  * @brief Iterates over all surface boundaries of subdomains and stores and returns it as a vector of Surface objects.   
  *
- * TODO
- *
- * @tparam SVMTK Surface object   s 
+ * @tparam SVMTK Surface object    
  * @param none 
  * @return patches vector of Surface objects 
  */
@@ -1284,6 +1433,26 @@ std::vector<std::shared_ptr<Surface>> Domain::get_boundaries()
    }
    return patches;
 }
+
+
+template<typename Surface>
+std::shared_ptr<Surface> Domain::get_interface(std::pair<int,int> interface ) 
+{ 
+   
+   std::vector<Point_3> points;
+   std::vector<Face> faces;
+   std::vector<std::shared_ptr<Surface>> patches;
+
+   if (interface.first == interface.second)
+       throw InvalidArgumentError("There are no interfaces between similar tags.") ;
+
+   facets_in_complex_3_to_triangle_soup_(c3t3,Surface_patch_index(interface.first,interface.second),points,faces);
+   std::shared_ptr<Surface> surf(new Surface(points,faces)); 
+
+   return surf;
+}
+
+
 
 /**
  * @brief CGAL function for lloyd optimazation of the constructed mesh. 
