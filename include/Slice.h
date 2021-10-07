@@ -62,21 +62,6 @@
 #include <CGAL/IO/Triangulation_off_ostream_2.h>
 
 
-
-//#include <CGAL/utils.h> // NEEDED  ? 
-//#include <CGAL/Triangulation_hierarchy_2.h>
-/*#include <CGAL/convex_hull_2.h> //WHY 
-
-#include <CGAL/Polygon_2_algorithms.h> //WHY
-#include <CGAL/Polygon_with_holes_2.h> */
-
-//#include <CGAL/assertions.h>
-//#include <boost/unordered_map.hpp>
-//#include <queue>
-//#include <assert.h>  
-
-
-
 /**
  * @brief Computes the length of an polyline 
  * i.e. vector of points
@@ -158,7 +143,18 @@ struct Minimum_sphere_2
 /**
  * \Slice 
  * 
- * Handles triangulated mesh in 2D
+ * The SVMTK Slice class is used to store and manipulate triangulated surfaces in 2D, i.e. the thrid coordinate is voided. 
+ *
+
+ * The SVMTK Slice class is implemnted with the Exact predicates inexact constructions kernel.
+ * @see(CGAL::Exact_predicates_inexact_constructions_kernel)[https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Exact__predicates__inexact__constructions__kernel.html] 
+ * 
+ * 
+ *
+ * @note The Slice does not handle cavities, but cavities can be assigned with adding surfaces and an 
+ * optional SVMTK SubdomainMap class. 
+ * @see [ add_surface_domains] 
+ *              
  */
 class Slice
 {
@@ -207,6 +203,7 @@ class Slice
 
        void set_plane(Plane_3 inplane){ this->plane = inplane;}
        Plane_3& get_plane(){return this->plane;}
+       
        template<typename Surface> 
        void add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map); 
        template<typename Surface> 
@@ -222,8 +219,10 @@ class Slice
        int  connected_components(); 
        void keep_largest_connected_component(); 
 
+       
        void add_constraints(Polylines_2 &polylines); 
        void add_constraints(Slice &slice);
+       
        void add_constraint(Polyline_2 &polyline);
 
        Polylines_2& get_constraints() { return constraints;}
@@ -246,6 +245,7 @@ class Slice
        void output_slice_to_medit_(std::ostream& os);
        void write_STL(const std::string filename);
 
+
        struct sort_vectors_by_size {
                   template<typename T>
                   bool operator()(const std::vector<T> & a, const std::vector<T> & b)
@@ -261,7 +261,6 @@ class Slice
     private:
        Minimum_sphere_2<Kernel> min_sphere;
        Polylines_2 constraints;
-       //Constraint_graph constraints;
        CDT cdt;
        Plane_3 plane;
        std::map<Edge,int> edges; 
@@ -489,7 +488,7 @@ void Slice::slice_surfaces(std::vector<Surface> surfaces)
 {
    for ( auto surf : surfaces ) 
    {
-         std::shared_ptr<Slice> temp = surf.template mesh_slice<Slice>(this->plane);              
+         std::shared_ptr<Slice> temp = surf.template get_slice<Slice>(this->plane);              
          this->add_constraints(*temp.get()); 
    }
 }  
@@ -748,7 +747,7 @@ inline int Slice::connected_components()
  * @brief Saves the 2D mesh to file. 
  *
  * Valid format are: off, stl, vtu and mesh(with tags)                                          
- * TODO
+ * TODO: add tags for all formats.
  *
  * @param filename where the 2D mesh is to be stored
  * @return void

@@ -38,6 +38,7 @@
 /* -- CGAL Mesh_3 -- */ 
 #include <CGAL/Mesh_3/Detect_polylines_in_polyhedra.h>
 #include <CGAL/Mesh_3/polylines_to_protect.h>
+#include <CGAL/IO/read_ply_points.h>
 
 /**
  * @brief Transform facets with a specific tag to points and facet connections.
@@ -328,12 +329,40 @@ struct Minimum_sphere
 
 
 /**
- * \class 
- * Used to create and store the resulting tetrahedra mesh.
+ * \class Domain
+ * The SVMTK Domain class is used to create and tetrahedra mesh in 3D. 
+ * For auxilary purpose, most of the CGAL declarations are done inside the Domain class.
+ *
+ *
+ *
+ *
+ *
+ * The class utilize the CGAL Exact predicates inexact constructions kernel.
+ * @see(CGAL::Exact_predicates_inexact_constructions_kernel)[https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Exact__predicates__inexact__constructions__kernel.html] 
+ * 
+ * SVMTK Domain class uses a nested set of CGAL mesh domain in order to get
+ * the required properties of the tetrahedra mesh. These properties include 
+ * user specific subdomain labels, and the properties of 1D features, such as 
+ * sharp edges.
+ *
+ * @see  (Mesh_domain_with_polyline_features_3)[https://doc.cgal.org/latest/Mesh_3/classCGAL_1_1Mesh__domain__with__polyline__features__3.html]
+ *       (Polyhedral_mesh_domain_with_features_3)[https://doc.cgal.org/latest/Mesh_3/classCGAL_1_1Polyhedral__mesh__domain__with__features__3.html]
+ *       (Labeled_Mesh_Domain)[https://doc.cgal.org/latest/Mesh_3/classCGAL_1_1Labeled__mesh__domain__3.html]
+ *   
+ * 
+ * Mesh_Criteria 
+ * @see (CGAL:: [https://doc.cgal.org/latest/Mesh_3/classMeshCriteria__3.html]
+ *
+ * Triganulation data structure 
+ *@see ( CGAL::Mesh_triangulation_3)[https://doc.cgal.org/latest/Triangulation_3/index.html]
+ *
+ * Mesh_complex_3_in_triangulation_3
+ *@see (CGAL::Mesh_complex_3_in_triangulation_3)[https://doc.cgal.org/latest/Mesh_3/classMeshComplex__3InTriangulation__3.html]
+ *
+ *    
  */
 class Domain {
     public :
-        // TODO CLEAN UP
         // Overview of CGAL classe definitions and auxiliary definitions.
         // See (https://doc.cgal.org/latest/Kernel_23/group__kernel__predef.html)
         
@@ -367,8 +396,10 @@ class Domain {
         typedef C3t3::Facets_in_complex_iterator Facet_iterator;
         
         typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
+        // Experimental
         typedef CGAL::Mesh_constant_domain_field_3<Tr::Geom_traits,
-                                           Mesh_domain::Index> Sizing_field;
+                                          Mesh_domain::Index> Sizing_field;
+        //
         typedef CGAL::Triple<Cell_handle, int, int> Edge; 
 
         typedef Tr::Finite_vertices_iterator Finite_vertices_iterator;
@@ -1074,7 +1105,6 @@ inline void Domain::create_mesh(double edge_size,double cell_size, double facet_
  *  @brief Creates the mesh stored in the class member variable c3t3. 
  *  @note The mesh criteria is set based on mesh_resolution and the minimum bounding radius of the mesh.
  *
- * 
  *  @param mesh_resolution a value determined 
  *  @overload
  */
@@ -1168,22 +1198,26 @@ inline void Domain::remove_subdomain(std::vector<int> tags)
   
   int before = c3t3.number_of_cells();
   std::vector<std::tuple<Cell_handle,int,int,int>> rebind;  
-  
+  int spindex1,spindex2;
   // Iterate over subdomains to be removed, and stores connected facets (Cell_handle,int) and patches (int,int)
   for( auto j = tags.begin(); j!=tags.end(); ++j)
   {
     Subdomain_index temp(*j) ; 
+    // iterate over all cells, intended to be all other cells.
     for(C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();cit != c3t3.cells_in_complex_end(); ++cit)
     {
-      int k = static_cast<int>(c3t3.subdomain_index(cit)) ;
       for (std::size_t i = 0; i < 4; i++)
       { 
-
-         if(std::find(tags.begin(), tags.end(), static_cast<int>(c3t3.subdomain_index(cit))  ) == tags.end() )          
+         spindex1 = static_cast<int>(c3t3.surface_patch_index(cit,i).first);
+         spindex2 = static_cast<int>(c3t3.surface_patch_index(cit,i).second); 
+        
+         // True if the cell is not a cell to be removed 
+         if(std::find(tags.begin(), tags.end(), static_cast<int>(c3t3.subdomain_index(cit))  ) == tags.end() and c3t3.is_in_complex(cit))           
          {
-           if(c3t3.subdomain_index(cit->neighbor(i))==temp)
-           {         
-               rebind.push_back(std::make_tuple(cit, i,*j,k)); 
+           // True if neighbor cell is a cell to be removed
+           if(c3t3.subdomain_index(cit->neighbor(i))==temp or !c3t3.is_in_complex(cit->neighbor(i)))
+           {     
+               rebind.push_back(std::make_tuple(cit, i,spindex1,spindex2));               
            }
          }
       }
@@ -1209,6 +1243,7 @@ inline void Domain::remove_subdomain(std::vector<int> tags)
       int s =std::get<1>(*cit);
       Subdomain_index cf = Subdomain_index(std::get<3>(*cit));            
       Subdomain_index ck = Subdomain_index(std::get<2>(*cit)); 
+      
       c3t3.remove_from_complex(cn,s);
       if (cf>ck) 
       {

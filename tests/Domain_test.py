@@ -103,11 +103,8 @@ class Domain_Test(unittest.TestCase):
         domain.create_mesh(1)
         domain.perturb() 
 
-    
-    
-
-    
-    
+        # TODO Add remove_subdomain test  
+  
     def test_surface_segmentation(self): # NOTE: may occasionally fail.
         surface_1 = SVMTK.Surface() 
         surface_1.make_cube(0,0,0,1.,1.,1.,1) 

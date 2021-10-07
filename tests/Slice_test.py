@@ -17,7 +17,7 @@ class Slice_Test(unittest.TestCase):
     def test_slice_meshing(self):
         surface = SVMTK.Surface() 
         surface.make_cube(0.,0.,0.,1.,1.,1.,1) 
-        slice_ = surface.slice(1,1,1,-0.5 )  
+        slice_ = surface.get_slice(1,1,1,-0.5 )  
         self.assertTrue( slice_.number_of_constraints() > 0)
         slice_.create_mesh(1.) 
         self.assertTrue( slice_.number_of_faces() > 0) 

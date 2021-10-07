@@ -25,11 +25,14 @@ public:
 
 typedef std::function<double(double,double,double)> Surface_implicit_function;
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
+typedef CGAL::Polyhedron_3<Kernel> Polyhedron;   
 typedef Kernel::Point_3 Point_3;
 typedef Kernel::Point_2 Point_2;
 typedef Kernel::Plane_3 Plane_3;
 typedef Kernel::Vector_3 Vector_3;
 
+
+/* -- CGAL wrapping */
 Vector_3 Wrapper_vector_3(double x,double y,double z)
 {
        return Vector_3(x,y,z);
@@ -54,6 +57,26 @@ Plane_3 Wrapper_plane_3(Point_3 p1, Point_3 p2 , Point_3 p3)
 {
       return Plane_3(p1,p2,p3);
 }
+std::vector<Point_3> Wrapper_load_points(std::string filename)
+{
+     std::vector<Point_3> points;
+     std::ifstream in(filename);
+     if(CGAL::read_ply_points(in, std::back_inserter(points)))
+        return points;
+     else 
+        throw  InvalidArgumentError("Can't open file.");
+}
+
+/*std::vector<Point_3> Wrapper_load_graph(std::string filename)
+{
+     Polyhedron polyhedron;
+     std::ifstream in(filename);
+     if(CGAL::IO::read_VT(in, polyhedron ))
+        return std::shared_ptr<Surface> face_graph(new Surface(polyhedron)); ;
+     else 
+        throw  InvalidArgumentError("Can't open file.");
+}*/
+
 
 std::shared_ptr< Surface > Wrapper_convex_hull(py::array_t< double > point3_array)
 {
@@ -244,8 +267,11 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("clip",py::overload_cast<Point_3,Vector_3,double,bool,bool>( &Surface::clip ),
                                              py::arg("point"),py::arg("vector"),py::arg("radius"),py::arg("invert")=false,py::arg("preserve_manifold")=true )            
         
-        .def("slice", py::overload_cast<double , double, double , double>(&Surface::mesh_slice<Slice>)) 
-
+        .def("get_slice", py::overload_cast<double , double, double , double>(&Surface::get_slice<Slice>)) 
+        .def("get_slice", py::overload_cast<Plane_3>(&Surface::get_slice<Slice>)) 
+        
+        
+        
         .def("clear" , &Surface::clear) 
         .def("intersection", &Surface::surface_intersection)
         .def("union", &Surface::surface_union)
@@ -284,10 +310,11 @@ PYBIND11_MODULE(SVMTK, m) {
         .def("get_shortest_surface_path", py::overload_cast<double , double, double , double,double,double>( &Surface::get_shortest_surface_path) )
         .def("get_shortest_surface_path", py::overload_cast<Point_3,Point_3>( &Surface::get_shortest_surface_path) )
 
-        .def("embed", &Surface::embed, py::arg("other") , py::arg("adjustment")=-0.8,py::arg("smoothing")=0.4, py::arg("max_iter")=400)
-        .def("enclose", &Surface::enclose,py::arg("other") , py::arg("adjustment")=0.8,py::arg("smoothing")=-0.4, py::arg("max_iter")=400)
+        .def("embed", &Surface::embed,     py::arg("other") , py::arg("adjustment")=-0.8,py::arg("smoothing")= 0.4, py::arg("max_iter")=400)
+        .def("enclose", &Surface::enclose, py::arg("other") , py::arg("adjustment")= 0.8,py::arg("smoothing")=-0.4, py::arg("max_iter")=400)
+        .def("expose", &Surface::expose,  py::arg("other") , py::arg("adjustment")=-0.8,py::arg("smoothing")= 0.4, py::arg("max_iter")=400)
         .def("separate", &Surface::separate, py::arg("other") , py::arg("adjustment")=0.8, py::arg("max_iter")=400)
-
+        .def("get_closest_surface_point", &Surface::get_closest_points, py::arg("Point_3"), py::arg("num")=1)
 
         .def("collapse_edges", py::overload_cast<const double >( &Surface::collapse_edges))
         .def("collapse_edges", py::overload_cast<>(&Surface::collapse_edges))
@@ -366,6 +393,11 @@ PYBIND11_MODULE(SVMTK, m) {
                   
 
 
+
+       m.def("load_points", &Wrapper_load_points);
+       //m.def("load_graph",  &Wrapper_load_graph);
+       
+       
        m.def("convex_hull", &Wrapper_convex_hull); 
        //TODO : Rename edge_movement.
        m.def("separate_overlapping_surfaces",  py::overload_cast<Surface&,Surface&,Surface&,double,double,int>( &separate_surface_overlapp<Surface>),
@@ -385,8 +417,8 @@ PYBIND11_MODULE(SVMTK, m) {
                                    py::arg("edge_movement")=-0.2 , py::arg("smoothing")=0.1 ,py::arg("max_iter")=400 );
 
        m.def("union_partially_overlapping_surfaces", &union_partially_overlapping_surfaces<Surface>,
-                                   py::arg("surf1"), py::arg("surf2"), py::arg("clusterth")=36.87 ,
-                                   py::arg("edge_movement")=0.25 , py::arg("smoothing")=1, py::arg("max_iter")=8  ); 
+                                   py::arg("surf1"), py::arg("surf2"), py::arg("angle_in_degress")=36.87  ,
+                                   py::arg("adjustment")=0.7 , py::arg("smoothing")=0.25, py::arg("max_iter")=8  ); 
 
 
 
