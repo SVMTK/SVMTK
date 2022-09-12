@@ -20,7 +20,7 @@
 
 // FIXME CLEAN UP
 /* --Includes -- */
-
+//#include "Errors.h" 
 /* -- STL -- */
 #include <vector>
 #include <fstream>
@@ -64,11 +64,11 @@
 #include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/IO/output_surface_facets_to_polyhedron.h>
 #include <CGAL/IO/facets_in_complex_2_to_triangle_mesh.h>
-
+#include <CGAL/IO/read_points.h>
 
 
 /**
- * \class
+ * \class FT_to_point_function_wrapper
  * Wraps a function with structure : double functions( double, double,double) 
  * to a function with structure : FT functions(Point p) 
  */
@@ -127,7 +127,6 @@ void surface_mesher(Mesh& mesh, Implicit_Function func, double& x0 ,double& y0, 
     CGAL::Surface_mesh_default_criteria_3<Tr> criteria(angular_bound,radius_bound,distance_bound);
 
     CGAL::make_surface_mesh(c2t3, surface, criteria, CGAL::Non_manifold_tag());
-
     CGAL::facets_in_complex_2_to_triangle_mesh(c2t3,mesh);
 }
 
@@ -182,7 +181,7 @@ void surface_mesher(Mesh& mesh, Implicit_Function func,  double bounding_sphere_
  * @overload   
  */
 template<typename Surface>
-void poisson_reconstruction(Surface &surface,double angular_bound, double radius_bound, double distance_bound)
+void poisson_reconstruction(Surface &surface, double angular_bound, double radius_bound, double distance_bound)
 { 
      typedef typename Surface::Kernel Kernel;
      typedef typename Surface::FT FT;
@@ -192,6 +191,7 @@ void poisson_reconstruction(Surface &surface,double angular_bound, double radius
      typedef typename CGAL::Surface_mesh_triangulation_generator_3<Kernel>::Type Tr;
      typedef typename CGAL::Poisson_reconstruction_function<Kernel> Poisson_reconstruction_function;
      typedef typename CGAL::Implicit_surface_3<Kernel, Poisson_reconstruction_function > Implicit_surface_3;
+    
      typedef std::pair<Point_3, Vector_3> Point_with_normal;
      typedef std::vector<Point_with_normal> PointList;
      typedef CGAL::First_of_pair_property_map<Point_with_normal> Point_map;
@@ -206,27 +206,91 @@ void poisson_reconstruction(Surface &surface,double angular_bound, double radius
      points = surface.get_points_with_normal();
      Poisson_reconstruction_function function(points.begin(), points.end(), Point_map(), Normal_map());
 
-     if ( ! function.compute_implicit_function() )
+     if( !function.compute_implicit_function() )
      {
         std::cout << "Could not compute implicit function" << std::endl;
         return;
      }
-     FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
-      (points, 6 /* knn = 1 ring */,
-       CGAL::parameters::point_map (Point_map()));
+     FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points, 
+                                                                              6,
+                                                                              CGAL::parameters::point_map (Point_map()));
 
      Point_3 inner_point = function.get_inner_point();
      Sphere_3 bsphere = function.bounding_sphere();
      FT radius = std::sqrt(bsphere.squared_radius());
 
-     FT sm_sphere_radius = 5.0 * radius;
+     FT sm_sphere_radius = 5.0*radius; //why
      FT sm_dichotomy_error = sm_distance*average_spacing/1000.0; 
      Implicit_surface_3 implicit_surface(function,
-                      Sphere_3(inner_point,sm_sphere_radius*sm_sphere_radius),
-                      sm_dichotomy_error/sm_sphere_radius);
+                                         Sphere_3(inner_point,sm_sphere_radius*sm_sphere_radius),
+                                         sm_dichotomy_error/sm_sphere_radius);
   
      CGAL::Surface_mesh_default_criteria_3<Tr> criteria(angular_bound,radius_bound,distance_bound);
      CGAL::make_surface_mesh(c2t3, implicit_surface, criteria, CGAL::Manifold_tag());
      CGAL::facets_in_complex_2_to_triangle_mesh(c2t3,surface.get_mesh());
 }
+
+
+template<typename Surface>
+void poisson_reconstruction(Surface &surface, std::string filename ,double angular_bound, double radius_bound, double distance_bound)
+{ 
+     typedef typename Surface::Kernel Kernel;
+     typedef typename Surface::FT FT;
+     typedef typename Surface::Point_3 Point_3;
+     typedef typename Surface::Vector_3 Vector_3;
+     typedef typename Surface::Sphere_3 Sphere_3;
+     typedef typename CGAL::Surface_mesh_triangulation_generator_3<Kernel>::Type Tr;
+     typedef typename CGAL::Poisson_reconstruction_function<Kernel> Poisson_reconstruction_function;
+     typedef typename CGAL::Implicit_surface_3<Kernel, Poisson_reconstruction_function > Implicit_surface_3;
+    
+     typedef std::pair<Point_3, Vector_3> Point_with_normal;
+     typedef std::vector<Point_with_normal> PointList;
+     typedef CGAL::First_of_pair_property_map<Point_with_normal> Point_map;
+     typedef CGAL::Second_of_pair_property_map<Point_with_normal> Normal_map;
+     typedef CGAL::Complex_2_in_triangulation_3<Tr> C2t3;
+
+     FT sm_distance(distance_bound) ;
+
+     PointList points;
+     Tr tr;
+     C2t3 c2t3 (tr);     
+     
+     if(!CGAL::IO::read_points(filename, 
+                               std::back_inserter(points),
+                               CGAL::parameters::point_map(Point_map())
+                                           .normal_map(Normal_map())))
+     {
+        std::cout << "Could not read points from file." << std::endl;
+        return;
+     }
+
+     Poisson_reconstruction_function function(points.begin(), points.end(), Point_map(), Normal_map());
+
+
+
+     if( !function.compute_implicit_function() )
+     {
+        std::cout << "Could not compute implicit function." << std::endl;
+        return;
+     }
+     FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points, 
+                                                                              6,
+                                                                              CGAL::parameters::point_map (Point_map()));
+
+     Point_3 inner_point = function.get_inner_point();
+     Sphere_3 bsphere = function.bounding_sphere();
+     FT radius = std::sqrt(bsphere.squared_radius());
+
+     FT sm_sphere_radius = 5.0*radius; //why
+     FT sm_dichotomy_error = sm_distance*average_spacing/1000.0; 
+     Implicit_surface_3 implicit_surface(function,
+                                         Sphere_3(inner_point,sm_sphere_radius*sm_sphere_radius),
+                                         sm_dichotomy_error/sm_sphere_radius);
+  
+     CGAL::Surface_mesh_default_criteria_3<Tr> criteria(angular_bound,radius_bound,distance_bound);
+     CGAL::make_surface_mesh(c2t3, implicit_surface, criteria, CGAL::Manifold_tag());
+     CGAL::facets_in_complex_2_to_triangle_mesh(c2t3,surface.get_mesh());
+}
+
+
 #endif

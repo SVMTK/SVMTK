@@ -10,7 +10,6 @@
 
 
 /*
- * 
  * CGAL Polyhedron to CGAL labeled mesh.
  * Combines the option of using CGAL polyhedrons to create mesh 
  * with specific tags for overlapping surfaces.
@@ -29,8 +28,7 @@ namespace CGAL {
                 typedef typename BGT::Sphere_3    Sphere_3;
                 
                 /**
-                 * @brief TODO
-                 * 
+                 * @brief Constructor
                  * @param v a vector of functions i.e. surfaces with query is inside  
                  * @param map a smart pointer to a child class of SVMTK virtuell class AbstractMap
                  *       options : DefaultMap and SubdomainMap
@@ -38,7 +36,6 @@ namespace CGAL {
                 Polyhedral_vector_to_labeled_function_wrapper(const std::vector<Function_*>& v, std::shared_ptr<AbstractMap> map) : function_vector_(v)
                 {
                     subdmap =std::move(map);
-
                 }
 
                 ~Polyhedral_vector_to_labeled_function_wrapper() {}
@@ -61,17 +58,13 @@ namespace CGAL {
                     int nb_func = function_vector_.size();
                     Bmask bits(nb_func);
 
-                    for ( int i = 0 ; i < nb_func ; ++i )
-                    {
+                    for(int i=0; i<nb_func; ++i)
                         bits[i] =(bool)function_vector_[i]->is_in_domain_object()(p);
-                    }
-
                     return subdmap->index(bits);
                 }
                 
                /**
                  * @brief Constructs a bounding box of the surfaces.
-                 * @param none
                  * @return sum_bbox the summation of CGAL bounding boxes for each surfaces 
                  */
                 Bbox_3 bbox() const
@@ -79,10 +72,8 @@ namespace CGAL {
                     int nb_func = function_vector_.size();
 
                     Bbox_3 sum_bbox;
-                    for ( int i = 0 ; i < nb_func ; ++i )
-                    {
+                    for(int i=0; i<nb_func; ++i)
                         sum_bbox+= function_vector_[i]->bbox();
-                    }
                     return sum_bbox;
                 }
      

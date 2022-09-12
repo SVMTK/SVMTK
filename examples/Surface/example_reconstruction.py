@@ -1,4 +1,4 @@
-"""Compute number of self-intersections."""
+""" Reconstruct a surface """
 
 import SVMTK as  svm
 from pathlib import Path
@@ -8,23 +8,15 @@ if __name__ == "__main__":
     outdir = Path("results")
     outdir.mkdir(exist_ok=True)
 
-    pig = svm.Surface("../Data/blobby.off")
+    surf = svm.Surface() 
 
-    self_intersecting = pig.num_self_intersections()
-    if self_intersecting>0:
-       print("There are self-intersections")
-       print("{} pars of triangles intersect".format(pig.num_self_intersections()))
-    else:
-       print("There are no self-intersecting")
+    ### Reconstruction Parameters ###  
+    angular_bound=20
+    radius_bound=0.01
+    distance_bound=0.01
 
-    pig.reconstruct(20,0.1,0.1)
+    surf.reconstruct("../Data/kitten.xyz",angular_bound,radius_bound,distance_bound)
 
-    self_intersecting = pig.num_self_intersections()
-    if self_intersecting>0:
-       print("There are self-intersections")
-       print("{} pars of triangles intersect".format(pig.num_self_intersections()))
-    else:
-       print("There are no self-intersecting")
 
-    pig.save("foo.off")
+    surf.save(str(outdir/"reconstruct.stl"))
     print("Finish ",__file__)        

@@ -31,8 +31,6 @@
 #include <boost/lexical_cast.hpp>
 
 
-
-
 /**
  * \class 
  * The Abstract superclass for SubdomainMap.
@@ -50,6 +48,8 @@ class AbstractMap
 
 };
 
+
+// DocString: DefaultMap
 /**
  *  \class 
  *  The defualt method to set subdomains in the mesh.
@@ -68,7 +68,7 @@ class DefaultMap : virtual public AbstractMap
         /** 
          * @brief Maps bistring to an integer using binary conversion to integer
          * @param bits a bitstring of the form boost::dynamic_bitset.
-         * @return long conversion of the bit string.
+         * @returns a long conversion of the bit string.
          */
         return_type index(const Bmask bits) 
         {
@@ -78,28 +78,27 @@ class DefaultMap : virtual public AbstractMap
                   template<typename T>
                   bool operator()(const std::vector<T> & a, const std::vector<T> & b)
                        { return a.size() > b.size(); }                   
-       };           
+       }; 
+       
+                 
         /** 
          * @brief Gives each interfaces an unique tag based on presence in mesh and 
          * from the highest cell tag. Ex:(Cell tags 1 2 -> Interface tags 3 4 5)
          * @param interfaces a vector of integer pairs that represent cell tag between a facet.
-         * @return patches a map of unique combination of pairs with an unique integer. 
+         * @returns a map of unique combination of pairs with an unique integer. 
          */      
         const std::map<std::pair<int,int>,int> make_interfaces(std::vector<std::pair<int,int>> interfaces)
-        { 
-        
+        {         
            std::map<std::pair<int,int> ,int> patches;  
            int iter =0;
-           for( auto interface : interfaces )  
+           for( auto interface : interfaces)  
            {  
-               if (interface.first > iter)
-                    iter = interface.first ;                 
+               if(interface.first > iter)
+                 iter = interface.first;                 
            } 
            iter++;
-           for( auto interface : interfaces )  
-           {  
-               patches[std::pair<int,int>(interface.first,interface.second)]=iter++;
-           } 
+           for(auto interface : interfaces)  
+              patches[std::pair<int,int>(interface.first,interface.second)]=iter++;
            return patches;
         }
 };
@@ -109,26 +108,30 @@ class DefaultMap : virtual public AbstractMap
  * @param[in] string unfinished binarystirng, i.e. elements < max_elements 
  * @param[out] strings contains all possible binarystirng given the number of elements in binary string.
  * @param[in] max_elements number of elements in bitstring
- * @return void.
  */
-inline 
-void generate_binary_strings(std::string string, std::vector<std::string>& strings, int max_elements) 
+inline void generate_binary_strings(std::string string, std::vector<std::string>& strings, int max_elements) 
 {
     if( static_cast<int>(string.length())<max_elements)
     {
        generate_binary_strings(string+"0", strings, max_elements); 
        generate_binary_strings(string+"1", strings, max_elements); 
     }
-    else if ( static_cast<int>(string.length())==max_elements) 
-    {
-       strings.push_back(string);
-    }    
+    else if(static_cast<int>(string.length())==max_elements) 
+       strings.push_back(string); 
     return;
 }
+
+ // DocString: SubdomainMap
 /**
  * \class
  *
  *  User specific method to set subdomains in the mesh.
+ *
+ *
+ * A point is either inside (1) or outside (0) a surface.
+ * Thus, for N number of surface, a point will have N^2 possible 
+ * locations.
+ *
  */
 class SubdomainMap :virtual public AbstractMap
 {
@@ -139,12 +142,9 @@ class SubdomainMap :virtual public AbstractMap
        
         SubdomainMap(int number_of_surfaces) : num_surfaces(number_of_surfaces) 
         {
-            //if (number_of_surfaces<1)
-            //   throw InvalidArgumentError("Invalid number of surfaces"); 
             std::string zero_tag = std::string(number_of_surfaces , '0');
             add(zero_tag,0);        
         }
-        //SubdomainMap() : num_surfaces(0) {}
          ~SubdomainMap() {} 
 
         /**
@@ -155,7 +155,6 @@ class SubdomainMap :virtual public AbstractMap
          * @note Removing this function may cause errors in backwards compatiblity.
          * 
          * @param number_of_surfaces integer that equal the number of surfaces.
-         * @return none.
          */
         void set_number_of_surfaces(int number_of_surfaces) 
         {
@@ -165,12 +164,13 @@ class SubdomainMap :virtual public AbstractMap
             std::string zero_tag = std::string(number_of_surfaces , '0');
             add(zero_tag,0);
         }
-
+        
+        
         /**
          * @brief Automatically fills the binary combintation of a string
          * with asterix *.
          * 
-         * Precondition is that the number of surfaces is set to be non-zero.
+         * @precondition the number of surfaces is set to be non-zero.
          * Fils the remaining binary possibilites given a substring with asterix:  
          * i.e. 2 surfaces and *1 -> 01 and 11 
          *      3 surfaces and 11* -> 110 and 111 
@@ -179,140 +179,128 @@ class SubdomainMap :virtual public AbstractMap
          * @param istring substring without * 
          * @param pos the position of * in substring before removal. 
          * @param tag the subdomain tag that is used for the substring 
-         * @return none.
          */
         void fill(std::string istring, int pos, int tag)
         {
              std::vector<std::string>  strings; 
              std::string dummy;
-             generate_binary_strings(dummy, strings, this->num_surfaces - static_cast<int>(istring.length())  );  
-             
-             for ( auto i : strings)
+             generate_binary_strings(dummy, strings, this->num_surfaces - static_cast<int>(istring.length()));  
+             for(auto i : strings)
              {   
-                if (pos==0)
-                { 
+                if(pos==0)
                    this->add(i+istring,tag); 
-                }
-                else 
-                {  
-                   this->add(istring+i,tag); 
-                }
+                else
+                   this->add(istring+i,tag);
              }
         }
-
+        
+        // DocString: add  
         /**
-         * TODO FIXME
          * @brief Transforms a string of 0 and 1 to a binarystring 
          * 
+         * @see SVMTK::SubdomainMap
+         *
          * @param string that contains only 0 and 1. 
          * @param subdomain an integer that determines the output tag of the subdomain
-         * @return none 
          */
         void add(std::string string, int subdomain)
         {
-        
            if ( string.find("*") !=std::string::npos)
            {
               if (this->num_surfaces==0)
-                 throw InvalidArgumentError("Use of asterix require that number of surfaces to set.");    
-           
+                 throw InvalidArgumentError("Use of asterix require that number of surfaces to set.");      
+              
               int pos = static_cast<int>(string.find("*"));
               string.erase(pos,1);
-               // TODO better code writing 
-              /*if (pos==0)
-
-               else
-                  string.erase(pos);
-                */    
-              if( static_cast<int>( string.length())<this->num_surfaces)
-              {                                            
-                  fill(string,pos,subdomain); 
-              }
+              if(static_cast<int>( string.length()) < this->num_surfaces)                                            
+                fill(string,pos,subdomain); 
               else 
-                 throw InvalidArgumentError("Bitstring exceeds number of surfaces");                   
+                throw InvalidArgumentError("Bitstring exceeds number of surfaces");                   
            }
            else 
            {
               if(static_cast<int>( string.length())==this->num_surfaces or this->num_surfaces==0) 
               { 
                  std::reverse( string.begin(), string.end());
-                 if (subdmap.find(Bmask(string)) == subdmap.end() )
-                     subdmap[Bmask(string)]=subdomain;   
+                 if(subdmap.find(Bmask(string)) == subdmap.end())
+                   subdmap[Bmask(string)]=subdomain;   
               }
               else 
                 throw InvalidArgumentError( "Use the correct number of characters in bitstring." ); 
            }
         }      
-        /**
-         * @brief Erase binary string from SubdomainMap 
-         * @param string a bitstring to remove from SubdomainMap 
-         * @return void
-         */
+       
+       // DocString: erase        
+       /**
+        * @brief Erase binary string from SubdomainMap 
+        * @param string a bitstring to remove from SubdomainMap 
+        */
         void erase(std::string string)
         {
            // reverse the string since boost dyamic bitset reads the string in reverse
            std::reverse( string.begin(), string.end());
            subdmap.erase(Bmask(string));
         }
-        /** 
-         * @brief Checks wether a point is inside a series of surfaces and returns 
-         * a bitstring indicating with 1 if point is inside surface or 0 if not.
-         * The bitstirng is used as a key in map that returns the added value for that 
-         * specific region.
-         * @param bits a bitstring of the form boost::dynamic_bitset.
-         * @return return_type integer determined by a map with Bmask keys.
-         */
+       
+          // DocString: fill  
+       /** 
+        * @brief Checks wether a point is inside a series of surfaces and returns 
+        * a bitstring indicating with 1 if point is inside surface or 0 if not.
+        * The bitstirng is used as a key in map that returns the added value for that 
+        * specific region.
+        * @param bits a bitstring of the form boost::dynamic_bitset.
+        * @returns an integer determined by a map with Bmask keys.
+        */
         return_type index(const Bmask bits) 
         {
            return static_cast<return_type>(subdmap[bits]);  
         }
-        /** 
-         * @brief Prints Subdomains and Patches
-         * @param none 
-         * @return void
-         *
-         */
-        void print() 
+        
+        // DocString: print    
+       /** 
+        * @brief Prints Subdomains and Patches
+        */
+        std::string print() 
         {
-           for(std::map<boost::dynamic_bitset<>,int>::iterator it=subdmap.begin();it!=subdmap.end();++it )
+           std::ostringstream os;
+
+           for( std::map<boost::dynamic_bitset<>,int>::iterator it=subdmap.begin();it!=subdmap.end();++it )
            {
               // Reversed so to look like what was added
               std::string dummy = boost::lexical_cast<std::string>(it->first);
               std::reverse(dummy.begin(),dummy.end());
-              std::cout<< "Subdomain: " << dummy << " " << it->second << " " << std::endl;
+              os << "Subdomain: " << dummy << " " << it->second << " " << std::endl;
            }
-           for(std::map<std::pair<int,int>,int>::iterator it=patches.begin();it!=patches.end();++it )
-           {
-              std::cout<< "Patches: " << it->first.first << " " << it->first.second << " " << it->second << " " << std::endl;
-           }
-
+           for( std::map<std::pair<int,int>,int>::iterator it=patches.begin();it!=patches.end();++it )
+              os << "Patches: " << it->first.first << " " << it->first.second << " " << it->second << " " << std::endl;
+              
+           return os.str();  
         }
+        
+        // DocString: get_tags    
         /** 
          * @brief Returns all tags that is added to the class object.  
-         * @param none 
-         * @return tags vector of integer that represents the tags added to the class object.
+         * @returns a vector of integer that represents all the tags added to the class object.
          */
         std::vector<int> get_tags() 
         {
               std::vector<int> tags;
-              for (auto it : subdmap) 
-              {
+              for(auto it : subdmap) 
                  tags.push_back(it.second);
-              } 
               return tags;
         }
-        
+       
+       
+        // DocString: get_map
         /** 
          * @brief Returns the map. 
-         * @param none 
-         * @return tags vector of integer that represents the tags added to the class object.
+         * @returns a tags vector of integer that represents the tags added to the class object.
          */
         std::map<std::string,int> get_map() 
         {
            std::map<std::string,int> result; 
            for(std::map<boost::dynamic_bitset<>,int>::iterator it=subdmap.begin();it!=subdmap.end();++it )
            {
-              // Reversed so to look like what was added
               std::string dummy = boost::lexical_cast<std::string>(it->first);
               std::reverse(dummy.begin(),dummy.end());
               result[dummy] = it->second;
@@ -320,65 +308,54 @@ class SubdomainMap :virtual public AbstractMap
            return result;  
         }
 
+        // DocString: add_interface
         /**
          * @brief Adds a tag value for surfaces patches between subdomains defined by a pair of integer 
          * the class member variable patches 
          *
          * @param interface a integer pair that represents the suface interface between two subdomains 
          * @param tag the value used to represent the surface interface in the save file. 
-         * @return void
          */
         void add_interface(std::pair<int,int> interface, int tag)
         {
-              if (interface.second > interface.first) 
-              {std::swap(interface.first, interface.second);}
+              if(interface.second > interface.first) 
+                std::swap(interface.first, interface.second);
               patches[interface] = tag;
         } 
 
+      
         /**    
          * @brief Returns the content of class member variable patches between subdomains with 
          * the corresponding tag value. If patches is empty, gives each interfaces an unique 
          * tag based on presence in mesh and the highest cell tag 
          * @param interfaces contains a set of all interfaces between cells used in the mesh. 
-         * @return patches a map  with pair of integers as key and a integer tag value.
+         * @returns a map with pair of integers as key and a integer tag value.
          */
         const std::map<std::pair<int,int>, int> make_interfaces(std::vector<std::pair<int,int>> interfaces)
         {
-           if (!patches.empty()) 
-           {
+           if(!patches.empty()) 
               return patches;
-           }
-           else
+
+           int iter =0;
+           for(auto interface : interfaces)  
            {  
-              //FIXME
-              
-              int iter =0;
-              for( auto interface : interfaces )  
-              {  
-
-                  if (interface.first > iter)
-                      iter = interface.first;  
-              } 
-              /*auto tags =get_tags();
-              auto iter = *std::max_element(std::begin(tags), std::end(tags));   */    
-              iter++;
-
-            
-              for( auto interface : interfaces )  
-              {  
-                  if (patches.find(std::pair<int,int>(interface.first,interface.second)) == patches.end() )
-                  {
-                      patches[std::pair<int,int>(interface.first,interface.second)]=iter++;       
-                  }    
-              } 
-              return patches;
+               if(interface.first > iter)
+                 iter = interface.first;  
+           }    
+           iter++;
+           for(auto interface : interfaces)  
+           {  
+              if(patches.find(std::pair<int,int>(interface.first,interface.second)) == patches.end())
+                patches[std::pair<int,int>(interface.first,interface.second)]=iter++;           
            } 
+           return patches;
+            
         }
         
+        // DocString: get_interfaces
         /**
-         * @brief get stored interface patches and tags.
-         * @param none 
-         * @param  
+         * @brief get stored interface patches.
+         * @returns the stored interfaces.
          */ 
         std::map<std::pair<int,int>, int> get_interfaces()
         {

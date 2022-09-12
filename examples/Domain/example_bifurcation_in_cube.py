@@ -1,28 +1,37 @@
+""" Create a 3D mesh with conforming bifurcation """
+
 import SVMTK as svm
 
-
 if __name__ == "__main__":
-    
- 
-   surf = svm.Surface();
-
-   surf.make_cube(-2.,-2.,-2.,2.,2.,2.,0.5)
-   surf.save("cube_.off")
-   maker = svm.Domain(surf)
-  
+   print("Start ",__file__)   
+   surf = svm.Surface()
+   outdir = Path("results")
+   outdir.mkdir(exist_ok=True)
+   
+   # Cube corner coordinates and edge length.
+   x0,y0,z0,x1,y1,z1, edge_length = -2, -2, -2, 2, 2, 2, 0.5
+   # Create a cube surface in 3D.
+   surf.make_cube(x0,y0,z0,x1,y1,z1,edge_length)
+   
+   maker = svm.Domain(surf)  
+   
+   # Edges that Angles to detect 
+   angle_detect = 85
    maker.add_sharp_border_edges(surf,85)
 
-   line0 = [svm.Point_3(0,0,0.0), svm.Point_3(0,1.0,1.0)] 
-   line1 = [ svm.Point_3(0,0,-1.0),svm.Point_3(0,0,0.0)] 
-   line2 = [ svm.Point_3(0,0,0.0), svm.Point_3(0,-1.0,1.0) ]
- 
-   maker.add_feature( line0)
-   maker.add_feature( line1)
-   maker.add_feature( line2)
+   # Create 3 lines with the bifurcation point. 
+   line0 = [svm.Point_3(0,0,0), svm.Point_3(0,1.0,1.0)] 
+   line1 = [svm.Point_3(0,0,-1.0), svm.Point_3(0,0,0)] 
+   line2 = [svm.Point_3(0,0,0), svm.Point_3(0,-1.0,1.0)]
+   
+   # Add features to the mesh construction.
+   maker.add_feature(line0)
+   maker.add_feature(line1)
+   maker.add_feature(line2)
 
-   maker.create_mesh(24.)
+   # Create the mesh 
+   maker.create_mesh(24.) 
    maker.exude(100, 0)
-   maker.save("bifurcation_in_cube.mesh", True)
-
-
+   maker.save(str(outdir/"bifurcation_in_cube.mesh"))
+   print("Finish ",__file__)   
    

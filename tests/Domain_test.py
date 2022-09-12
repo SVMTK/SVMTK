@@ -80,7 +80,7 @@ class Domain_Test(unittest.TestCase):
         surface_1.make_cube(-1.,-1.,-1.,1.,1.,1.,1) 
         domain = SVMTK.Domain(surface_1)
         domain.create_mesh(1)
-        domain.lloyd()        
+        #domain.lloyd() May cause dump.       
        
     def test_mesh_excude(self):
         surface_1 = SVMTK.Surface() 

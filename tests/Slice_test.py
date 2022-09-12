@@ -10,7 +10,7 @@ class Slice_Test(unittest.TestCase):
         self.assertTrue( slice1.number_of_constraints(),1)
         slice2 = SVMTK.Slice(SVMTK.Plane_3(0.,0.,1.,0.) )
         slice2.add_constraint([SVMTK.Point_2(0.5,0.5),SVMTK.Point_2(0.5,-0.5)]) 
-        slice3 = SVMTK.Slice(slice2)
+        slice3 = slice2
         slice3.add_constraints(slice1)
         self.assertTrue( slice3.number_of_constraints(),2)
 

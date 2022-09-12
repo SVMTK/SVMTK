@@ -88,9 +88,12 @@ class Surface_Test(unittest.TestCase):
         surface =SVMTK.Surface()   
         surface.make_cube(-1.,-1.,-1.,1.,1.,1.,1) 
         surface.clip(0,0,1.,0,True) 
-        self.assertEqual(surface.span(0),(-1.0,1.0))
-        self.assertEqual(surface.span(1),(-1.0,1.0))
-        self.assertEqual(surface.span(2),(-1.,0.0))
+        self.assertAlmostEqual(surface.span(0)[0],-1.0,8)
+        self.assertAlmostEqual(surface.span(0)[1],1.0,8)        
+        self.assertAlmostEqual(surface.span(1)[0],-1.0,8)
+        self.assertAlmostEqual(surface.span(1)[1],1.0,8)        
+        self.assertAlmostEqual(surface.span(2)[0],-1.,8)
+        self.assertAlmostEqual(surface.span(2)[1],0.0,8)        
 
     def test_adjust_boundary(self):
         surface =SVMTK.Surface()   
