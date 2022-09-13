@@ -179,7 +179,7 @@ Complete the installation with
 
 Further details can be found at `MPFR <http://www.mpfr.org>`_.
 
-CMake >=3.12
+CMake >=3.13
 ---------------------------------
 Installing CMake using terminal::
 
