@@ -23,11 +23,10 @@ TEST_CASE("Vertices, points and vectors")
 {
     Surface surface; 
     surface.make_cube(0.,0.,0.,2.0,2.0,2.0,1.); 
-    surface.save("ccp_cube_surface_test.off");
     auto vertices = surface.get_vertices();
-    REQUIRE( vertices.size()==44);
+    REQUIRE( vertices.size()==48);
     auto points = surface.get_points();
-    REQUIRE( points.size()==44);
+    REQUIRE( points.size()==48);
 
 }
 

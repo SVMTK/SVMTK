@@ -73,7 +73,7 @@
  * to a function with structure : FT functions(Point p) 
  */
 template <typename FT, typename P>
-class FT_to_point_function_wrapper : public std::unary_function<P, FT>
+class FT_to_point_function_wrapper
 {
   typedef std::function<double(double,double,double)> Implicit_function;
   Implicit_function function;
