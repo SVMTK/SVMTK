@@ -2918,7 +2918,7 @@ class Surface
           get_vertices_with_property<A,B>(other,vertices);
           after = vertices.size();  
           
-          if( this-num_self_intersections()>0 )
+          if( this->num_self_intersections()>0 )
           {
              this->repair_self_intersections(); 
              vertices = get_vertices_with_property<A,B>(other);
