@@ -1,3 +1,6 @@
+channels:
+ - conda-forge
+ 
 dependencies:
   - boa
   - conda-forge-pinning
