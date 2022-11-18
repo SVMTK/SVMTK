@@ -1,0 +1,3 @@
+dependencies:
+  - boa
+  - conda-forge-pinning
