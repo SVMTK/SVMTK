@@ -1,0 +1,30 @@
+{% set ref = "1cfe938fe9733e1f75ee8d07abe1f676d1591804" %}
+
+package:
+  name: svmtk
+  version: 0.2022.11.18
+
+source:
+  url: https://github.com/SVMTK/SVMTK/archive/{{ ref }}.tar.gz
+
+build:
+  number: 0
+  script: $PYTHON -m pip install -vv --ignore-installed --no-deps .
+
+requirements:
+  build:
+    - {{ compiler("c") }}
+    - {{ compiler("cxx") }}
+    - cmake
+    - make
+  host:
+    - boost-cpp
+    - cgal
+    - eigen
+    - pybind11
+    - python
+    - pip
+  run:
+    - boost-cpp
+    - eigen
+    - python

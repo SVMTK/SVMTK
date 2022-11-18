@@ -1,0 +1,29 @@
+
+on:
+  push:
+    branches:
+      - "**"
+ 
+
+ jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        py_version: ["3.8", "3.9", "3.10"]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Conda environment with Micromamba
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          environment-file: myenv.yaml
+          environment-name: myenvname
+          extra-specs: |
+            python=${{ matrix.py_version }}
+            boa
+            conda-forge-pinning
+
+      - name: Build packages
+        run: |
+          conda mambabuild conda-recipe/
