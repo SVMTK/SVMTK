@@ -4,3 +4,4 @@ channels:
 dependencies:
   - boa
   - conda-forge-pinning
+  - anaconda-client

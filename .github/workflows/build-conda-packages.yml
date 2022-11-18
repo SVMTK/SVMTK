@@ -34,3 +34,9 @@ jobs:
           name: conda-build-{{ matrix.py_version }}
           path: "/home/runner/micromamba-root/envs/root/conda-bld/linux-64/*"
           if-no-files-found: error
+
+      - name: Upload to Anaconda
+        env:
+          BINSTAR_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
+        run:
+          anaconda upload ${CONDA_PREFIX}/conda-bld/linux-64/*.tar.bz2
