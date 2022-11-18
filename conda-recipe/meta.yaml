@@ -1,7 +1,8 @@
+{% set version = datetime.datetime.utcnow().strftime('0.%Y.%m.%d.%H.%M') %}
 
 package:
   name: svmtk
-  version: 0.2022.11.18
+  version: {{ version }}
 
 source:
   path: ../
