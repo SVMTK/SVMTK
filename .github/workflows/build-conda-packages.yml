@@ -2,7 +2,9 @@ on:
   push:
     branches:
       - "**"
- 
+defaults:
+  run:
+    shell: bash -l {0}
 
 jobs:
   test:
@@ -17,7 +19,7 @@ jobs:
         uses: mamba-org/provision-with-micromamba@main
         with:
           environment-file: conda-recipe/environment.yml
-          environment-name: builder-env
+          environment-name: root
           extra-specs: |
             python=${{ matrix.py_version }}
 
