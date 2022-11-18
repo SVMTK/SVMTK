@@ -1,11 +1,10 @@
-
 on:
   push:
     branches:
       - "**"
  
 
- jobs:
+jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
