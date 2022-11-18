@@ -19,7 +19,7 @@ requirements:
     - make
   host:
     - boost-cpp
-    - cgal
+    - cgal-cpp
     - eigen
     - pybind11
     - python
