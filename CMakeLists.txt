@@ -44,8 +44,12 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Lightweight C++ template library for linear algebra"
   URL "http://eigen.tuxfamily.org")
 
-set(CGAL_DIR external/cgal)
-find_package(CGAL REQUIRED COMPONENTS Core)
+
+find_package(CGAL COMPONENTS Core)
+if (!${CGAL_FOUND})
+  set(CGAL_DIR external/cgal)
+  find_package(CGAL REQUIRED COMPONENTS Core)
+endif()
 include(${CGAL_USE_FILE})
 
 set_package_properties(CGAL PROPERTIES TYPE REQUIRED
@@ -64,9 +68,14 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")
 
-add_subdirectory(external/pybind11)
 
-set( CMAKE_CXX_FLAGS "-fPIC -std=gnu++1z -frounding-math -lgmpxx -lgmp -Wall -I${Boost_INCLUDE_DIRS}") 
+find_package(pybind11)
+if (!{pybind11_FOUND})
+  add_subdirectory(external/pybind11)
+endif()
+find_package(pybind11 REQUIRED)
+
+set( CMAKE_CXX_FLAGS "-fPIC -std=gnu++1z -frounding-math -lgmpxx -lgmp -Wall -I${Boost_INCLUDE_DIRS}")  
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
