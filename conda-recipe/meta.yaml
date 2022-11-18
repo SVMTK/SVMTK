@@ -1,0 +1,30 @@
+{% set version = datetime.datetime.utcnow().strftime('0.%Y.%m.%d.%H.%M') %}
+
+package:
+  name: svmtk
+  version: {{ version }}
+
+source:
+  path: ../
+
+build:
+  number: 0
+  script: $PYTHON -m pip install -vv --ignore-installed --no-deps .
+
+requirements:
+  build:
+    - {{ compiler("c") }}
+    - {{ compiler("cxx") }}
+    - cmake
+    - make
+  host:
+    - boost-cpp
+    - cgal-cpp
+    - eigen
+    - pybind11
+    - python
+    - pip
+  run:
+    - boost-cpp
+    - eigen
+    - python
