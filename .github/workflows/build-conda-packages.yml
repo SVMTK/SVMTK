@@ -25,4 +25,5 @@ jobs:
 
       - name: Build packages
         run: |
+          cp ${CONDA_PREFIX}/conda_build_config.yaml .
           conda mambabuild conda-recipe/
