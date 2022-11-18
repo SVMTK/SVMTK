@@ -70,7 +70,7 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
 
 
 find_package(pybind11)
-if (!{PYBIND11_FOUND})
+if (!{pybind11_FOUND})
   add_subdirectory(external/pybind11)
 endif()
 find_package(pybind11 REQUIRED)
