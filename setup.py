@@ -55,7 +55,7 @@ class CMakeBuild(build_ext):
         )
         # default to 3 build threads
         if "CMAKE_BUILD_PARALLEL_LEVEL" not in env:
-            env["CMAKE_BUILD_PARALLEL_LEVEL"] = "3"
+            env["CMAKE_BUILD_PARALLEL_LEVEL"] = "1"
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
