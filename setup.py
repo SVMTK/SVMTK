@@ -57,6 +57,9 @@ class CMakeBuild(build_ext):
         if "CMAKE_BUILD_PARALLEL_LEVEL" not in env:
             env["CMAKE_BUILD_PARALLEL_LEVEL"] = "1"
 
+        if "CMAKE_BUILD_TESTING" not in env:
+            cmake_args += ["-DCMAKE_BUILD_TESTING=OFF", ]
+
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
