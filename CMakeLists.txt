@@ -46,13 +46,10 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
 
 
 find_package(CGAL COMPONENTS Core)
-message(STATUS "CGAL FOUND ${CGAL_FOUND}")
 if (!${CGAL_FOUND})
-set(CGAL_DIR external/cgal)
+  set(CGAL_DIR external/cgal)
   find_package(CGAL REQUIRED COMPONENTS Core)
 endif()
-message(STATUS "CGAL FOUND after external search ${CGAL_FOUND}")
-
 include(${CGAL_USE_FILE})
 
 set_package_properties(CGAL PROPERTIES TYPE REQUIRED
@@ -71,7 +68,12 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")
 
-add_subdirectory(external/pybind11)
+
+find_package(pybind11)
+if (!{PYBIND11_FOUND})
+  add_subdirectory(external/pybind11)
+endif()
+find_package(pybind11 REQUIRED)
 
 set( CMAKE_CXX_FLAGS "-fPIC -std=gnu++1z -frounding-math -lgmpxx -lgmp -Wall -I${Boost_INCLUDE_DIRS}")  
 
