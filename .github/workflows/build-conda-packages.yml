@@ -16,11 +16,9 @@ jobs:
       - name: Install Conda environment with Micromamba
         uses: mamba-org/provision-with-micromamba@main
         with:
-          environment-file: myenv.yaml
-          environment-name: myenvname
           extra-specs: |
             python=${{ matrix.py_version }}
-            boa
+            boa 
             conda-forge-pinning
 
       - name: Build packages
