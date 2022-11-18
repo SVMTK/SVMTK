@@ -53,7 +53,7 @@ class CMakeBuild(build_ext):
             env.get("CXXFLAGS", "-g"),
             self.distribution.get_version()
         )
-        # default to 3 build threads
+        # default to 1 build thread
         if "CMAKE_BUILD_PARALLEL_LEVEL" not in env:
             env["CMAKE_BUILD_PARALLEL_LEVEL"] = "1"
 
