@@ -1,7 +1,8 @@
+# Package for pushing conda packages to anaconda server
 on:
   push:
     branches:
-      - "**"
+      - "master"
 defaults:
   run:
     shell: bash -l {0}
