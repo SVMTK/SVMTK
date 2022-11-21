@@ -1,0 +1,28 @@
+name: Test building SVMTK
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+        python-version: [3.8, 3.9, 3.10]
+    name: Python ${{ matrix.python-version }} example
+
+    steps:
+    - name: Install SVMTK
+    - uses: actions/checkout@3
+      with: 
+          submodules: true
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version}} 
+      run:
+        python3 -m pip install -v .
+
+    steps:
+    - name: Test import
+    - run: python3 -c "import SVMTK"
