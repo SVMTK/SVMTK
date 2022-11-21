@@ -23,6 +23,5 @@ jobs:
       run:
         python3 -m pip install -v .
 
-    steps:
     - name: Test import
     - run: python3 -c "import SVMTK"
