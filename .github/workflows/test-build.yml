@@ -21,14 +21,15 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }} 
     
-    - name: Install Eigen3 (ubuntu)
+    - name: Install Eigen3 and mpfr (ubuntu)
       if: matrix.os == 'ubuntu-latest'
-      run: sudo apt-get install -y libeigen3-dev
+      run: sudo apt-get install -y libeigen3-dev mpfr
 
     - name: Install Eigen3 (macos)
       if: matrix.os == 'macOS-latest'
       run: brew install eigen
 
+    
 
     - name: Install SVMTK
       run:
