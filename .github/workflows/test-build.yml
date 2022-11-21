@@ -25,9 +25,9 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt-get install -y libeigen3-dev libmpfr-dev libboost-dev
 
-    - name: Install Eigen3 (macos)
+    - name: Install Eigen3, boost (macos)
       if: matrix.os == 'macOS-latest'
-      run: brew install eigen
+      run: brew install eigen boost
 
     
 
