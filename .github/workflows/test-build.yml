@@ -21,9 +21,9 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }} 
     
-    - name: Install Eigen3 and mpfr (ubuntu)
+    - name: Install Eigen3, mpfr, boost (ubuntu)
       if: matrix.os == 'ubuntu-latest'
-      run: sudo apt-get install -y libeigen3-dev libmpfr-dev
+      run: sudo apt-get install -y libeigen3-dev libmpfr-dev libboost-dev
 
     - name: Install Eigen3 (macos)
       if: matrix.os == 'macOS-latest'
