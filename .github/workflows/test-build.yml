@@ -23,7 +23,7 @@ jobs:
     
     - name: Install Eigen3 and mpfr (ubuntu)
       if: matrix.os == 'ubuntu-latest'
-      run: sudo apt-get install -y libeigen3-dev mpfr
+      run: sudo apt-get install -y libeigen3-dev libmpfr-dev
 
     - name: Install Eigen3 (macos)
       if: matrix.os == 'macOS-latest'
