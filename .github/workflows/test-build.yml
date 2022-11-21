@@ -27,8 +27,9 @@ jobs:
 
     - name: Install Eigen3, boost gmp (macos)
       if: matrix.os == 'macOS-latest'
-      run: brew install eigen boost gmp
-
+      run: |
+        brew install eigen boost gmp
+        xcode-select --install
     
 
     - name: Install SVMTK
