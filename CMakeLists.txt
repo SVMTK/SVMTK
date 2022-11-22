@@ -79,11 +79,11 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
 
 if (DOWNLOAD_PYBIND11)
   add_subdirectory(external/pybind11)
-  pybind11_add_module(SVMTK SHARED python/src/SVMTK.cpp)
 else()
   find_package(pybind11 REQUIRED)
 endif()
 
+pybind11_add_module(SVMTK SHARED python/src/SVMTK.cpp)
 set( CMAKE_CXX_FLAGS "-fPIC -std=gnu++1z -frounding-math -lgmpxx -lgmp -Wall -I${Boost_INCLUDE_DIRS}")  
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
