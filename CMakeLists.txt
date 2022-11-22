@@ -23,8 +23,17 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(BUILD_TESTING ON)
 set(PYBIND11_FINDPYTHON ON)
+
+
+option(BUILD_TESTING OFF "Build SVMTK tests")
+add_feature_info(BUILD_TESTING BUILD_TESTING  "Build SVMTK tests")
+
+option(DOWNLOAD_PYBIND11 "Download Pybind11. Requires that git-repo has been cloned in recursive mode" ON)
+add_feature_info(DOWNLOAD_PYBIND11 DOWNLOAD_PYBIND11 "Download Pybind11. Requires that git-repo has been cloned in recursive mode")
+
+option(DOWNLOAD_CGAL "Download CGAL. Requires that git-repo has been cloned in recursive mode" ON)
+add_feature_info(DOWNLOAD_CGAL DOWNLOAD_CGAL "Download CGAL. Requires that git-repo has been cloned in recursive mode")
 
 if (CMAKE_COMPILER_IS_GNUCXX)
   if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7)
@@ -44,9 +53,13 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Lightweight C++ template library for linear algebra"
   URL "http://eigen.tuxfamily.org")
 
-set(CGAL_DIR external/cgal)
-find_package(CGAL REQUIRED COMPONENTS Core)
-include(${CGAL_USE_FILE})
+if (DOWNLOAD_CGAL)
+  set(CGAL_DIR external/cgal)
+  find_package(CGAL REQUIRED COMPONENTS Core)
+  include(${CGAL_USE_FILE})
+else()
+    find_package(CGAL REQUIRED COMPONENTS Core)
+endif()
 
 set_package_properties(CGAL PROPERTIES TYPE REQUIRED
   DESCRIPTION "C++ template library for efficient and reliable algorithms in computational geometry"
@@ -64,13 +77,16 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")
 
+if (DOWNLOAD_PYBIND11)
+  add_subdirectory(external/pybind11)
+  pybind11_add_module(SVMTK SHARED python/src/SVMTK.cpp)
+else()
+  find_package(pybind11 REQUIRED)
+endif()
 
-add_subdirectory(external/pybind11)
 set( CMAKE_CXX_FLAGS "-fPIC -std=gnu++1z -frounding-math -lgmpxx -lgmp -Wall -I${Boost_INCLUDE_DIRS}")  
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-pybind11_add_module(SVMTK SHARED python/src/SVMTK.cpp)
 target_link_libraries(SVMTK PRIVATE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${GMP_LIBRARIES}
                             ${MPFR_LIBRARIES} ${Eigen3} ${Boost}) 
 
