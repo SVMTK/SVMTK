@@ -1,12 +1,9 @@
 import os
-import re
-import sys
+
 import subprocess
 
 from setuptools import setup, find_packages, Extension
 from setuptools.command.build_ext import build_ext
-from setuptools.command.test import test
-from shutil import copyfile, copymode
 
 from os import path
 this_directory = path.abspath(path.dirname(__file__))

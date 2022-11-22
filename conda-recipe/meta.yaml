@@ -22,6 +22,7 @@ requirements:
     - cgal-cpp
     - eigen
     - pybind11
+    - pybind11-abi 
     - python
     - pip
   run:
