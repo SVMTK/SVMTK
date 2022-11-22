@@ -25,23 +25,17 @@
 /* -- STL -- */
 #include <algorithm> 
 #include <iterator>
-#include <iterator>
-#include <fstream>
 
 /* -- CGAL 2D and 3D Linear Geometry Kernel -- */
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/centroid.h>
-#include <CGAL/squared_distance_2.h>
 
 /* -- CGAL 2D Conforming Triangulations and Meshes -- */
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Constrained_triangulation_plus_2.h>
-#include <CGAL/Triangulation_conformer_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 #include <CGAL/Triangulation_face_base_with_info_2.h>
 
 /* -- CGAL 2D Triangulation -- */
-#include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Delaunay_mesher_2.h>
 #include <CGAL/Delaunay_mesh_face_base_2.h>
 #include <CGAL/Delaunay_mesh_size_criteria_2.h>
@@ -59,7 +53,6 @@
 //#include <CGAL/IO/write_off_points.h>
 //#include <CGAL/IO/write_xyz_points.h>
 #include <CGAL/IO/write_VTU.h>
-#include <CGAL/boost/graph/IO/VTK.h>
 #include <CGAL/IO/Triangulation_off_ostream_2.h>
 
 #define PI 3.14159265

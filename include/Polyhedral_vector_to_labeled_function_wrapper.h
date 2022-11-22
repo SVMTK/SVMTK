@@ -5,8 +5,6 @@
 /* --- Includes -- */
 #include "SubdomainMap.h" 
 
-/* -- CGAL Polygon Mesh Processing -- */
-#include <CGAL/Polygon_mesh_processing/bbox.h>
 
 
 /*

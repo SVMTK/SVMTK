@@ -32,12 +32,7 @@
 /* -- boost-- */
 #include <boost/foreach.hpp>
 #include <boost/multi_array.hpp>
-#include <boost/system/error_code.hpp>
-
-/* -- CGAL 2D and 3D Linear Geometry Kernel  -- */
-#include <CGAL/Kernel/global_functions.h>
-#include <CGAL/squared_distance_3.h>
-#include <CGAL/Bbox_2.h>
+#include <CGAL/Surface_mesh.h>
 
 /* -- CGAL 3D Convex Hulls  -- */
 #include <CGAL/convex_hull_3.h>
@@ -50,8 +45,6 @@
 #include <CGAL/Search_traits_adapter.h>
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 
-/* -- CGAL Triangulated Surface Mesh Shortest Paths-- */
-#include <CGAL/Surface_mesh_shortest_path.h>
 
 /* -- CGAL Triangulated Surface Mesh Skeletonization -- */
 #include <CGAL/extract_mean_curvature_flow_skeleton.h>
@@ -59,8 +52,6 @@
 /* -- CGAL IO -- */
 #include <CGAL/IO/STL.h> 
 #include <CGAL/IO/OFF.h> 
-#include <CGAL/Polygon_mesh_processing/IO/polygon_mesh_io.h>
-#include <CGAL/IO/output_surface_facets_to_polyhedron.h>
 
 /* -- CGAL Polygon Mesh Processing -- */
 #include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
@@ -80,9 +71,11 @@
 #include <CGAL/Polygon_mesh_processing/bbox.h>
 #include <CGAL/Polygon_mesh_slicer.h>
 
+#include <CGAL/Surface_mesh_shortest_path/Surface_mesh_shortest_path_traits.h>
+#include <CGAL/Surface_mesh_shortest_path.h>
+#include <CGAL/Surface_mesh_default_triangulation_3.h>
 /* -- CGAL Surface mesh simplification -- */
 #include <CGAL/Surface_mesh_simplification/edge_collapse.h>
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_ratio_stop_predicate.h>
 
 //#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_and_length.h>
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Edge_length_cost.h>
@@ -95,16 +88,12 @@
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
 
 /* -- CGAL Triangulated Surface Mesh Segmentation -- */
-#include <CGAL/mesh_segmentation.h>
 
 #include <CGAL/Polygon_mesh_processing/repair.h>
 #include <CGAL/Polygon_mesh_processing/self_intersections.h>
 #include <CGAL/Polygon_mesh_processing/repair_degeneracies.h>
 
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_stop_predicate.h>
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/LindstromTurk_cost.h>
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/LindstromTurk_placement.h>
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Bounded_normal_change_filter.h>
 
 /**
  * \class 

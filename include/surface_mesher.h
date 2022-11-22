@@ -23,10 +23,8 @@
 //#include "Errors.h" 
 /* -- STL -- */
 #include <vector>
-#include <fstream>
 #include <math.h>
 #include <functional>
-#include <cstdlib>
 
 /* -- CGAL 2D and 3D Linear Geometry Kernel  -- */
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -37,21 +35,11 @@
 #include <CGAL/Surface_mesh_traits_generator_3.h>
 #include <CGAL/Surface_mesh_default_criteria_3.h>
 #include <CGAL/Surface_mesh_triangulation_generator_3.h>
-#include <CGAL/Surface_mesh_default_triangulation_3.h>
+   
 #include <CGAL/Complex_2_in_triangulation_3.h>
 
-/* -- CGAL 3D Polyhedral Surface -- */
-#include <CGAL/Polyhedron_3.h>
-
-/* -- CGAL Surface Mesh -- */
-#include <CGAL/Surface_mesh.h>
-
-/* -- CGAL Polygon Mesh Processing -- */
-#include <CGAL/Polygon_mesh_processing/distance.h>
-#include <CGAL/Side_of_triangle_mesh.h>
 
 /* -- CGAL and the Boost Graph Library -- */
-#include <CGAL/boost/graph/copy_face_graph.h>
 #include <CGAL/property_map.h>
 
 /* -- CGAL Poisson Surface Reconstruction -- */
@@ -61,7 +49,6 @@
 #include <CGAL/compute_average_spacing.h>
 
 /* -- CGAL IO -- */
-#include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/IO/output_surface_facets_to_polyhedron.h>
 #include <CGAL/IO/facets_in_complex_2_to_triangle_mesh.h>
 #include <CGAL/IO/read_points.h>

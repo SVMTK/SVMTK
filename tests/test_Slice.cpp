@@ -1,7 +1,6 @@
-#include <catch.hpp>
-
-#include "Slice.h" 
-
+#include <catch.hpp>  // for Approx, operator==, AssertionHandler, SourceLin...
+#include <vector>     // for vector
+#include "Slice.h"    // for Slice, Slice::Point_2
 
 
 TEST_CASE("Minimum bounding circle")
