@@ -9,7 +9,7 @@ source:
 
 build:
   number: 0
-  script: $PYTHON -m pip install -vv --ignore-installed --no-deps .
+  script: CMAKE_DOWNLOAD_CGAL=OFF CMAKE_DOWNLOAD_PYBIND11=OFF CMAKE_BUILD_TESTING=OFF $PYTHON -m pip install -vv --ignore-installed --no-deps .
 
 requirements:
   build:

@@ -3,8 +3,8 @@ import re
 import sys
 import subprocess
 
-from setuptools import setup,find_packages,Extension
-from setuptools.command.build_ext import build_ext 
+from setuptools import setup, find_packages, Extension
+from setuptools.command.build_ext import build_ext
 from setuptools.command.test import test
 from shutil import copyfile, copymode
 
@@ -18,6 +18,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 MAJOR = 1
 MINOR = 0
 
+
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=""):
         Extension.__init__(self, name, sources=[])
@@ -30,25 +31,26 @@ class CMakeBuild(build_ext):
             out = subprocess.check_output(["cmake", "--version"])
         except OSError:
             names = ", ".join(e.name for e in self.extensions)
-            msg = "CMake must be installed to build the following extensions: {}".format(names)
+            msg = "CMake must be installed to build the following extensions: {}".format(
+                names)
             raise RuntimeError(msg)
 
         for ext in self.extensions:
             self.build_extension(ext)
-        
-        
+
     def build_extension(self, ext):
-        extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
+        extdir = os.path.abspath(os.path.dirname(
+            self.get_ext_fullpath(ext.name)))
 
         cmake_args = [
-            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(extdir)#, "-DPYTHON_EXECUTABLE={}".format(sys.executable)
+            # , "-DPYTHON_EXECUTABLE={}".format(sys.executable)
+            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(extdir)
         ]
-        
-        
+
         cfg = "Debug" if self.debug else "Release"
         build_args = ["--config", cfg]
         env = os.environ.copy()
-   
+
         env["CXXFLAGSS"] = '{} -DVERSION_INFO=\\"{}\\"'.format(
             env.get("CXXFLAGS", "-g"),
             self.distribution.get_version()
@@ -58,15 +60,30 @@ class CMakeBuild(build_ext):
             env["CMAKE_BUILD_PARALLEL_LEVEL"] = "1"
 
         if "CMAKE_BUILD_TESTING" not in env:
-            cmake_args += ["-DCMAKE_BUILD_TESTING=OFF", ]
+            cmake_args += ["-DBUILD_TESTING=OFF", ]
+        else:
+            cmake_args += [
+                f"-DBUILD_TESTING={env['CMAKE_BUILD_TESTING']}", ]
 
+        if "CMAKE_DOWNLOAD_CGAL" not in env:
+            cmake_args += ["-DDOWNLOAD_CGAL=ON", ]
+        else:
+            cmake_args += [
+                f"-DDOWNLOAD_CGAL={env['CMAKE_DOWNLOAD_CGAL']}", ]
+        if "CMAKE_DOWNLOAD_PYBIND" not in env:
+            cmake_args += ["-DDOWNLOAD_PYBIND11=ON", ]
+        else:
+            cmake_args += [
+                f"-DDOWNLOAD_PYBIND11={env['CMAKE_DOWNLOAD_PYBIND']}", ]
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
-        subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
-        subprocess.check_call(["cmake", "--build","."] + build_args, cwd=self.build_temp)
+        subprocess.check_call(["cmake", ext.sourcedir] +
+                              cmake_args, cwd=self.build_temp, env=env)
+        subprocess.check_call(["cmake", "--build", "."] +
+                              build_args, cwd=self.build_temp)
 
-     
+
 setup(
     name="SVMTK",
     version="{}.{}".format(MAJOR, MINOR),
@@ -75,7 +92,7 @@ setup(
     packages=find_packages(include=['SVMTK', 'SVMTK.*']),
     python_requires='>=3',
     license="GNU GENERAL PUBLIC LICENSE",
-    keywords="Surface Volume Meshing Toolkit " ,
+    keywords="Surface Volume Meshing Toolkit ",
     long_description=long_description,
     long_description_content_type='text/markdown',
     ext_modules=[CMakeExtension("SVMTK")],
@@ -83,4 +100,3 @@ setup(
     test_suite='tests',
     zip_safe=False
 )
-
