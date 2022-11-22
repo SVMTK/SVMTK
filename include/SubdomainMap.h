@@ -20,7 +20,6 @@
 /* --- Includes -- */
 
 #include <algorithm>                                // for reverse
-#include <boost/detail/basic_pointerbuf.hpp>        // for basic_pointerbuf<...
 #include <boost/lexical_cast.hpp>                   // for lexical_cast
 #include <boost/move/utility_core.hpp>              // for move
 #include <iostream>                                 // for operator<<, basic...
@@ -32,6 +31,7 @@
 
 
 /* -- boost-- */
+#include <boost/dynamic_bitset.hpp>
 #include <boost/lexical_cast.hpp>
 
 

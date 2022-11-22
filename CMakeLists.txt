@@ -44,8 +44,6 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Lightweight C++ template library for linear algebra"
   URL "http://eigen.tuxfamily.org")
 
-
-
 set(CGAL_DIR external/cgal)
 find_package(CGAL REQUIRED COMPONENTS Core)
 include(${CGAL_USE_FILE})
