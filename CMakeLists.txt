@@ -11,6 +11,7 @@ endif()
 project(SVMTK)
 include(FeatureSummary)
 
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 set(SVMTK_VERSION_RELEASE 1)
 set(SVMKT_VERSION_MAJOR "1")
 set(SVMTK_VERSION_MINOR "0")
@@ -44,7 +45,8 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Lightweight C++ template library for linear algebra"
   URL "http://eigen.tuxfamily.org")
 
-
+find_package(GMP REQUIRED)
+include_directories(${GMP_INCLUDE_DIR})
 
 set(CGAL_DIR external/cgal)
 find_package(CGAL REQUIRED COMPONENTS Core)
@@ -68,7 +70,7 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
 
 
 add_subdirectory(external/pybind11)
-set( CMAKE_CXX_FLAGS "-fPIC -std=gnu++1z -frounding-math -lgmpxx -lgmp -Wall -I${Boost_INCLUDE_DIRS}")  
+set( CMAKE_CXX_FLAGS "-fPIC -std=gnu++1z -frounding-math -Wall -I${Boost_INCLUDE_DIRS}")
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
