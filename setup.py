@@ -70,7 +70,7 @@ class CMakeBuild(build_ext):
         else:
             cmake_args += [
                 f"-DDOWNLOAD_CGAL={env['CMAKE_DOWNLOAD_CGAL']}", ]
-        if "CMAKE_DOWNLOAD_PYBIND" not in env:
+        if "CMAKE_DOWNLOAD_PYBIND11" not in env:
             cmake_args += ["-DDOWNLOAD_PYBIND11=ON", ]
         else:
             cmake_args += [
