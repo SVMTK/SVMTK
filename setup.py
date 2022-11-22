@@ -74,7 +74,7 @@ class CMakeBuild(build_ext):
             cmake_args += ["-DDOWNLOAD_PYBIND11=ON", ]
         else:
             cmake_args += [
-                f"-DDOWNLOAD_PYBIND11={env['CMAKE_DOWNLOAD_PYBIND']}", ]
+                f"-DDOWNLOAD_PYBIND11={env['CMAKE_DOWNLOAD_PYBIND11']}", ]
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
