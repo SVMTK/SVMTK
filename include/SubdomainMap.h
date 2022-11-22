@@ -18,13 +18,17 @@
 
 #define SubdomainMap_H
 /* --- Includes -- */
-#include "Errors.h"
 
-/* -- STL -- */
-#include <map>
-#include <string>
-#include <vector>
-#include <iostream>
+#include <algorithm>                                // for reverse
+#include <boost/lexical_cast.hpp>                   // for lexical_cast
+#include <boost/move/utility_core.hpp>              // for move
+#include <iostream>                                 // for operator<<, basic...
+#include <map>                                      // for map, operator!=
+#include <string>                                   // for string, allocator
+#include <utility>                                  // for pair, swap
+#include <vector>                                   // for vector
+#include "Errors.h"                                 // for InvalidArgumentError
+
 
 /* -- boost-- */
 #include <boost/dynamic_bitset.hpp>

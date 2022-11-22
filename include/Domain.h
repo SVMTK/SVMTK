@@ -36,10 +36,8 @@
 #include <CGAL/make_mesh_3.h>
 
 /* -- CGAL Mesh_3 -- */ 
-//#include <CGAL/Mesh_3/Detect_polylines_in_polyhedra.h>
 #include <CGAL/Polygon_mesh_processing/detect_features.h>
 #include <CGAL/Mesh_3/polylines_to_protect.h>
-#include <CGAL/IO/read_ply_points.h>
 
 /**
  * @brief Transform facets with a specific tag to points and facet connections.

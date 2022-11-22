@@ -1,7 +1,9 @@
 #ifndef  __Errors_H
 
 #define __Errors_H
-#include<string>
+#include <exception>  // for exception
+#include <string>     // for string, allocator
+
 /**
  * \class PreconditionError
  *

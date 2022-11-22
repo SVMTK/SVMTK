@@ -1,7 +1,6 @@
 #include <catch.hpp>
 
 #include "Surface.h" 
-#include "Slice.h"
 
 TEST_CASE("Points inside and outside surface")
 {
