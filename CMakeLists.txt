@@ -23,7 +23,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(PYBIND11_FINDPYTHON ON)
 
 
 option(BUILD_TESTING OFF "Build SVMTK tests")
@@ -34,6 +33,10 @@ add_feature_info(DOWNLOAD_PYBIND11 DOWNLOAD_PYBIND11 "Download Pybind11. Require
 
 option(DOWNLOAD_CGAL "Download CGAL. Requires that git-repo has been cloned in recursive mode" ON)
 add_feature_info(DOWNLOAD_CGAL DOWNLOAD_CGAL "Download CGAL. Requires that git-repo has been cloned in recursive mode")
+
+if (DOWNLOAD_PYBIND11)
+  set(PYBIND11_FINDPYTHON ON)
+endif()
 
 if (CMAKE_COMPILER_IS_GNUCXX)
   if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7)
