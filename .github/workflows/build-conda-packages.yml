@@ -45,5 +45,7 @@ jobs:
       - name: Upload to Anaconda
         env:
           BINSTAR_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
-        run:
-          anaconda -t ${BINSTAR_TOKEN} upload ${CONDA_PREFIX}/conda-bld/linux-64/*.tar.bz2
+        run: |
+          if [[ ! -z "${BINSTAR_TOKEN}" ]]; then
+            anaconda -t ${BINSTAR_TOKEN} upload ${CONDA_PREFIX}/conda-bld/linux-64/*.tar.bz2
+          fi
