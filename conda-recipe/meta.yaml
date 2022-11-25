@@ -21,10 +21,14 @@ requirements:
     - boost-cpp
     - cgal-cpp
     - eigen
+    - gmp
+    - mpfr
     - pybind11
     - python
     - pip
   run:
     - boost-cpp
     - eigen
+    - gmp
+    - mpfr
     - python
