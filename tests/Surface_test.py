@@ -91,7 +91,6 @@ class Surface_Test(unittest.TestCase):
         p = SVMTK.Surface(f"{tests_dir}/Data/P.off")
         self.assertTrue(p.triangulate_faces())
 
-    @pytest.mark.xfail(strict=True)
     def test_surface_clip(self):
         surface =SVMTK.Surface()
         surface.make_cube(-1.,-1.,-1.,1.,1.,1.,1)
