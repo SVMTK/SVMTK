@@ -8,3 +8,5 @@ examples/results/
 dist/
 build/
 *.so
+
+__pycache__
