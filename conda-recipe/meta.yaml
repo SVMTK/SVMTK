@@ -19,7 +19,7 @@ requirements:
     - make
   host:
     - boost-cpp
-    - cgal-cpp
+    - cgal-cpp=5.3.1
     - eigen
     - gmp
     - mpfr
