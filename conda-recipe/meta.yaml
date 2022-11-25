@@ -32,3 +32,14 @@ requirements:
     - gmp
     - mpfr
     - python
+
+test:
+  requires:
+    - pytest
+  source_files:
+    - tests
+  imports:
+    - SVMTK
+
+  commands:
+    - pytest -v tests/Surface_test.py
