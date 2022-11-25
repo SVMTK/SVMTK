@@ -3,6 +3,12 @@ on:
   push:
     branches:
       - "master"
+  pull_request:
+    paths:
+      - conda-recipes/**
+      - .github/workflows/build-conda-packages.yml
+  workflow_dispatch:
+
 defaults:
   run:
     shell: bash -l {0}
