@@ -1,5 +1,12 @@
+import os
 import unittest
+
 import SVMTK
+import pytest
+
+tests_dir = os.path.dirname(__file__)
+
+
 def ellipsoid_function( x, y, z):
   return x*x + 4.*y*y +4.*z*z-1.;
 
@@ -11,11 +18,11 @@ class Surface_Test(unittest.TestCase):
     def test_surface_io(self):
         surface =SVMTK.Surface()  
         surface.make_cube(0.,0.,0.,1.,1.,1.,1) 
-        surface.save("tests/Data/cube.off")
-        surface.save("tests/Data/cube.stl")
-        surface= SVMTK.Surface("tests/Data/cube.off")
+        surface.save(f"{tests_dir}/Data/cube.off")
+        surface.save(f"{tests_dir}/Data/cube.stl")
+        surface= SVMTK.Surface(f"{tests_dir}/Data/cube.off")
         self.assertTrue(surface.num_vertices()==14 and surface.num_faces()==24 and surface.num_edges()==36) 
-        surface= SVMTK.Surface("tests/Data/cube.stl") 
+        surface= SVMTK.Surface(f"{tests_dir}/Data/cube.stl") 
         self.assertTrue(surface.num_vertices()==14 and surface.num_faces()==24 and surface.num_edges()==36)
 
     def test_surfaces_shapes(self):
@@ -74,14 +81,14 @@ class Surface_Test(unittest.TestCase):
         self.assertEqual(surface.span(2),(0.,3))
 
     def test_fill_holes(self):          
-        mech_shark = SVMTK.Surface("tests/Data/mech-holes-shark.off")
+        mech_shark = SVMTK.Surface(f"{tests_dir}/Data/mech-holes-shark.off")
         nb_holes = mech_shark.fill_holes()
         self.assertEqual(nb_holes,4)
         nb_holes = mech_shark.fill_holes()
         self.assertEqual(nb_holes,0)
 
     def test_triangulate_faces(self):
-        p = SVMTK.Surface("tests/Data/P.off")
+        p = SVMTK.Surface(f"{tests_dir}/Data/P.off")
         self.assertTrue(p.triangulate_faces())
 
     def test_surface_clip(self):
@@ -142,7 +149,7 @@ class Surface_Test(unittest.TestCase):
         self.assertTrue(surface.num_edges(),126) 
 
     def test_separate_narrow_gaps(self):
-         s1=SVMTK.Surface("tests/Data/narrow_gap.off")
+         s1=SVMTK.Surface(f"{tests_dir}/Data/narrow_gap.off")
          a = s1.separate_narrow_gaps(adjustment=-.1,smoothing=0.1)
          self.assertTrue(a[0]) 
          self.assertEqual(a[1],0) 
@@ -197,8 +204,6 @@ class Surface_Test(unittest.TestCase):
 
 if __name__ == '__main__':
     import os
-    unittest.main()        
+    unittest.main()
     os.remove('tests/Data/cube.stl')
     os.remove('tests/Data/cube.off')
-
-
