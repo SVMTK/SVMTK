@@ -10,3 +10,4 @@ build/
 *.so
 
 __pycache__
+tests/bin

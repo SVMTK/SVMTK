@@ -21,10 +21,24 @@ requirements:
     - boost-cpp
     - cgal-cpp
     - eigen
+    - gmp
+    - mpfr
     - pybind11
     - python
     - pip
   run:
-    - boost-cpp
-    - eigen
+    - gmp
+    - mpfr
+    - numpy
     - python
+
+test:
+  requires:
+    - pytest
+  source_files:
+    - tests
+  imports:
+    - SVMTK
+
+  commands:
+    - pytest -v tests/Surface_test.py

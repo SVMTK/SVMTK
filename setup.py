@@ -95,5 +95,13 @@ setup(
     ext_modules=[CMakeExtension("SVMTK")],
     cmdclass={'build_ext': CMakeBuild},
     test_suite='tests',
+    install_requires=[
+        "numpy",
+    ],
+    extras_require={
+        "test": [
+            "pytest",
+        ],
+    },
     zip_safe=False
 )

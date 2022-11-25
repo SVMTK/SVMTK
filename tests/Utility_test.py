@@ -1,6 +1,9 @@
+import os
 import unittest
+
 import SVMTK
 
+tests_dir = os.path.dirname(__file__)
 
 class Utility_Test(unittest.TestCase):
 
@@ -86,8 +89,8 @@ class Utility_Test(unittest.TestCase):
 
 
     def test_union_partially_overlapping_surfaces(self): 
-        s1 =SVMTK.Surface("tests/Data/s1.off")
-        s2 =SVMTK.Surface("tests/Data/s2.off")       
+        s1 =SVMTK.Surface(f"{tests_dir}/Data/s1.off")
+        s2 =SVMTK.Surface(f"{tests_dir}/Data/s2.off")       
         s5  = SVMTK.union_partially_overlapping_surfaces(s1,s2,50,0.7,1,8)
         self.assertTrue(s5.num_faces()>0) 
 

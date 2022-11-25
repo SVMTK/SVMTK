@@ -35,7 +35,9 @@ jobs:
 
     - name: Install SVMTK
       run:
-        python3 -m pip install -v . pytest
+        python3 -m pip install -v .[test]
+      env:
+        CMAKE_BUILD_TESTING: "ON"
 
     - name: Run Tests
-      run: pytest -v
+      run: pytest -v tests

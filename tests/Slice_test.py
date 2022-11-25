@@ -1,5 +1,9 @@
+import os
 import unittest
+
 import SVMTK
+
+tests_dir = os.path.dirname(__file__)
 
 
 class Slice_Test(unittest.TestCase):
@@ -21,10 +25,10 @@ class Slice_Test(unittest.TestCase):
         self.assertTrue( slice_.number_of_constraints() > 0)
         slice_.create_mesh(1.) 
         self.assertTrue( slice_.number_of_faces() > 0) 
-        slice_.save("tests/Data/slice.vtu")
-        slice_.save("tests/Data/slice.stl")
-        slice_.save("tests/Data/slice.off")
-        slice_.save("tests/Data/slice.mesh")
+        slice_.save(f"{tests_dir}/Data/slice.vtu")
+        slice_.save(f"{tests_dir}/Data/slice.stl")
+        slice_.save(f"{tests_dir}/Data/slice.off")
+        slice_.save(f"{tests_dir}/Data/slice.mesh")
 
     def test_slice_subdomains(self):
         slice_ = SVMTK.Slice(SVMTK.Plane_3(0,0,1,0))
@@ -75,8 +79,8 @@ class Slice_Test(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
     import os
-    os.remove("tests/Data/slice.vtu")
-    os.remove("tests/Data/slice.stl")
-    os.remove("tests/Data/slice.off")
-    os.remove("tests/Data/slice.mesh")
 
+    os.remove(f"{tests_dir}/Data/slice.vtu")
+    os.remove(f"{tests_dir}/Data/slice.stl")
+    os.remove(f"{tests_dir}/Data/slice.off")
+    os.remove(f"{tests_dir}/Data/slice.mesh")
