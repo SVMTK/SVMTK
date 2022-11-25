@@ -14,13 +14,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-      with: 
+      with:
           submodules: true
 
     - uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }} 
-    
+        python-version: ${{ matrix.python-version }}
+
     - name: Install Eigen3, mpfr, boost (ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt-get install -y libeigen3-dev libmpfr-dev libboost-dev
@@ -29,11 +29,11 @@ jobs:
     #   if: matrix.os == 'macOS-latest'
     #   run: |
     #     brew install eigen boost
-    
+
 
     - name: Install SVMTK
       run:
-        python3 -m pip install -v .
+        python3 -m pip install -v . pytest
 
-    - name: Test import
-      run: python3 -c "import SVMTK"
+    - name: Run Tests
+      run: pytest -v
