@@ -18,7 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        py_version: ["3.8", "3.9", "3.10"]
+        py_version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
     steps:
       - uses: actions/checkout@v3
 
@@ -27,13 +31,12 @@ jobs:
         with:
           environment-file: conda-recipe/environment.yml
           environment-name: root
-          extra-specs: |
-            python=${{ matrix.py_version }}
 
       - name: Build packages
         run: |
-          cp ${CONDA_PREFIX}/conda_build_config.yaml .
           conda mambabuild conda-recipe/
+        env:
+          CONDA_PY: ${{ matrix.py_version }}
 
 
       - uses: actions/upload-artifact@v3
