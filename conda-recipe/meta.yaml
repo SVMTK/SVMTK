@@ -18,8 +18,10 @@ requirements:
     - cmake
     - make
   host:
-    - boost-cpp
-    - cgal-cpp=5.3.1
+    # boost-cpp pin neede for cgal pin
+    - boost-cpp=1.74
+    # cgal 5.4.1 needed due to compatibility issue in clipping
+    - cgal-cpp=5.4.1
     - eigen
     - gmp
     - mpfr
