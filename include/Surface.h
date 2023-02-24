@@ -746,7 +746,7 @@ class Surface
          if( res==A or res==B )
            vit++;
          else 
-           mvertices.erase(vit->first);       
+           mvertices.erase(vit++);       
       }
       return mvertices;
    }
