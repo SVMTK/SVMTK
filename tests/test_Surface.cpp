@@ -23,9 +23,9 @@ TEST_CASE("Vertices, points and vectors")
     Surface surface; 
     surface.make_cube(0.,0.,0.,2.0,2.0,2.0,1.); 
     auto vertices = surface.get_vertices();
-    REQUIRE( vertices.size()==48);
+    REQUIRE( vertices.size()==50);
     auto points = surface.get_points();
-    REQUIRE( points.size()==48);
+    REQUIRE( points.size()==50);
 
 }
 
