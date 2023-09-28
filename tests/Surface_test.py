@@ -100,7 +100,6 @@ class Surface_Test(unittest.TestCase):
         self.assertAlmostEqual(surface.span(1)[0],-1.0,8)
         self.assertAlmostEqual(surface.span(1)[1],1.0,8)
         self.assertAlmostEqual(surface.span(2)[0],-1.,8)
-        # FIXME: this assertion is failing
         self.assertAlmostEqual(surface.span(2)[1],0.0,8)
 
     def test_adjust_boundary(self):
@@ -151,7 +150,7 @@ class Surface_Test(unittest.TestCase):
 
     def test_separate_narrow_gaps(self):
          s1=SVMTK.Surface(f"{tests_dir}/Data/narrow_gap.off")
-         a = s1.separate_narrow_gaps(adjustment=-.1,smoothing=0.1)
+         a = s1.separate_narrow_gaps(-1.0,0.10,600)
          self.assertTrue(a[0]) 
          self.assertEqual(a[1],0) 
 
@@ -159,14 +158,15 @@ class Surface_Test(unittest.TestCase):
 
     def test_enclose(self):
         surface1 =SVMTK.Surface()  
-        surface1.make_cube(0.,0.,0.,2.,2.,2.,2) 
+        surface1.make_cube(0.,0.,0.,2.,2.,2.,2.0) 
         surface2 =SVMTK.Surface()  
+        surface1.save("enclose1.stl")
         surface2.make_cube(-0.5,-0.5,-0.5,2.5,2.5,2.5,2.) 
-        a =  surface1.enclose(surface2,0.8)
+        surface2.save("enclose2.stl")
+        a =  surface1.enclose(surface2,0.8,0.1) 
+        surface1.save("enclose3.stl")
         self.assertTrue( a[0])
         self.assertEqual( a[1],0) 
-        
-        
         
     def test_embed(self):
         surface1 =SVMTK.Surface()  #BUG
@@ -177,12 +177,13 @@ class Surface_Test(unittest.TestCase):
         self.assertTrue( a[0])
         self.assertEqual( a[1],0) 
 
-    def test_separate_enclosed_surface(self):
+    def test_separate_surface(self):
+    
         surface1 =SVMTK.Surface()  #BUG
-        surface1.make_cube(0.,0.,0.,2.,2.,2.,1.0)         
+        surface1.make_cube(0.,0.,0.,2.,2.,2.,0.5)         
         surface2 =SVMTK.Surface()  
-        surface2.make_cube(0.05,0.05,0.05,1.95,1.95,1.95,1.0) 
-        a = surface2.separate(surface1, 0.4)
+        surface2.make_cube(0.05,0.05,0.05,1.95,1.95,1.95,0.5) 
+        a = surface2.separate(surface1, 0.6, 0.3 ,600)    
         self.assertTrue( a[0])
         self.assertEqual( a[1],0)
 

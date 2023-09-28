@@ -1,4 +1,4 @@
-solid tests/Data/slice.stl
+solid /home/lars/SVMTK/tests/Data/slice.stl
 facet normal 1 1 1
 outer loop
 	vertex 0 0.25 0.25

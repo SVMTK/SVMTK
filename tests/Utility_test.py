@@ -42,17 +42,17 @@ class Utility_Test(unittest.TestCase):
         self.assertEqual(pl3.d(),0.0)
 
 
-    def test_seperate_close_surfaces(self):
+    def test_separate_close_surfaces(self):
         s1 =SVMTK.Surface()
         s2 =SVMTK.Surface()  
-        s1.make_cube(1.,0.,1.,2.,1.,2.,1) 
-        s2.make_cube(1.,1,1.,2.,2.,2.,1) 
-        
+        s1.make_cube(1.,0.,1.,2.,1.00,2.,1.0) 
+        s2.make_cube(1.,1.0,1.,2.,2.,2., 1.0) 
+      
         self.assertTrue(SVMTK.separate_close_surfaces(s1,s2))
 
 
 
-    def test_seperate_close_surfaces_2(self):
+    def test_separate_close_surfaces_2(self):
         s1 =SVMTK.Surface()
         s2 =SVMTK.Surface()  
         s3 =SVMTK.Surface()    
@@ -76,7 +76,7 @@ class Utility_Test(unittest.TestCase):
         self.assertTrue(SVMTK.separate_overlapping_surfaces(s1,s2))
 
 
-    def test_sperate_overlapping_surface_2(self):
+    def test_separate_overlapping_surface_2(self):
         s1 =SVMTK.Surface()
         s2 =SVMTK.Surface()  
         s3 =SVMTK.Surface()    

@@ -121,14 +121,7 @@ R"doc(Returns a set of integer that represents the cell tags in the mesh.
 
 )doc";
 
-static const char *__doc_Domain_get_interface =
-R"doc(Returns a SVMTK Surface object of the interface
 
-:param: interface a pair of subdomain tags.
-
-:Returns: a :class:`Surface` object.
-
-)doc";
 
 
 static const char *__doc_Domain_add_sharp_border_edges =
@@ -229,6 +222,60 @@ See also:
 :param time_limit: Sets, in seconds, a CPU time limit after which the optimization process is stopped.
 :sliver_bound: Sets a targeted lower-bound on dihedral angles of mesh cells.
 
+)doc";
+
+static const char *__doc_Domain_get_collision_distances =
+R"doc( Experimental: This function computes the collision distance in the negative normal for each facet on the interface for a subdomain. If
+the collision occurs with a specified interface, then the collision distance is set as negative. The collisions distance is stored as 
+triangle data, and can be written to file.
+
+The purpose of this function is to approximate to the hydrolic resistance for a subdomain, then remove the 
+subdomain, and simulate flow on the interface. 
+
+:param subdomain_tag: An integer representing a subdomain in the mesh.  
+
+:int boundary_tag=0:  An integer, which in combination wit the subdomain_tag gives an iterface in the mesh.
+
+
+)doc";
+
+static const char *__doc_Domain_get_collision_spheres =
+R"doc(Experimental: This function computes the collision spheres for each facet on the interface for a subdomain. 
+The collisions distance is stored as triangle data, and can be written to file.
+
+The purpose of this function is to approximate to the hydrolic resistance for a subdomain, then remove the 
+subdomain, and simulate flow on the interface. 
+
+:param subdomain_tag: An integer representing a subdomain in the mesh.  
+
+
+)doc";
+
+
+static const char *__doc_Domain_write_facet_data =
+R"doc(Writes stored triangle data to file.
+
+:param filename: name of file. 
+
+
+)doc";
+
+static const char *__doc_Domain_get_borders =
+R"doc(Returns the borders add to the domain as vector of :class:`Point_3`.
+
+:Returns: Vector of :class:`Point_3` objects.
+    
+)doc";
+
+
+
+static const char *__doc_Domain_get_interface =
+R"doc(Returns the interface between two subdomain as a :class:`Surface` object.
+
+:param interface: a pair of integers tags. 
+
+:Returns: a :class:`Surface` object.
+    
 )doc";
 
 static const char *__doc_Domain_get_boundaries =
@@ -457,6 +504,19 @@ Attributes:
 )doc";
 
 
+static const char *__doc_Slice_get_points = R"doc(Returns points in the 2D triangulation.)doc";
+
+static const char *__doc_Slice_get_facets = R"doc(Returns the points for facets in the 2D triangulation.)doc";
+
+static const char *__doc_Slice_add_polygon_domain = 
+R"doc( Marks all cells within the polygon with the polygon tag.
+
+:param polygon: a closed vector of points in 2D.
+
+:param polygon_tag: a integer for the polygon.
+
+)doc";
+
 static const char *__doc_Slice_Slice = R"doc(Create an empty SVMTK Slice object.)doc";
 
 static const char *__doc_Slice_Slice_2 =
@@ -643,9 +703,9 @@ R"doc(Set the plane attribute.
 )doc";
 
 static const char *__doc_Slice_simplify =
-R"doc(Simplify constraints to a specific point density.
+R"doc(Simplify number of constraints to be a specific fraction.
 
-:param point_density: The number of points pr. length unit.
+:param point_density: Fraction threshold.
 
 )doc";
 
@@ -962,8 +1022,6 @@ R"doc(Moves incrementally vertices in a negative normal direction so that they a
 
 :Returns: True if completed and the number vertices still outside surface.
 
-:Raises: *InvalidArgumentError* if adjustment is positive, i.e. expansion instead of contraction.
-
 )doc";
 
 static const char *__doc_Surface_enclose =
@@ -978,7 +1036,6 @@ R"doc(Moves incrementally vertices in a positiv normal direction so that they ar
 
 :Returns: True if completed and the number vertices still inside surface.
 
-:Raises: *InvalidArgumentError* if adjustment is negative, i.e. contraction instead of expansion.
 
 )doc";
 
@@ -993,7 +1050,6 @@ R"doc(Moves incrementally vertices in a negative normal direction so that they a
 
 :Returns: True if completed and the number vertices still outside surface. 
 
-:Raises: *InvalidArgumentError* if adjustment is positive, i.e. expansion instead of contraction.
 
 )doc";
 
@@ -1494,12 +1550,34 @@ R"doc(Creates a :class`Vector_3` object.
 
 )doc";
 
-
 static const char *__doc_Vector3_Vector3_2 =
 R"doc(Creates a :class`Vector_3` object as difference between two points.
 
 :param source: :class:`Point_3` object. 
 :param target: :class:`Point_3` object.
+
+)doc";
+
+
+static const char *__doc_Vector2 =
+R"doc(Wrapper for `CGAL Vector_2 class <https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Vector__2.html>`_.
+
+)doc";
+
+static const char *__doc_Vector2_Vector2 =
+R"doc(Creates a :class`Vector_2` object.
+
+:param x: Sets x direction of the object.
+:param y: Sets y direction of the object.
+
+
+)doc";
+
+static const char *__doc_Vector2_Vector2_2 =
+R"doc(Creates a :class`Vector_2` object as difference between two points.
+
+:param source: :class:`Point_2` object. 
+:param target: :class:`Point_2` object.
 
 )doc";
 

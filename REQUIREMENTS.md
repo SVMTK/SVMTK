@@ -42,10 +42,10 @@ and the submodule version can be switched with
 
 `cd external/cgal`
 
-`git checkout releases/CGAL-5.3.0`
+`git checkout releases/CGAL-5.6.0`
 
 Tested CGAL versions 
-  - 5.3.0
+  - 5.6.0
 
 ## Python>=3.6 
 Installing python3.6
@@ -215,4 +215,7 @@ Complete the installation with
 `make install`
 
 Further details can be found at <http://eigen.tuxfamily.org>
+
+
+
 

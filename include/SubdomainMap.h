@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2021 Lars Magnus Valnes 
+// Copyright (C) 2018-2023 Lars Magnus Valnes 
 //
 // This file is part of Surface Volume Meshing Toolkit (SVM-TK).
 //
@@ -316,18 +316,17 @@ class SubdomainMap :virtual public AbstractMap
         /**
          * @brief Adds a tag value for surfaces patches between subdomains defined by a pair of integer 
          * the class member variable patches 
-         *
+         * FIXME WHy? 
          * @param interface a integer pair that represents the suface interface between two subdomains 
          * @param tag the value used to represent the surface interface in the save file. 
          */
         void add_interface(std::pair<int,int> interface, int tag)
         {
-              if(interface.second > interface.first) 
-                std::swap(interface.first, interface.second);
+              if(interface.second < interface.first) 
+                std::swap(interface.second, interface.first);
               patches[interface] = tag;
         } 
 
-      
         /**    
          * @brief Returns the content of class member variable patches between subdomains with 
          * the corresponding tag value. If patches is empty, gives each interfaces an unique 

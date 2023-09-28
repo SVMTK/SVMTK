@@ -104,6 +104,7 @@ python setup.py install --prefix=$PROJECT_HOME/src/SVMTK/local
 
 ### Running SVMTK on SAGA HPC Cluster
 
+Outdated 
 ```
 export PROJECT_HOME=path-to-base-install-dir
 
