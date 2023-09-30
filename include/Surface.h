@@ -392,11 +392,9 @@ class Surface
        Vector_3 direction,normal, edge ;
        
        std::map< vertex_descriptor, Vector_3> vertex_displacement;
-       FT distance;
+       //FT distance;
        double N; double avg_edge_length = average_edge_length();
 
-       
-       // FIXME 
        for(auto vit = mvertices.begin(); vit!= mvertices.end(); vit++)
        {
           K_neighbor_search search(tree, mesh.point(*vit), 2,0,true,tr_dist); 
@@ -407,9 +405,8 @@ class Surface
           
           // Vector(a, b) -> b-a
           direction =  Vector_3(current,closest);   
-          
-          distance = CGAL::sqrt(direction.squared_length());
-          normal =  CGAL::Polygon_mesh_processing::compute_vertex_normal(*vit,mesh);
+          //distance = CGAL::sqrt(direction.squared_length());          
+
           Vector_3 delta=CGAL::NULL_VECTOR;
           CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(*vit), mesh), done(vbegin);
           N=0;
@@ -3259,8 +3256,8 @@ bool separate_surface_overlapp(Surface& surf1, Surface& surf2, double edge_movem
   int iter =0;
   do 
   {      
-        vertex_vector_map vertex_displacement_1 = surf1.get_vertex_displacement(s1vertices, edge_movement,smoothing);     
-        vertex_vector_map vertex_displacement_2 = surf2.get_vertex_displacement(s2vertices, edge_movement,smoothing);         
+        vertex_vector_map vertex_displacement_1 = surf1.get_vertex_displacement(s1vertices, -abs(edge_movement),smoothing);     
+        vertex_vector_map vertex_displacement_2 = surf2.get_vertex_displacement(s2vertices, -abs(edge_movement),smoothing);         
 
         surf1.set_adjacent_vertices(vertex_displacement_1);
         surf2.set_adjacent_vertices(vertex_displacement_2);    
@@ -3330,8 +3327,8 @@ bool separate_surface_overlapp(Surface& surf1, Surface& surf2, Surface& other, d
         s1vertices  = surf1.get_vertices_outside(other,s1vertices); 
         s2vertices  = surf2.get_vertices_outside(other,s2vertices);
 
-        vertex_vector_map vertex_displacement_1 = surf1.get_vertex_displacement(s1vertices, edge_movement,smoothing);     
-        vertex_vector_map vertex_displacement_2 = surf2.get_vertex_displacement(s2vertices, edge_movement,smoothing);         
+        vertex_vector_map vertex_displacement_1 = surf1.get_vertex_displacement(s1vertices, -abs(edge_movement), smoothing);     
+        vertex_vector_map vertex_displacement_2 = surf2.get_vertex_displacement(s2vertices, -abs(edge_movement), smoothing);         
 
         surf1.set_adjacent_vertices(vertex_displacement_1);
         surf2.set_adjacent_vertices(vertex_displacement_2);           
@@ -3404,12 +3401,15 @@ bool separate_close_surfaces(Surface& surf1, Surface& surf2, Surface& other, dou
         s1vertices  = surf1.get_vertices_outside(other,s1vertices);
         s2vertices  = surf2.get_vertices_outside(other,s2vertices);       
              
-        vertex_vector_map vertex_displacement_1 = surf1.get_close_vertex_displacement(surf2, s1vertices, -edge_movement,smoothing);     
-        vertex_vector_map vertex_displacement_2 = surf2.get_close_vertex_displacement(surf1, s2vertices, -edge_movement,smoothing);  
+        vertex_vector_map vertex_displacement_1 = surf1.get_close_vertex_displacement(surf2, s1vertices, abs(edge_movement), smoothing);     
+        vertex_vector_map vertex_displacement_2 = surf2.get_close_vertex_displacement(surf1, s2vertices, abs(edge_movement), smoothing);  
         
         surf1.set_adjacent_vertices(vertex_displacement_1);
         surf2.set_adjacent_vertices(vertex_displacement_2);               
-        
+  
+        auto max_element_1 = std::max_element( vertex_displacement_1.begin(), vertex_displacement_1.end(), typename Surface::find_largest_displacement());    
+        auto max_element_2 = std::max_element( vertex_displacement_2.begin(), vertex_displacement_2.end(), typename Surface::find_largest_displacement());    
+
         if( surf1.num_self_intersections()>0  )
         {
             surf1.repair_self_intersections();
@@ -3432,7 +3432,14 @@ bool separate_close_surfaces(Surface& surf1, Surface& surf2, Surface& other, dou
            std::cout << "Recommend use istropic_remeshing before continuation"  << std::endl;
            return false;
         }
-        if( iter++>max_iter)
+        
+        if(  max_element_1->second.squared_length() < 1.0e-18 and max_element_2->second.squared_length() < 1.0e-18) 
+        {
+           std::cout << "Failed to converge, terminating" << std::endl;
+           return false;   
+        } 
+        
+        if( iter++>max_iter ) 
         {
            std::cout << "Failed to converge in "<< max_iter <<" steps, terminating" << std::endl;
            return false;                
@@ -3472,12 +3479,15 @@ bool separate_close_surfaces(Surface& surf1, Surface& surf2, double edge_movemen
    
    do
    {
-        vertex_vector_map s1vertices_displacement = surf1.get_close_vertex_displacement(surf2,s1vertices,-edge_movement,smoothing);     
-        vertex_vector_map s2vertices_displacement = surf2.get_close_vertex_displacement(surf1,s2vertices,-edge_movement,smoothing);  
+        vertex_vector_map vertex_displacement_1 = surf1.get_close_vertex_displacement(surf2, s1vertices, abs(edge_movement), smoothing);     
+        vertex_vector_map vertex_displacement_2 = surf2.get_close_vertex_displacement(surf1, s2vertices, abs(edge_movement), smoothing);  
         
-        surf1.set_adjacent_vertices(s1vertices_displacement);
-        surf2.set_adjacent_vertices(s2vertices_displacement);           
+        surf1.set_adjacent_vertices(vertex_displacement_1);
+        surf2.set_adjacent_vertices(vertex_displacement_2);  
         
+        auto max_element_1 = std::max_element( vertex_displacement_1.begin(), vertex_displacement_1.end(), typename Surface::find_largest_displacement());    
+        auto max_element_2 = std::max_element( vertex_displacement_2.begin(), vertex_displacement_2.end(), typename Surface::find_largest_displacement());    
+                  
         if( surf1.num_self_intersections()>0 )
         {
             surf1.repair_self_intersections();
@@ -3500,13 +3510,18 @@ bool separate_close_surfaces(Surface& surf1, Surface& surf2, double edge_movemen
            std::cout << "Recommend use istropic_remeshing before continuation"  << std::endl;
            return false;
         }
+        if(  max_element_1->second.squared_length() < 1.0e-18 and max_element_2->second.squared_length() < 1.0e-18) 
+        {
+           std::cout << "Failed to converge, terminating" << std::endl;
+           return false;   
+        } 
 
-
-        if( iter++>max_iter )
+        if( iter++>max_iter) 
         {
            std::cout << "Failed to converge in "<< max_iter <<" steps, terminating" << std::endl;
            return false;                
         }
+        
    }while( !s1vertices.empty() or !s2vertices.empty() );
    
 

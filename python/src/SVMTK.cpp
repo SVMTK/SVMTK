@@ -504,16 +504,16 @@ PYBIND11_MODULE(SVMTK, m)
           py::arg("surf1"),
           py::arg("surf2"),
           py::arg("other"),
-          py::arg("edge_movement") = -2.0,
-          py::arg("smoothing") = 0.4,
+          py::arg("edge_movement") = -1.0,
+          py::arg("smoothing") = 0.2,
           py::arg("max_iter") = 400,
           DOC(separate_close_surfaces));
 
     m.def("separate_close_surfaces", py::overload_cast<Surface &, Surface &, double, double, int>(&separate_close_surfaces<Surface>),
           py::arg("surf1"),
           py::arg("surf2"),
-          py::arg("edge_movement") = -2.0,
-          py::arg("smoothing") = 0.4,
+          py::arg("edge_movement") = -1.0,
+          py::arg("smoothing") = 0.2,
           py::arg("max_iter") = 400,
           DOC(separate_close_surfaces, 2));
 
