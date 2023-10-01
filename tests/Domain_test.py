@@ -42,12 +42,12 @@ class Domain_Test(unittest.TestCase):
         domain = SVMTK.Domain([surface_1,surface_2],sf)
         domain.create_mesh(1.) 
         surface = domain.get_boundary(0)
-        print( surface.num_vertices(), surface.num_faces(), surface.num_edges() )# lloyd +1        
+        print( surface.num_vertices(), surface.num_faces(), surface.num_edges() )# FIXME       
         #self.assertTrue(surface.num_vertices()==75 and surface.num_faces()==146 and surface.num_edges()==219)
         surface = domain.get_boundary(1) 
         self.assertEqual(surface.num_vertices(), 0) 
         surface = domain.get_boundary(3)
-        print( surface.num_vertices(), surface.num_faces(), surface.num_edges() )# lloyd +1
+        print( surface.num_vertices(), surface.num_faces(), surface.num_edges() )# FIXME 
         #self.assertTrue(surface.num_vertices()==126 and surface.num_faces()==244 and surface.num_edges()==366) 
         surfaces =  domain.get_boundaries()  
         self.assertEqual(len(surfaces),2) 

@@ -47,8 +47,8 @@ class Utility_Test(unittest.TestCase):
         s2 =SVMTK.Surface()  
         s1.make_cube(1.,0.,1.,2.,1.00,2.,1.0) 
         s2.make_cube(1.,1.0,1.,2.,2.,2., 1.0) 
-      
-        self.assertTrue(SVMTK.separate_close_surfaces(s1,s2))
+        
+        self.assertTrue(SVMTK.separate_close_surfaces(s1,s2,1.0,0.1,10))
 
 
 
