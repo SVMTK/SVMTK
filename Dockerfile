@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
 # Downlod CGAL and pybind
 RUN mkdir external && cd external && \
     git clone https://github.com/pybind/pybind11.git --branch=v2.6.2 && \
-    git clone https://github.com/CGAL/cgal.git --branch=v5.3.0
+    git clone https://github.com/CGAL/cgal.git --branch=v5.3
 
 RUN python3 -m pip install setuptools
 

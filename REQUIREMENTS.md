@@ -42,7 +42,7 @@ and the submodule version can be switched with
 
 `cd external/cgal`
 
-`git checkout releases/CGAL-5.3.0`
+`git checkout v5.3`
 
 Tested CGAL versions 
   - 5.3.0
