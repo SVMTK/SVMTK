@@ -1,5 +1,5 @@
 import os
-
+import sys
 import subprocess
 
 from setuptools import setup, find_packages, Extension
@@ -40,7 +40,7 @@ class CMakeBuild(build_ext):
             self.get_ext_fullpath(ext.name)))
 
         cmake_args = [
-            # , "-DPYTHON_EXECUTABLE={}".format(sys.executable)
+            "-DPYTHON_EXECUTABLE={}".format(sys.executable),
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(extdir)
         ]
 
