@@ -35,7 +35,7 @@ option(DOWNLOAD_CGAL "Download CGAL. Requires that git-repo has been cloned in r
 add_feature_info(DOWNLOAD_CGAL DOWNLOAD_CGAL "Download CGAL. Requires that git-repo has been cloned in recursive mode")
 
 if (DOWNLOAD_PYBIND11)
-  set(PYBIND11_FINDPYTHON ON)
+  set(PYBIND11_FINDPYTHON OFF)
 endif()
 
 if (CMAKE_COMPILER_IS_GNUCXX)
