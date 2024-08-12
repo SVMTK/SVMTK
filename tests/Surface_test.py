@@ -82,9 +82,9 @@ class Surface_Test(unittest.TestCase):
 
     def test_fill_holes(self):          
         mech_shark = SVMTK.Surface(f"{tests_dir}/Data/mech-holes-shark.off")
-        nb_holes = mech_shark.fill_holes()
+        closed, nb_holes = mech_shark.fill_holes()
         self.assertEqual(nb_holes,4)
-        nb_holes = mech_shark.fill_holes()
+        closed, nb_holes = mech_shark.fill_holes()
         self.assertEqual(nb_holes,0)
 
     def test_triangulate_faces(self):
@@ -160,11 +160,8 @@ class Surface_Test(unittest.TestCase):
         surface1 =SVMTK.Surface()  
         surface1.make_cube(0.,0.,0.,2.,2.,2.,2.0) 
         surface2 =SVMTK.Surface()  
-        surface1.save("enclose1.stl")
         surface2.make_cube(-0.5,-0.5,-0.5,2.5,2.5,2.5,2.) 
-        surface2.save("enclose2.stl")
         a =  surface1.enclose(surface2,0.8,0.1) 
-        surface1.save("enclose3.stl")
         self.assertTrue( a[0])
         self.assertEqual( a[1],0) 
         
@@ -183,7 +180,8 @@ class Surface_Test(unittest.TestCase):
         surface1.make_cube(0.,0.,0.,2.,2.,2.,0.5)         
         surface2 =SVMTK.Surface()  
         surface2.make_cube(0.05,0.05,0.05,1.95,1.95,1.95,0.5) 
-        a = surface2.separate(surface1, 0.6, 0.3 ,600)    
+        a = surface2.separate(surface1, 1.0, 0.5 ,600)    
+        print(a) 
         self.assertTrue( a[0])
         self.assertEqual( a[1],0)
 

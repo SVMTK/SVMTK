@@ -10,7 +10,7 @@
  * Combines the option of using CGAL polyhedrons to create mesh 
  * with specific tags for overlapping surfaces.
  * 
- * FIXME Inspiration see [] 
+ * Inspiration see [] 
  */
 namespace CGAL {
         template<class Function_, class BGT>

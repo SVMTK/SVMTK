@@ -23,7 +23,7 @@ class Slice_Test(unittest.TestCase):
         surface.make_cube(0.,0.,0.,1.,1.,1.,1) 
         slice_ = surface.get_slice(1,1,1,-0.5 )  
         self.assertTrue( slice_.number_of_constraints() > 0)
-        slice_.create_mesh(1.) 
+        slice_.create_mesh(5.) 
         self.assertTrue( slice_.number_of_faces() > 0) 
         slice_.save(f"{tests_dir}/Data/slice.vtu")
         slice_.save(f"{tests_dir}/Data/slice.stl")
@@ -43,7 +43,7 @@ class Slice_Test(unittest.TestCase):
         slice_ = SVMTK.Slice(SVMTK.Plane_3(0,0,1,0))
         slice_.slice_surfaces([ surface1 , surface2] )  
 
-        slice_.create_mesh(1.)
+        slice_.create_mesh(5.)
         slice_.add_surface_domains([ surface1 , surface2] )
         self.assertEqual(slice_.number_of_subdomains(),2)
         slice_.add_surface_domains([ surface1 , surface2],sf)
@@ -54,14 +54,15 @@ class Slice_Test(unittest.TestCase):
         except SVMTK.EmptyMeshError:
           self.assertTrue(True) 
 
-    def test_connected_components(self):
+    def test_connected_components(self): #FIXME
         surface1 = SVMTK.Surface() 
         surface1.make_cube(0.,0.,0.,1.,1.,1.,0.1)
         surface2 = SVMTK.Surface() 
         surface2.make_cube(1.5,0,0,2.,1.,1.,0.1)
         slice_ = SVMTK.Slice(SVMTK.Plane_3(0,0,1,-0.5))
-        slice_.slice_surfaces([ surface1,surface2])  
-        slice_.create_mesh(1.)
+        slice_.slice_surfaces([surface1,surface2])  
+        slice_.create_mesh(6.)
+        slice_.save("error_slc.vtu") 
         slice_.add_surface_domains([ surface1,surface2])
         self.assertEqual(slice_.connected_components(), 2) 
         slice_.keep_largest_connected_component() 

@@ -42,6 +42,8 @@
 #include <CGAL/IO/File_medit.h>
 
 #include <CGAL/facets_in_complex_3_to_triangle_mesh.h>
+
+
 //#include <CGAL/SMDS_3/facets_in_complex_3_to_triangle_soup.h>
 
 
@@ -247,7 +249,9 @@ void output_to_medit_(std::ostream& os,
        os << V[vh1] << ' ' << V[vh2] << ' ' << V[vh3] << ' '; 
        Surface_patch_index spi = c3t3.surface_patch_index(*fit);
        std::pair<int,int> key(static_cast<int>(spi.first) , static_cast<int>(spi.second));
-       if( key.second>key.first ){std::swap(key.first,key.second);}
+       // With 5.6.1 -> ( low, high) i.e. (3,1) -> (1,3)
+       if( key.second<key.first ){std::swap(key.first,key.second);}
+      
        if( facet_pmap.find(key)==facet_pmap.end() )
           os << 0 << '\n'; 
        else
@@ -377,8 +381,7 @@ class Domain {
         
      typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
      // Experimental, not currently used 
-     typedef CGAL::Mesh_constant_domain_field_3<Tr::Geom_traits,
-                                          Mesh_domain::Index> Sizing_field;
+ 
 
      typedef CGAL::Triple<Cell_handle, int, int> Edge; 
 
@@ -444,6 +447,7 @@ class Domain {
            sit->get_polyhedron(polyhedron);
            min_sphere.add_polyhedron(polyhedron);
            Polyhedral_mesh_domain_3 *polyhedral_domain = new Polyhedral_mesh_domain_3(polyhedron);
+
            this->v.push_back(polyhedral_domain);
         }
         map_ptr = std::shared_ptr<DefaultMap>(new  DefaultMap()); 
@@ -813,7 +817,7 @@ class Domain {
 
         int i,j,k,n;
   
-        Cell_handle ch,cn; 
+        Cell_handle ch;//,cn; 
         Vertex_handle vh1,vh2,vh3;
   
         std::map<int,int> temp;
@@ -829,7 +833,7 @@ class Domain {
               if( tr.is_facet(vh1, vh2, vh3, ch, i, j, k) ) 
               {      
                  n=(6 - (i+j+k)); // 3+2+1 -> 0 , 3+1+0 -> 2 etc.
-                 cn = ch->neighbor(n);
+
                  c3t3.remove_from_complex(ch,n);
                  c3t3.add_to_complex(ch, n, Surface_patch_index(pit.second.first,pit.second.second)); 
               }
@@ -855,10 +859,12 @@ class Domain {
      {
         assert_non_empty_mesh_object();
         const Tr& tr = c3t3.triangulation();
-        auto patches = get_patches();
+        auto patches = get_patches(); //MF2TAG
+        
         auto p = std::minmax_element(patches.begin(),patches.end()); 
 
         int tag_ = 1+p.second->first;
+        std::cout<< "Tag " << tag_ << std::endl; //FIXME 
         std::shared_ptr<Surface> surf;
   
         surf =  get_boundary<Surface>(subdomain_tag);
@@ -917,7 +923,7 @@ class Domain {
      {
        auto tags = get_subdomains();
        for(auto tag : tags) 
-          boundary_segmentations<Surface>(tag,angle_in_degree);
+          boundary_segmentations<Surface>(tag, angle_in_degree);
      }
      
     /**
@@ -973,6 +979,10 @@ class Domain {
      {   
         set_borders();
         set_features();
+        
+        
+        
+        
         Mesh_criteria criteria(CGAL::parameters::edge_size(edge_size).
                                                  facet_angle(facet_angle).
                                                  facet_size(facet_size).
@@ -984,8 +994,7 @@ class Domain {
     
         c3t3 = CGAL::make_mesh_3<C3t3>(*domain_ptr.get(), criteria,CGAL::parameters::no_exude().  
                                                                                      no_perturb().
-                                                                                     features().
-                                                                                     non_manifold()); 
+                                                                                     features() ); 
     
         remove_isolated_vertices();
         c3t3.rescan_after_load_of_triangulation();
@@ -993,6 +1002,69 @@ class Domain {
         std::cout << "Done meshing" << std::endl;
      }
 
+
+     void init_triangulation(std::vector<Point_3> points) 
+     {
+         Tr& tr = c3t3.triangulation();
+         for(auto point : points) 
+         {
+             Weighted_point wp(point.x(),point.y(),point.z());
+             Vertex_handle vh = tr.insert(wp);
+             c3t3.add_to_complex(vh,Corner_index(0) );
+         }
+     }
+
+     void init_triangulation(Surface surf) 
+     {
+         auto points = surf.get_points();
+         init_triangulation(points);
+     }
+
+    void init_triangulation(std::vector<Surface> surfaces) 
+     {
+         for( auto surf : surfaces) 
+            init_triangulation(surf); 
+     }
+          
+     
+     
+          
+     void refine( const double mesh_resolution)
+     {
+        double r = min_sphere.get_bounding_sphere_radius(); 
+        const double cell_size = r/mesh_resolution;     
+        set_borders();
+        set_features();
+
+        //FIXME FIXME TEST min_size 
+
+        std::cout << "Cell size: " << cell_size << std::endl;
+
+        // NOTE CGAL v5.6 edge_size -> min_edge_size allows for preservation of edges.
+        Mesh_criteria criteria(CGAL::parameters::edge_min_size(cell_size).
+                                                 facet_angle(30.0).
+                                                 facet_min_size(cell_size).
+                                                 facet_distance(cell_size/10.0).
+                                                 cell_radius_edge_ratio(3.0).
+                                                 cell_min_size(cell_size) ); 
+        
+
+        std::cout << "Start meshing" << std::endl;
+    
+        CGAL::refine_mesh_3<C3t3>(c3t3, *domain_ptr.get(), criteria,CGAL::parameters::no_exude().  
+                                                                                     no_perturb().
+                                                                                     features() ); 
+    
+        remove_isolated_vertices();
+        c3t3.rescan_after_load_of_triangulation();
+        rebind_missing_facets();        
+        std::cout << "Done meshing" << std::endl;     
+     
+     
+     
+     }
+          
+          
      // DocString: create_mesh 
     /** 
      * @brief Creates the mesh stored in the class member variable c3t3. 
@@ -1008,19 +1080,28 @@ class Domain {
         set_borders();
         set_features();
 
- 
+        //FIXME 
+        //Sizing_field edges_sizing_field(0.07,*domain_ptr.get() );
+        
+        //namespace params = CGAL::parameters;
+
         std::cout << "Cell size: " << cell_size << std::endl;
-        Mesh_criteria criteria(CGAL::parameters::edge_size(cell_size).
+        // NOTE CGAL v5.6 edge_size -> min_edge_size allows for preservation of edges.
+        Mesh_criteria criteria(CGAL::parameters::edge_min_size(cell_size).
                                                  facet_angle(30.0).
-                                                 facet_size(cell_size).
-                                                 facet_distance(cell_size/10.0). 
+                                                 facet_min_size(cell_size).
+                                                 facet_distance(cell_size/10.0).
                                                  cell_radius_edge_ratio(3.0).
-                                                 cell_size(cell_size));
+                                                 cell_min_size(cell_size) ); // FIXME cell_radius_edge_ratio(3.0).facet_distance(cell_size/10.0). 
+                                                 
+                                                 
+        //(*domain_ptr.get()).detect_features();                                      
+                                                 
 
         std::cout << "Start meshing" << std::endl;
         c3t3 = CGAL::make_mesh_3<C3t3>(*domain_ptr.get(), criteria, CGAL::parameters::no_exude().  
-                                                                                      no_perturb().
-                                                                                      features().
+                                                                                      no_perturb().  // ->no_perturb();
+                                                                                      features(*domain_ptr.get()).
                                                                                       non_manifold()  ); // 
                                                                                  
         remove_isolated_vertices();
@@ -1070,8 +1151,6 @@ class Domain {
         
         std::map<std::pair<int,int>,int> facet_map = this->map_ptr->make_interfaces(this->get_patches());
     
-        
-        
         output_to_medit_(medit_file, c3t3, vertex_pmap, facet_map, cell_pmap, facet_twice_pmap , false, save_1Dfeatures);
         medit_file.close();
      }
@@ -1314,10 +1393,10 @@ class Domain {
      * then the borders are not updated, this is to 
      * avoid core dump.  
      */
-     void protect_borders()  
+     void protect_borders(double angle_in_degree=90)  
      {
         Polylines temp;
-        polylines_to_protect(temp, this->borders.begin(), this->borders.end());
+        polylines_to_protect(temp, this->borders.begin(), this->borders.end(), angle_in_degree);
         if( temp.size()==this->borders.size() )
           return;
         else 
@@ -1345,17 +1424,17 @@ class Domain {
      std::vector<std::pair<int,int>> get_patches()
      {
         std::vector<std::pair<int,int>> sf_indices;
-        std::set<std::pair<int,int>> dummy; // FIND BETTER METHOD
+        std::set<std::pair<int,int>> dummy; // FIXME TODO FIND BETTER METHOD, use it and transform
         for(Cell_iterator cit = c3t3.cells_in_complex_begin();cit != c3t3.cells_in_complex_end(); ++cit)
         {
            for(int i=0; i<4; ++i)
            {
               Surface_patch_index spi = c3t3.surface_patch_index(cit,i);
               if( dummy.insert(std::pair<int,int>(static_cast<int>(spi.first) , static_cast<int>(spi.second))).second and spi.first!=spi.second )
-                sf_indices.push_back(std::pair<int,int>(static_cast<int>(spi.first) , static_cast<int>(spi.second)));
+                  sf_indices.push_back(std::pair<int,int>(static_cast<int>(spi.second) , static_cast<int>(spi.first))); // 5.6.1 switch
            }
         }
-        std::sort(sf_indices.begin(), sf_indices.end());
+        
         return sf_indices;
      }
 
@@ -1613,8 +1692,8 @@ class Domain {
            if( eit.second.size()!=2 ) 
               bad_edges++;
         }    
-        std::cout << "Bad_vertices " << bad_vertices << std::endl;
-        std::cout << "Bad_edges " << bad_edges << std::endl;      
+        std::cout << "Number of bad vertices  : " << bad_vertices << std::endl;
+        std::cout << "Number of bad edges     : " << bad_edges << std::endl;      
      }     
      
     // DocString: get_collision_distance
@@ -1795,6 +1874,49 @@ class Domain {
     }
 
 
+   /* void optimize()
+    {
+       
+       
+      //Iterate over vertices 
+       
+      const Tr& tr = c3t3.triangulation();
+      for( Finite_vertices_iterator vit = tr.finite_vertices_begin(); vit != tr.finite_vertices_end(); ++vit )
+      {
+          Weighted_point p = tr.point(vit);
+
+          unsigned int index = cell->index(vit);
+
+          const Weighted_point& wvp = tr.point(cell, index);
+          const Weighted_point& wp2 = tr.point(cell, (index+1)&3);
+          const Weighted_point& wp3 = tr.point(cell, (index+2)&3);
+          const Weighted_point& wp4 = tr.point(cell, (index+3)&3);
+          
+          
+          
+          
+          
+      }
+   
+      
+   
+      for( auto vit : moved) 
+      {
+      
+      
+      
+      }
+   
+   
+    
+    } 
+   */
+   
+   
+   
+   
+   
+   
    private :  
      std::vector<std::pair<Triangle_3,double>> triangle_data;
      std::vector<std::pair<Point_3,double>> point_data;     

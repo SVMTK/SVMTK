@@ -25,6 +25,7 @@
 
 #define PI 3.14159265
 
+
 /* --Includes -- */
 #include "surface_mesher.h" 
 #include "Errors.h" //FIXME 
@@ -123,7 +124,12 @@ class Cost_stop_predicate
 };
 
 
-inline extern const double EDGERATIO=1.0;  //inline  
+template<typename Point_3>
+Point_3 vector_centroid( std::vector< Point_3> vertices ) 
+{
+       return CGAL::centroid( vertices.begin(), vertices.end());
+}
+    
 
 
 // DocString: Surface
@@ -151,6 +157,7 @@ class Surface
 {
   public:
    typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel; 
+   
    //TODO remove not used
    typedef Kernel::Point_3 Point_3;
    typedef Kernel::Plane_3 Plane_3;
@@ -179,7 +186,9 @@ class Surface
    typedef std::vector<Point_3>               point_vector;   
    typedef std::vector<Polyline>              Polylines;
    typedef std::vector<std::size_t>           Face;
-   typedef std::vector<vertex_descriptor>     vertex_vector;       
+   typedef std::vector<vertex_descriptor>     vertex_vector;   
+   typedef std::set<vertex_descriptor>        vertex_set;         
+   typedef std::vector<Vector_3>              vertex_disp;             
    typedef std::vector<face_descriptor>       face_vector; 
    
    typedef Mesh::Vertex_index                 Index;
@@ -226,7 +235,7 @@ class Surface
     Surface(Polyhedron &polyhedron) 
     {
       CGAL::copy_face_graph(polyhedron, mesh);
-      CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);             
+      CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);          
     }
 
    // DocString: Surface
@@ -238,7 +247,8 @@ class Surface
     Surface(const std::string filename)
     {
       load_surface(filename);
-      CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);    
+      CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);   
+
 
     }
 
@@ -249,7 +259,8 @@ class Surface
     Surface(const std::shared_ptr<Surface> surf) 
     {
        this->mesh=surf.get()->get_mesh(); 
-       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);              
+       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);  
+
     } 
     
    // DocString: Surface
@@ -259,8 +270,10 @@ class Surface
     Surface(Mesh mesh) 
     {
        this->mesh=mesh; 
-       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);           
+       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);    
+
     } 
+   
     
    /**
     * @brief Constructs a SVMTK Surface object with surface using points and connections between points.
@@ -277,6 +290,7 @@ class Surface
          CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
        }
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);       
+
     }
 
    ~Surface(){}
@@ -341,7 +355,7 @@ class Surface
   /** 
    *
    */
-   void add_point(std::vector<Point_3> points)
+   void add_points(std::vector<Point_3> points)
    {
      for( Point_3 point : points)
          mesh.add_vertex(point);
@@ -352,11 +366,6 @@ class Surface
       mesh.add_vertex(point);
    }
   
-   // FIXME WHY
-   bool is_valid()
-   {
-      return mesh.is_valid();
-   }  
   
   // DocString: get_close_vertex_displacement     
   /**
@@ -367,13 +376,16 @@ class Surface
    * ( 1 + N*beta) p_f = ( 1 + beta*N)p_0 + adj*normal + beta*Sum^N ( p_i - p_0)  
    * p_f - p_0 = (  adj*normal + beta*Sum^N ( p_i - p_0) )/( 1 + beta*N) 
    * 
-   * As long as beta > 0, then displacment p_f - p_0 --> 0 Question: Why?  
-   *  
+   * Assumption
+   * As long as beta > 0, then displacment p_f - p_0 --> 0 .  
+   * TODO : 
+   *      implement if displacement < threshold then set a minimum displacement.  
+   *
    * @param double multiplier for the displacement.
    * @param double smoothing factor for the displacement.      
    * @returns returns the centeroid point of the surface
    */    
-   template<int A=0> // FIXME
+   template<int A=0> 
    vertex_vector_map get_close_vertex_displacement(Surface other,vertex_vector &mvertices, const double adjustment, const double smoothing)
    {
       assert_non_empty_mesh();
@@ -387,14 +399,18 @@ class Surface
                 Traits(vppmap));
  
        Distance tr_dist(vppmap);
-       FT edge_length, min_edge;
+       FT edge_length, min_edge, max_edge;
        Point_3 closest;
        Vector_3 direction,normal, edge ;
        
+       // std::vector<Vector_3> vertex_displacement;
        std::map< vertex_descriptor, Vector_3> vertex_displacement;
-       //FT distance;
-       double N; double avg_edge_length = average_edge_length();
 
+       double N; 
+       double avg_edge_length = average_edge_length();
+
+       double tmp, beta;
+       Vector_3 temp,disp;
        for(auto vit = mvertices.begin(); vit!= mvertices.end(); vit++)
        {
           K_neighbor_search search(tree, mesh.point(*vit), 2,0,true,tr_dist); 
@@ -403,14 +419,20 @@ class Surface
           
           Point_3 current = mesh.point(*vit);
           
+          normal =  CGAL::Polygon_mesh_processing::compute_vertex_normal(*vit,mesh);
           // Vector(a, b) -> b-a
           direction =  Vector_3(current,closest);   
-          //distance = CGAL::sqrt(direction.squared_length());          
-
+          tmp  = CGAL::sqrt( direction.squared_length() );
+          
+          // Normalize --> direction().vector() not correct 
+          direction/=tmp;
+          
+          //TODO unstable using max_edge
           Vector_3 delta=CGAL::NULL_VECTOR;
           CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(*vit), mesh), done(vbegin);
           N=0;
           min_edge = FT(10*avg_edge_length);
+          max_edge = FT(0.1*avg_edge_length);
           do
           {
              N++;
@@ -420,10 +442,28 @@ class Surface
 
              if( edge_length < min_edge )
                   min_edge = edge_length; 
+             if ( edge_length > max_edge) 
+                  max_edge = edge_length; 
+                  
+                  
              *vbegin++;
           }while(vbegin!=done);
-          
-           vertex_displacement[*vit] = (-adjustment*min_edge*direction.direction().vector() + smoothing*delta)/(1 + abs(smoothing*N));  
+
+
+       
+          beta = min_edge; // - tmp; //  tmp < min_edge 
+           
+     
+          disp =  (-adjustment*(beta)*direction + smoothing*delta)/(1 + abs(smoothing*N));  
+          if (  CGAL::sqrt( disp.squared_length()) > 2.*avg_edge_length ) 
+             disp -= beta*normal; //FIXME
+             
+          else if(   CGAL::sqrt( disp.squared_length())  < 1.0e-2  )
+             disp = -adjustment*(beta)*direction; //CGAL::sqrt( delta.squared_length() )*normal; 
+
+           
+           vertex_displacement[*vit] = disp;
+       
       }   
       return vertex_displacement;
    }
@@ -443,12 +483,13 @@ class Surface
    {
       assert_non_empty_mesh();
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);
-      FT edge_length, min_edge;
+      FT edge_length, min_edge,max_edge;
       Vector_3 direction,normal, edge ;
        
       std::map< vertex_descriptor, Vector_3> vertex_displacement;
-       
-      double N; 
+      Vector_3 disp;
+      double N,beta; 
+      double displacment; //FIXME
       double avg_edge_length = average_edge_length();
       for(auto vit = mvertices.begin(); vit!= mvertices.end(); vit++)
       {
@@ -458,31 +499,207 @@ class Surface
           Vector_3 delta=CGAL::NULL_VECTOR;
           CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(*vit), mesh), done(vbegin);
           N=0;
-          min_edge = FT(10.0*avg_edge_length);
+          min_edge = FT(10*avg_edge_length);
+          max_edge = FT(0.1*avg_edge_length);
           do
           {
              N++;
-             edge =  Vector_3(current,mesh.point(*vbegin)); 
+             edge   = Vector_3(current,mesh.point(*vbegin));
              delta += edge;
              edge_length = CGAL::sqrt(edge.squared_length());
+
              if( edge_length < min_edge )
-                 min_edge = edge_length;  
+                  min_edge = edge_length; 
+             if ( edge_length > max_edge) 
+                  max_edge = edge_length; 
              *vbegin++;
           }while(vbegin!=done);
           
-          vertex_displacement[*vit] = (adjustment*min_edge*normal + smoothing*delta)/(1+abs(smoothing*N)); 
+          //FIXME
+          //delta = delta - (normal*delta)*delta/CGAL::sqrt(delta.squared_length());
+       
+          beta = min_edge ;
+          disp =  (adjustment*(beta)*normal + smoothing*delta)/(1+abs(smoothing*N)); 
+          
+          displacment = CGAL::sqrt( disp.squared_length());
+          
+          //std::cout << " D" << displacment << "  E" << CGAL::sqrt( delta.squared_length() ) <<std::endl;
+          
+          if ( displacment  > 2.*avg_edge_length ) 
+             disp -= beta*normal; //FIXME
+             
+          else if(  displacment  < 1.0e-2  )
+             disp = adjustment*(beta)*normal;
+       
+          vertex_displacement[*vit] = disp;
+      }
+      return vertex_displacement;
+   }  
+
+  // DocString: get_dir_vertex_displacement     
+  /**
+   * @brief Computes the displacement for vertices, which is parallel to the surface normal direction.
+   *        
+   * 
+   * @param double multiplier for the displacement.
+   * @param double smoothing factor for the displacement.
+   * @returns returns the centeroid point of the surface
+   */  
+   vertex_vector_map get_constant_vertex_displacement(vertex_vector &mvertices, Vector_3 disp, const double smoothing)
+   {
+      assert_non_empty_mesh();
+      CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);
+      FT edge_length, min_edge,max_edge;
+      Vector_3 direction,normal, edge ;
+       
+      std::map< vertex_descriptor, Vector_3> vertex_displacement;
+       
+      double N; 
+      Vector_3 temp ;
+      double avg_edge_length = average_edge_length();
+      for(auto vit = mvertices.begin(); vit!= mvertices.end(); vit++)
+      {
+          Point_3 current = mesh.point(*vit);
+          normal =  CGAL::Polygon_mesh_processing::compute_vertex_normal(*vit,mesh);
+
+          Vector_3 delta=CGAL::NULL_VECTOR;
+          CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(*vit), mesh), done(vbegin);
+          N=0;
+          min_edge = FT(10*avg_edge_length);
+          max_edge = FT(0.1*avg_edge_length);
+          do
+          {
+             N++;
+             edge   = Vector_3(current,mesh.point(*vbegin));
+             delta += edge;
+             edge_length = CGAL::sqrt(edge.squared_length());
+
+             if( edge_length < min_edge )
+                  min_edge = edge_length; 
+             if ( edge_length > max_edge) 
+                  max_edge = edge_length; 
+             *vbegin++;
+          }while(vbegin!=done);
+          
+          
+          temp = ( disp + smoothing*delta)/(1+abs(smoothing*N));
+          
+          
+          
+          
+          vertex_displacement[*vit] = temp;
       }
       return vertex_displacement;
    }  
 
 
+
+  // DocString: add_adjacent_vertices     
+  /**
+   * @brief Sets the vertex displacement, and adjusts adjacent vertices with similar surface normal.
+   *
+   * @param vertex_displacement; map with vertices and displacements
+   * @param threshold; max angle for similar surface normal.
+   * @returns returns the centeroid point of the surface
+   */ 
+
+   void add_adjacent_vertices(vertex_vector &verticies, double threshold = 40.00)    
+   {
+      Vector_3 n1,n2;
+      double cos_angle = std::cos(threshold*PI/180.0);
+      vertex_set nvert; 
+      for( auto vit : verticies) 
+      {
+          n1 =  CGAL::Polygon_mesh_processing::compute_vertex_normal(vit,mesh);
+          CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(vit), mesh), done(vbegin);
+          do
+          {
+            n2 =  CGAL::Polygon_mesh_processing::compute_vertex_normal(*vbegin,mesh);         
+            if( std::find(verticies.begin(), verticies.end(),*vbegin ) == verticies.end() and  n1*n2>cos_angle ) 
+                nvert.insert(*vbegin);
+           *vbegin++;
+         }while(vbegin!=done);
+      }  
+      std::copy(nvert.begin(), nvert.end(), std::back_inserter(verticies));
+
+      
+   }
+   
+   
+   void add_adjacent_vertices2(vertex_vector &verticies, double threshold = 60.00)    
+   {
+      Vector_3 n1,n2;
+      double cos_angle = std::cos(threshold*PI/180.0);
+      vertex_set nvert; 
+      for( auto vit : verticies) 
+      {
+          n1 =  CGAL::Polygon_mesh_processing::compute_vertex_normal(vit,mesh);
+          CGAL::Face_around_target_circulator<Mesh> fbegin(mesh.halfedge(vit), mesh), done(fbegin);
+          do
+          {
+            n2 =  CGAL::Polygon_mesh_processing::compute_face_normal(*fbegin,mesh);        
+            if (n1*n2>cos_angle ) 
+            {
+               CGAL::Vertex_around_face_circulator<Mesh> vbegin(mesh.halfedge(*fbegin), mesh), done(vbegin);
+               do 
+               {
+                  if( std::find(verticies.begin(), verticies.end(),*vbegin ) == verticies.end() ) 
+                      nvert.insert(*vbegin);
+               
+               *vbegin++;
+               }while(vbegin!=done);
+            }
+           *fbegin++;
+         }while(fbegin!=done);
+      }  
+      std::copy(nvert.begin(), nvert.end(), std::back_inserter(verticies));
+      
+   }
+
+
+   /*
+   void set_adjacent_vertices(vertex_vector verticies, vertex_disp &disp, double threshold = 60.00)    
+   {
+      Vector_3 n1,n2;
+      double cos_angle = std::cos(threshold*PI/180.0);
+      for( auto [vit, dit] : zip(verticies, disp) )
+
+          mesh.point( vit) += dit;
+          n1 =  CGAL::Polygon_mesh_processing::compute_vertex_normal(vit,mesh);
+          CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(vit), mesh), done(vbegin);
+          do
+          {
+            n2 =  CGAL::Polygon_mesh_processing::compute_vertex_normal(*vbegin,mesh);         
+            if( vertex_displacement.find(vit) == vertex_displacement.end() and n1*n2>cos_angle ) // FIXME 
+                mesh.point(*vbegin)+= 0.167*Vector_3(mesh.point(*vbegin),  mesh.point( vit) ); // 1/6 TODO : more robust
+           *vbegin++;
+         }while(vbegin!=done);
+      }  
+   }
+   */ 
+   /**
+   TODO
+   
+   
+   
+   */
+   void set_vertices(vertex_vector_map &vertex_displacement)    
+   {
+      for( auto vit : vertex_displacement) 
+      {
+          mesh.point( vit.first) += vit.second;
+      }  
+   } 
+   
+   
+   
+   
   // DocString: set_adjacent_vertices     
   /**
    * @brief Sets the vertex displacement, and adjusts adjacent vertices with similar surface normal.
-   *          
-   * TODO 
-   *  surface normal
-   *        TODO
+   *
+   * @param vertex_displacement; map with vertices and displacements
+   * @param threshold; max angle for similar surface normal.
    * @returns returns the centeroid point of the surface
    */ 
    void set_adjacent_vertices(vertex_vector_map &vertex_displacement, double threshold = 40.00)    
@@ -493,12 +710,17 @@ class Surface
       {
           mesh.point( vit.first) += vit.second;
           n1 =  CGAL::Polygon_mesh_processing::compute_vertex_normal(vit.first,mesh);
+     
           CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(vit.first), mesh), done(vbegin);
           do
           {
-            n2 =  CGAL::Polygon_mesh_processing::compute_vertex_normal(*vbegin,mesh);         
+            n2 =  CGAL::Polygon_mesh_processing::compute_vertex_normal(*vbegin,mesh); 
+                    
             if( vertex_displacement.find(vit.first) == vertex_displacement.end() and n1*n2>cos_angle ) 
-                mesh.point(*vbegin)+=0.1*vit.second;
+            {
+                mesh.point(*vbegin)+= 0.5*Vector_3(mesh.point(*vbegin),  mesh.point( vit.first) ); // 1/6 TODO : more robust
+                
+            }
            *vbegin++;
          }while(vbegin!=done);
       }  
@@ -583,7 +805,7 @@ class Surface
  
    // DocString: num_faces
   /**
-   * @brief Returns the number of faces in the surface. FIXME WHY const
+   * @brief Returns the number of faces in the surface. 
    * @returns the number of faces in the surface
    */       
    int num_faces() const 
@@ -669,7 +891,7 @@ class Surface
       for(auto vit : vertices) 
          normal = normal + CGAL::Polygon_mesh_processing::compute_vertex_normal(vit,mesh); 
          
-      normal = normal.direction().vector(); ///CGAL::sqrt(normal.squared_length());
+      normal = normal.direction().vector(); 
       for(int i=0; i<size; ++i)
       {
         HV_const_circulator vbegin(mesh.halfedge(vertices[i]),mesh), done(vbegin);
@@ -704,7 +926,7 @@ class Surface
    void reconstruct(double angular_bound=20, double radius_bound=0.1, double distance_bound=0.1)
    { 
       assert_non_empty_mesh();
-      poisson_reconstruction(*this,angular_bound, radius_bound, distance_bound);
+      poisson_reconstruction(*this, angular_bound, radius_bound, distance_bound);
    }
 
    void reconstruct(std::string filename, double angular_bound=20, double radius_bound=0.1, double distance_bound=0.1)
@@ -796,59 +1018,17 @@ class Surface
                                                cap_threshold(cap_threshold).
                                                collapse_length_threshold(avgel*collapse_threshold));
                                              
-        CGAL::Polygon_mesh_processing::remove_connected_components_of_negligible_size(mesh,CGAL::parameters::volume_threshold( volume_threshold*volume()));            
+        CGAL::Polygon_mesh_processing::remove_connected_components_of_negligible_size(mesh,CGAL::parameters::volume_threshold( volume_threshold*volume()));     
+               
         CGAL::Polygon_mesh_processing::experimental::remove_self_intersections(mesh);
   
         int after = num_self_intersections();
         return std::make_pair(after==0, after); 
    }
- 
-  /**
-   * Updates argument vertices to include connected adjacent vertices.
-   * @param vertices a vector of vertices.
-   * FIXME 
-   */
-   void get_adjacent_vertices(vertex_vector &vertices) 
-   {
-      vertex_vector temp;
-      for(vertex_descriptor vit : vertices)  
-      {
-         CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(vit), mesh), done(vbegin);
-         do
-         {
-           if( std::find(vertices.begin(), vertices.end(), *vbegin)==vertices.end() ) 
-              temp.push_back(*vbegin);
-           *vbegin++;
-         }while(vbegin!=done);
-      }
-      vertices.insert(vertices.end(), temp.begin(), temp.end());
-   }
-
-  /**
-   * Updates argument vertices to include connected adjacent vertices.
-   * FIXME 
-   * @param vertices a vector of vertices.
-   */
-    void get_adjacent_vertices_with_direction(vertex_vector_map &vertices_wdir) 
-    {
-         vertex_vector_map temp;
-         for(auto vit : vertices_wdir)  
-         {
-            CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(vit.first), mesh), done(vbegin);
-            do
-            {
-              if( vertices_wdir.find(*vbegin)==vertices_wdir.end() ) 
-                  temp[*vbegin]=0.5*vit.second;
-              *vbegin++;
-            }while(vbegin!=done);
-         }
-         vertices_wdir.insert(temp.begin(), temp.end());
-   }
 
   /**
    * @brief Returns the vertices of the surface mesh
    * @returns a vector of surface vertices 
-   * TODO FIXME
    */
    vertex_vector get_vertices() 
    {
@@ -1069,7 +1249,6 @@ class Surface
     * @param  other SVMTK Surface object
     * @param mvertices a vector of vertices
     * @returns a vector of vertices that are close in a negative normal direction.
-    * FIXME 
     */
     vertex_vector get_needle_vertices(Surface &other, vertex_vector &mvertices)
     {
@@ -1087,10 +1266,9 @@ class Surface
     * @param other SVMTK surface object, itself is an option.
     * @param[in,out] mvertices a vector of vertices. 
     * @returns a vector of vertices. 
-    * @overload FIXME 
     */
-    template<int A, bool B> 
-    vertex_vector get_close_vertices_with_property(Surface &other, vertex_vector& mvertices)
+    template<int A, bool B> // ADDED FIXME TEST TODO
+    vertex_vector get_close_vertices_with_property(Surface &other, vertex_vector& mvertices) // TODO EDGERATIO
     {                     
        assert_non_empty_mesh();
        CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);
@@ -1108,7 +1286,7 @@ class Surface
        Point_3 closest;
        Vector_3 direction,normal;
        bool flag;
-       
+
        for(auto vit = mvertices.begin(); vit!= mvertices.end(); )
        {
 
@@ -1121,20 +1299,21 @@ class Surface
           
           distance = direction.squared_length();
 
-          if( (normal*direction<=0)==B) 
+          //TODO test without  ==true and B) --> B = false -> always false 
+          if( (normal*direction<=0)==true and B) 
           { 
             mvertices.erase(vit);
             continue;
           }
          
-          flag = true; // FIXME 
+          flag = true;
           
           CGAL::Vertex_around_target_circulator<Mesh> vbegin(mesh.halfedge(*vit), mesh), done(vbegin);
           do
           {
              edge_length = CGAL::squared_distance(current, mesh.point(*vbegin));  
-                
-             if( EDGERATIO*edge_length <= distance or closest == mesh.point(*vbegin) ) //FIXME 
+                //TODO test with 1.1
+             if( 1.4142*edge_length <= distance or closest == mesh.point(*vbegin) ) 
              {
                flag=false;
                break;
@@ -1164,9 +1343,9 @@ class Surface
     {
        assert_non_empty_mesh();
        CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh); 
-       if( adjustment>0 )
-         throw InvalidArgumentError("Adjusment must be negative.");
-       return manipulate_vertex_selection<1>(*this,adjustment,smoothing,max_iter);
+       //if( adjustment>0 )
+       //  throw InvalidArgumentError("Adjusment must be negative.");
+       return manipulate_vertex_selection<1>(*this, -abs(adjustment),smoothing,max_iter);
     }
 
   // DocString: separate_close_vertices
@@ -1187,7 +1366,7 @@ class Surface
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh); 
       if( adjustment<0 )
          throw  InvalidArgumentError("Adjusment must be positive.");
-      return manipulate_vertex_selection_with_direction<1>(*this,adjustment, smoothing ,max_iter); 
+      return manipulate_vertex_selection_with_direction<1,0>(*this,adjustment, smoothing ,max_iter); 
    }
 
   // DocString: embed
@@ -1202,7 +1381,7 @@ class Surface
    * @returns std::pair<bool,int> true if completed and number of adjusted vertices. 
    * @throws InvalidArgumentError if adjustment is positive, i.e. expansion instead of contraction.
    */
-   std::pair<bool,int> embed(Surface& other, double adjustment=0.5,  double smoothing=0.3, int max_iter=400) 
+   std::pair<bool,int> embed(Surface& other, double adjustment,  double smoothing, int max_iter) 
    {
      
       assert_non_empty_mesh();
@@ -1223,7 +1402,7 @@ class Surface
    * @returns std::pair<bool,int> true if completed and number of adjusted vertices. 
    * @throws InvalidArgumentError if adjustment is positive, i.e. expansion instead of contraction.
    */
-   std::pair<bool,int> expose(Surface& other, double adjustment=0.5,  double smoothing=0.1, int max_iter=400) 
+   std::pair<bool,int> expose(Surface& other, double adjustment,  double smoothing, int max_iter) 
    {
       assert_non_empty_mesh();
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh); 
@@ -1244,7 +1423,7 @@ class Surface
    * @returns std::pair<bool,int> true if completed and number of adjusted vertices. 
    * @throws InvalidArgumentError if adjustment is negative, i.e. contraction instead of expansion.
    */
-   std::pair<bool,int> enclose(Surface& other, double adjustment=0.5,double smoothing=0.3, int max_iter=400) 
+   std::pair<bool,int> enclose(Surface& other, double adjustment ,double smoothing , int max_iter) 
    {
       assert_non_empty_mesh();
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh); 
@@ -1263,20 +1442,30 @@ class Surface
    * @returns std::pair<bool,int> true if completed and number of adjusted vertices. 
    * @throws InvalidArgumentError if surfaces intersect.
    */
-   std::pair<bool,int> separate(Surface& other, double adjustment=1.0, double smoothing=0.5, int max_iter=400)
+   std::pair<bool,int> separate(Surface& other, double adjustment, double smoothing, int max_iter)
    { 
       std::pair<bool,bool> queries = check_vertices<CGAL::ON_BOUNDED_SIDE,CGAL::ON_UNBOUNDED_SIDE>(other);
-     
+      
+
       if( queries.first==queries.second )
          throw InvalidArgumentError("Surfaces must not collide.");
       else
-         return manipulate_vertex_selection_with_direction<0>(other, abs(adjustment), smoothing, max_iter);
-   }
+      {
+         /*if ( queries.first ) 
+            return manipulate_vertex_selection_with_direction<0,false>(other, abs(adjustment), smoothing, max_iter);
+         else 
+            return manipulate_vertex_selection_with_direction<0,false>(other, -abs(adjustment), smoothing, max_iter);*/
+            
+         if ( queries.first ) 
+            return manipulate_vertex_selection_with_direction<0,false>(other, abs(adjustment), smoothing, max_iter);
+         else 
+            return manipulate_vertex_selection_with_direction<0,false>(other, abs(adjustment), smoothing, max_iter);
+      }
+   } 
 
   /**
    * @brief Checks if the surface bounds a volume.
    * @returns true if surface bounds a volume  
-   * FIXME RNEMAE 
    */
    bool does_bound_a_volume()
    {  
@@ -1637,6 +1826,24 @@ class Surface
      for(std::pair<vertex_descriptor, Point_3> s : adjust)
         mesh.point(s.first) = s.second;
    }
+
+   template<typename InputIterator >
+   void adjust_vertices_in_region(InputIterator begin , InputIterator  end, const Vector_3 disp)
+   { 
+      assert_non_empty_mesh();
+      std::vector<std::pair<vertex_descriptor, Point_3> > adjust; 
+      for(; begin != end; ++begin)
+      {
+         Point_3 p = mesh.point(*begin) + disp;
+         adjust.push_back(std::make_pair(*begin, p));
+      }
+     for(std::pair<vertex_descriptor, Point_3> s : adjust)
+        mesh.point(s.first) = s.second;
+   }   
+   
+   
+   
+   
 
   /**
    * @brief Smooths the vertices in the iterator input. This is done by taking the sum of the vector edges for each vertex, and
@@ -2076,7 +2283,7 @@ class Surface
    * @see [triangulate_refine_and_fair_hole](https://doc.cgal.org/latest/Polygon_mesh_processing/group__hole__filling__grp.html)
    * @returns the nb_holes number of holes filled.
    */
-   int fill_holes()
+   std::pair<bool,int> fill_holes()
    {
      unsigned int nb_holes = 0;
      CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);
@@ -2097,9 +2304,8 @@ class Surface
            nb_holes++;
 
      }
-     //std::cout << nb_holes << " holes have been filled" << std::endl; 
      set_outward_face_orientation(); 
-     return nb_holes;
+     return std::make_pair(does_bound_a_volume(),nb_holes);
    }
 
   // DocString: triangulate_faces
@@ -2847,28 +3053,26 @@ class Surface
     std::pair<bool,int> manipulate_vertex_selection(Surface &other, double adjustment,  double smoothing, int max_iter)
     {
        vertex_vector vertices = get_vertices_with_property<A,B>(other); //FIXME 
+
        int after = 0,iter = 0;
        int before = vertices.size();
 
-
        while( !vertices.empty() )
        {     
-          // Relative to the surface normal, i.e. negative adjusment gives implosion TODO 
-          vertex_vector_map vertex_displacement = get_vertex_displacement(vertices, adjustment, smoothing); //TODO bool retrun ?? 
-  
+          // Relative to the surface normal, i.e. negative adjusment gives implosion 
+          vertex_vector_map vertex_displacement = get_vertex_displacement(vertices, adjustment, smoothing); 
+
+          //auto max_element = std::max_element( vertex_displacement.begin(), vertex_displacement.end(), find_largest_displacement());    
+          //if ( max_element->second.squared_length() < 1.0e-16 ) 
+          //   return std::make_pair(false, after);          
+             
           set_adjacent_vertices(vertex_displacement);
    
-
           vertices = get_vertices_with_property<A,B>(other,vertices);
-          
+
           after = vertices.size(); 
-          
-          auto max_element = std::max_element( vertex_displacement.begin(), vertex_displacement.end(), find_largest_displacement());    
-          if ( max_element->second.squared_length() < 1.0e-18 ) 
-             return std::make_pair(false, after);           
            
-           
-          if( after == 0) 
+          if( vertices.empty() ) 
               vertices = get_vertices_with_property<A,B>(other);
           
           if( this->num_self_intersections()>0 ) //FIXME 
@@ -2882,6 +3086,11 @@ class Surface
              
           if( after>before ) 
              throw AlgorithmError("The aglorithm failed, select a smaller adjustment parameter"); 
+             
+             
+             
+             
+             
        }
        return std::make_pair(true, after);
     }
@@ -2905,27 +3114,32 @@ class Surface
     template<int A>
     std::pair<bool,int> manipulate_vertex_selection(Surface &other, double adjustment,  double smoothing, int max_iter)
     { 
-       auto vertices = get_close_vertices<A>(other);//FIXME 
+       auto vertices = get_close_vertices<A>(other); 
+
        int after = 0, iter = 0;
        int before = vertices.size();
 
        while( !vertices.empty() )
-       {         
-          vertex_vector_map vertex_displacement = get_close_vertex_displacement<A>( other, vertices, -adjustment, smoothing); 
-          //vertex_vector_map vertex_displacement = get_vertex_displacement(vertices, adjustment, smoothing);
+       {       
+          // TEST   
+          //vertex_vector_map vertex_displacement = get_close_vertex_displacement<A>( other, vertices, -adjustment, smoothing); 
+          vertex_vector_map vertex_displacement = get_vertex_displacement(vertices, adjustment, smoothing);
           
+          //auto max_element = std::max_element( vertex_displacement.begin(), vertex_displacement.end(), find_largest_displacement());    
+          //std::cout <<  max_element->second.squared_length() << " "<< vertices.size() << std::endl;        
+          //if ( max_element->second.squared_length() < 1.0e-16 ) 
+          //   return std::make_pair(false, after); 
+             
           set_adjacent_vertices(vertex_displacement);
                    
-          auto max_element = std::max_element( vertex_displacement.begin(), vertex_displacement.end(), find_largest_displacement());    
 
+          vertices = get_close_vertices<A>(other,vertices); 
 
-          vertices = get_close_vertices<A>(other,vertices); // FIXME 
+          after = vertices.size(); 
           
-          after = vertices.size();  
-          if ( max_element->second.squared_length() < 1.0e-18 ) 
-             return std::make_pair(false, after);
-             
-          if( after==0 )  
+
+                        
+          if( vertices.empty()  )  
               vertices = get_close_vertices<A>(other);
               
           if( ++iter>max_iter and after>0 )
@@ -2953,10 +3167,12 @@ class Surface
     * @returns std::pair<bool,int>. True if algorithm complets before max_iter is reached. The integer is
     *         the number of vertex manipulation that is completed.  
     */
-    template<int A>
+    template<int A, bool B>
     std::pair<bool,int> manipulate_vertex_selection_with_direction(Surface &other, double adjustment, double smoothing,int max_iter)
     {   
-       vertex_vector vertices  =  get_close_vertices<A>(other); //FIXME 
+       vertex_vector  vertices =this->get_vertices() ; 
+       vertices  =  get_close_vertices_with_property<A,B>(other, vertices ); //FIXME 
+       add_adjacent_vertices(vertices,60);
        int before = vertices.size();
        int after = 0, iter = 0;
 
@@ -2964,21 +3180,27 @@ class Surface
        {  
           // adjustment is in negative direction 
           vertex_vector_map vertex_displacement = get_close_vertex_displacement<A>(other, vertices, adjustment, smoothing); 
-
+          //vertex_vector_map vertex_displacement = get_vertex_displacement(vertices, adjustment, smoothing);
+                
+          //auto max_element = std::max_element( vertex_displacement.begin(), vertex_displacement.end(), find_largest_displacement());    
+              
+          //std::cout <<  max_element->second.squared_length() << " "<< vertices.size() << std::endl;      
+         // if ( max_element->second.squared_length() < 1.0e-16 ) 
+         //    return std::make_pair(false, after);
+        
           set_adjacent_vertices(vertex_displacement);
-          auto max_element = std::max_element( vertex_displacement.begin(), vertex_displacement.end(), find_largest_displacement());    
-
-                     
-          vertices = get_close_vertices<A>(other, vertices); 
+         
+          vertices = get_close_vertices_with_property<A,B>(other, vertices); 
 
           after = vertices.size();    
-          
-          if ( max_element->second.squared_length() < 1.0e-18 ) 
-             return std::make_pair(false, after);
-             
-          if( after==0 )  
-              vertices = get_close_vertices<A>(other);
-                             
+  
+          if( vertices.empty()  )
+          {   
+              vertices =this->get_vertices() ; 
+              vertices = get_close_vertices_with_property<A,B>(other, vertices);
+              add_adjacent_vertices(vertices,60);
+          }
+                       
           if( ++iter>max_iter and after>0 )
             return std::make_pair(false, after);
           if( after>before ) 
@@ -3023,9 +3245,6 @@ class Surface
        AABB_Tree tree(faces(mesh).first, faces(mesh).second, mesh);
        return tree;
     } 
-    
-   
-    
     
    // DocString: get_collision_distance
    /**
@@ -3073,7 +3292,7 @@ class Surface
              if(boost::get<Point_3>(&(intersection->first)))
              {
                 const Point_3* intersectpoint =  boost::get<Point_3>(&(intersection->first));  
-                if( branch.squared_distance(*intersectpoint) < FT(1.0e-16) )  
+                if( branch.squared_distance(*intersectpoint) < FT(1.0e-18) )  
                     distance = CGAL::sqrt(CGAL::squared_distance(facetpoint, *intersectpoint));  
                 else 
                     distance = -CGAL::sqrt(CGAL::squared_distance(facetpoint, *intersectpoint));  
@@ -3098,6 +3317,9 @@ class Surface
     {  
         std::vector<std::pair<Triangle_3,double>> Tridepth;    
         double beta,min_beta;
+        
+        double proximity = std::min(1000, num_vertices() );  
+        
         Vertex_point_pmap vppmap = get(CGAL::vertex_point,mesh); 
      
         Tree tree(vertices(mesh).begin(),
@@ -3118,7 +3340,7 @@ class Surface
           
           Vector_3 normal = CGAL::Polygon_mesh_processing::compute_face_normal(fd,mesh);
 
-          K_neighbor_search search(tree,facetpoint, 1000 , 0, true, tr_dist);
+          K_neighbor_search search(tree,facetpoint,  proximity, 0, true, tr_dist); 
           
           for( auto pit = search.begin() ; pit != search.end() ; pit++) 
           {
@@ -3139,11 +3361,13 @@ class Surface
     }  
 
 
-
+    /**
+    TODO : 
+          RENAME describe 
     
+    */
     std::vector<Vector_3> get_surface_displacement(std::vector<Point_3> queries ) 
     {
-    
         Vertex_point_pmap vppmap = get(CGAL::vertex_point,mesh);  
 
         Tree tree(vertices(mesh).begin(),
@@ -3166,17 +3390,19 @@ class Surface
                 closest = mesh.point((search.begin())->first);
                 result.emplace_back(*vit,closest);
             }
-          
         }
         return result;    
     
     }
     
+    /**
+    TODO
+    
+    */
     int num_bad_facets() 
     {
          int N ;
          std::vector<face_descriptor> bad_faces;
-         
          for(face_descriptor fd : faces(mesh)) 
          {
             N = 0 ;
@@ -3189,14 +3415,224 @@ class Surface
            if ( N!=3) 
            bad_faces.push_back(fd); 
          }
-         
-         
-       
-       
-       
-            
          return bad_faces.size(); 
     }
+
+    /**
+    TODO
+    
+    */
+    int num_bad_facets_2() 
+    {
+         std::vector<halfedge_descriptor> remove;
+         
+     
+         for(halfedge_descriptor hd : mesh.halfedges()) 
+         {
+           if( mesh.face(hd) == Mesh::null_face() ) 
+               remove.push_back(hd);
+         }  
+
+         for( vertex_descriptor vd : mesh.vertices() ) 
+         {
+             if( mesh.degree(vd)<4 ) 
+                 remove.push_back( mesh.halfedge(vd));  
+         }      
+    
+         for( face_descriptor fd : mesh.faces() ) 
+         {
+             if( mesh.degree(fd)<3 ) 
+                 remove.push_back( mesh.halfedge(fd) );  
+         }          
+         
+         return remove.size(); 
+    }
+
+
+
+    /**
+    TODO REMOVE
+    */
+    void find_wedges(double threshold=30.0) 
+    {
+
+      vertex_set collector;
+      vertex_vector result;
+      
+      double cos_angle = -std::cos(threshold*PI/180.0);
+      
+      vertex_descriptor v0,v1;
+      face_descriptor f0,f1;
+      halfedge_descriptor h0,h1;
+      Vector_3 n1,n0;
+      
+      for( auto edge : mesh.edges() ) 
+      {
+           h0 = mesh.halfedge(edge, 0);
+           h1 = mesh.halfedge(edge, 1);       
+           
+           f0 = mesh.face(h0);
+           f1 = mesh.face(h1);    
+          
+           n0 = CGAL::Polygon_mesh_processing::compute_face_normal(f0,mesh);   
+           n1 = CGAL::Polygon_mesh_processing::compute_face_normal(f1,mesh);  
+         
+           if ( n1*n0 < cos_angle ) 
+           {      
+               v0 = mesh.vertex(edge,0);
+               v1  =mesh.vertex(edge,1);
+               collector.insert(v0);
+               collector.insert(v1);
+           }
+      } 
+      std::copy(collector.begin(), collector.end(), std::back_inserter(result));
+          
+      vertex_vector_map disp = get_vertex_displacement(result, abs(0.5), 0.25); //FIXME
+      set_adjacent_vertices(disp); 
+
+    }
+    /**
+    TODO
+    
+    */    
+    void remove_bad_elements()
+    {
+         std::vector<halfedge_descriptor> remove;
+         
+         for(halfedge_descriptor hd : mesh.halfedges()) 
+         {
+           if( mesh.face(hd) == Mesh::null_face() ) 
+               remove.push_back(hd);
+         }  
+
+         for( vertex_descriptor vd : mesh.vertices() ) 
+         {
+             if( mesh.degree(vd)<2 ) 
+                 remove.push_back( mesh.halfedge(vd));  
+         }      
+    
+         for( face_descriptor fd : mesh.faces() ) 
+         {
+             if( mesh.degree(fd)<2 ) 
+                 remove.push_back( mesh.halfedge(fd) );  
+         }          
+         
+         halfedge_descriptor hb; 
+
+         for( halfedge_descriptor hd : remove ) 
+         {
+             hb = mesh.opposite(hd);
+             
+             mesh.remove_vertex( mesh.source(hd) ); 
+             mesh.remove_vertex( mesh.source(hb) ); 
+             mesh.remove_face( mesh.face(hb)   );
+             mesh.remove_edge( mesh.edge(hb)   );
+         }
+         mesh.collect_garbage();
+    }
+
+    Vector_3 average_normal_vertex( vertex_vector&  vertices)
+    {
+        Vector_3 delta ;
+        for( auto vit : vertices) 
+        {
+             delta +=  CGAL::Polygon_mesh_processing::compute_vertex_normal(vit,mesh);   
+        }    
+    
+        Vector_3 n1 = delta/CGAL::sqrt(delta.squared_length());
+        return n1;
+    }
+    
+    
+    //TODO  
+    /*
+    
+    */
+    vertex_vector_map collect_adjacent_faces(vertex_vector&  vertices, double threshold, double adjustment ) 
+    {
+         double cos_angle = std::cos(threshold*PI/180.0);
+         //collect all associated faces 
+         face_vector faces;
+         Vector_3 delta; 
+         for( auto vit : vertices) 
+         {
+            CGAL::Face_around_target_circulator<Mesh> fbegin(mesh.halfedge(vit), mesh), done(fbegin);
+            do
+            {
+                if( std::find(faces.begin(), faces.end(),*fbegin ) == faces.end() ) 
+                {
+                   delta +=  CGAL::Polygon_mesh_processing::compute_face_normal(*fbegin,mesh);   
+                   faces.push_back(*fbegin);
+                }
+             *fbegin++;
+            }while(fbegin!=done);
+        }
+        
+        Vector_3 n1,n2;
+        face_descriptor fiq;
+        face_vector queue;
+        
+        std::map<face_descriptor ,bool> handled;
+        
+        n1 = delta/CGAL::sqrt(delta.squared_length());
+        
+        for( auto fit :faces) 
+        { 
+            if( handled[fit] )
+                continue;
+          
+            queue.push_back(fit);     
+            while( !queue.empty() )
+            {
+                 fiq = queue.back(); 
+                 queue.pop_back();         
+                 if( handled[fiq] ) 
+                     continue;  
+                 handled[fiq] = true;
+                 //n1 =  CGAL::Polygon_mesh_processing::compute_face_normal(fiq,mesh);   
+                 CGAL::Face_around_target_circulator<Mesh>  fbegin(mesh.halfedge(fiq), mesh), done(fbegin);
+                 do 
+                 {
+                     n2 =  CGAL::Polygon_mesh_processing::compute_face_normal(*fbegin,mesh);   
+                     if (n1*n2>cos_angle and handled[*fbegin]==false ) 
+                         queue.push_back(*fbegin);
+                     *fbegin++;
+                 }while(fbegin!=done);
+
+            }
+        }
+        
+        vertex_vector_map result; 
+        vertex_set collector;
+        
+        for( auto fit :handled) 
+        {
+            if( !fit.second ) 
+                continue;
+        
+            CGAL::Vertex_around_face_circulator<Mesh> vbegin(mesh.halfedge(fit.first), mesh), done(vbegin);
+            do
+            {
+                collector.insert(*vbegin);
+                *vbegin++;
+            }while(vbegin!=done); 
+        }
+        
+        for( auto vit : collector) 
+        {
+           result[vit] = adjustment*n1;
+        }
+        return result;
+        
+    }
+
+    
+    
+    
+    
+    
+    
+    
     
    protected:
     Mesh mesh;
@@ -3245,7 +3681,7 @@ std::shared_ptr<Surface> convex_hull(std::vector<Point_3 >& point_vector)
  * @returns true if complete.
  */
 template<typename Surface>
-bool separate_surface_overlapp(Surface& surf1, Surface& surf2, double edge_movement=-1.0, double smoothing=0.3, int max_iter=400)
+bool separate_surface_overlapp(Surface& surf1, Surface& surf2, double edge_movement, double smoothing, int max_iter)
 {
   typedef typename Surface::vertex_vector_map vertex_vector_map;
   typedef typename Surface::vertex_vector vertex_vector;
@@ -3254,7 +3690,7 @@ bool separate_surface_overlapp(Surface& surf1, Surface& surf2, double edge_movem
   vertex_vector s2vertices  = surf2.get_vertices_inside(surf1);
   
   int iter =0;
-  do 
+  while( !s1vertices.empty() or !s2vertices.empty() ) 
   {      
         vertex_vector_map vertex_displacement_1 = surf1.get_vertex_displacement(s1vertices, -abs(edge_movement),smoothing);     
         vertex_vector_map vertex_displacement_2 = surf2.get_vertex_displacement(s2vertices, -abs(edge_movement),smoothing);         
@@ -3262,6 +3698,7 @@ bool separate_surface_overlapp(Surface& surf1, Surface& surf2, double edge_movem
         surf1.set_adjacent_vertices(vertex_displacement_1);
         surf2.set_adjacent_vertices(vertex_displacement_2);    
         
+        //FIXME
         if( surf1.num_self_intersections()>0  )
         {
             surf1.repair_self_intersections();
@@ -3290,7 +3727,7 @@ bool separate_surface_overlapp(Surface& surf1, Surface& surf2, double edge_movem
          return false;
        }
        
-  }while( !s1vertices.empty() or !s2vertices.empty() );
+  }
 
   
   return true;
@@ -3313,7 +3750,7 @@ bool separate_surface_overlapp(Surface& surf1, Surface& surf2, double edge_movem
  * @returns true if complete.
  */
 template<typename Surface>
-bool separate_surface_overlapp(Surface& surf1, Surface& surf2, Surface& other, double edge_movement=-0.25, double smoothing=0.3, int max_iter=400)
+bool separate_surface_overlapp(Surface& surf1, Surface& surf2, Surface& other, double edge_movement, double smoothing, int max_iter)
 {
    typedef typename Surface::vertex_vector_map vertex_vector_map;
    typedef typename Surface::vertex_vector vertex_vector;
@@ -3322,7 +3759,7 @@ bool separate_surface_overlapp(Surface& surf1, Surface& surf2, Surface& other, d
    vertex_vector s2vertices  = surf2.get_vertices_inside(surf1);
   
    int iter =0;    
-   do
+   while( !s1vertices.empty() or !s2vertices.empty() ) 
    {
         s1vertices  = surf1.get_vertices_outside(other,s1vertices); 
         s2vertices  = surf2.get_vertices_outside(other,s2vertices);
@@ -3332,7 +3769,8 @@ bool separate_surface_overlapp(Surface& surf1, Surface& surf2, Surface& other, d
 
         surf1.set_adjacent_vertices(vertex_displacement_1);
         surf2.set_adjacent_vertices(vertex_displacement_2);           
-
+        
+        //FIXME
         if( surf1.num_self_intersections()>0 ) 
         {
             surf1.repair_self_intersections();
@@ -3363,7 +3801,7 @@ bool separate_surface_overlapp(Surface& surf1, Surface& surf2, Surface& other, d
            std::cout << "Failed to converge in "<< max_iter <<" steps, terminating" << std::endl;
            return false;       
         }
-   }   while( !s1vertices.empty() or !s2vertices.empty() );
+   }  
   
    return true;
 }
@@ -3387,7 +3825,7 @@ bool separate_surface_overlapp(Surface& surf1, Surface& surf2, Surface& other, d
  * @returns true if complete. 
  */
 template< typename Surface>
-bool separate_close_surfaces(Surface& surf1, Surface& surf2, Surface& other, double edge_movement=-0.25, double smoothing=0.3, int max_iter=400)
+bool separate_close_surfaces(Surface& surf1, Surface& surf2, Surface& other, double edge_movement, double smoothing, int max_iter)
 {
    typedef typename Surface::vertex_vector_map vertex_vector_map;
    typedef typename Surface::vertex_vector vertex_vector;
@@ -3396,24 +3834,30 @@ bool separate_close_surfaces(Surface& surf1, Surface& surf2, Surface& other, dou
    vertex_vector s2vertices =  surf2.get_close_vertices(surf1);
 
    int iter=0;
-   do
+   while( !s1vertices.empty() or !s2vertices.empty() ) 
    {
         s1vertices  = surf1.get_vertices_outside(other,s1vertices);
         s2vertices  = surf2.get_vertices_outside(other,s2vertices);       
-             
+        
+        // for backwards compatiblity : abs(edge_movement)   FIXME SLOW    
         vertex_vector_map vertex_displacement_1 = surf1.get_close_vertex_displacement(surf2, s1vertices, abs(edge_movement), smoothing);     
         vertex_vector_map vertex_displacement_2 = surf2.get_close_vertex_displacement(surf1, s2vertices, abs(edge_movement), smoothing);  
+ 
+        //auto max_element_1 = std::max_element( vertex_displacement_1.begin(), vertex_displacement_1.end(), typename Surface::find_largest_displacement());    
+        //auto max_element_2 = std::max_element( vertex_displacement_2.begin(), vertex_displacement_2.end(), typename Surface::find_largest_displacement());    
+
+        //std::cout <<  max_element_1->second.squared_length()  << " " << max_element_2->second.squared_length() << std::endl;      
+        //std::cout <<  s1vertices.size()   << " " << s2vertices.size()  << std::endl;                        
+        
         
         surf1.set_adjacent_vertices(vertex_displacement_1);
         surf2.set_adjacent_vertices(vertex_displacement_2);               
   
-        auto max_element_1 = std::max_element( vertex_displacement_1.begin(), vertex_displacement_1.end(), typename Surface::find_largest_displacement());    
-        auto max_element_2 = std::max_element( vertex_displacement_2.begin(), vertex_displacement_2.end(), typename Surface::find_largest_displacement());    
-
+        //FIXME
         if( surf1.num_self_intersections()>0  )
         {
             surf1.repair_self_intersections();
-            s1vertices = surf1.get_close_vertices(surf2); // FIXME 
+            s1vertices = surf1.get_close_vertices(surf2); 
         }
         else 
             surf1.get_close_vertices(surf2,s1vertices); 
@@ -3421,10 +3865,11 @@ bool separate_close_surfaces(Surface& surf1, Surface& surf2, Surface& other, dou
         if( surf2.num_self_intersections()>0  )
         {
             surf2.repair_self_intersections();  
-            s2vertices = surf2.get_close_vertices(surf1); // FIXME 
+            s2vertices = surf2.get_close_vertices(surf1); 
         }
         else 
             surf2.get_close_vertices(surf1,s2vertices); 
+        
         
         if( surf1.num_self_intersections()+surf2.num_self_intersections() >0 )
         {                
@@ -3433,18 +3878,18 @@ bool separate_close_surfaces(Surface& surf1, Surface& surf2, Surface& other, dou
            return false;
         }
         
-        if(  max_element_1->second.squared_length() < 1.0e-18 and max_element_2->second.squared_length() < 1.0e-18) 
+        /*if(  max_element_1->second.squared_length() < 1.0e-16 and max_element_2->second.squared_length() < 1.0e-16) 
         {
            std::cout << "Failed to converge, terminating" << std::endl;
            return false;   
-        } 
+        } */
         
         if( iter++>max_iter ) 
         {
            std::cout << "Failed to converge in "<< max_iter <<" steps, terminating" << std::endl;
            return false;                
         }
-   }while( !s1vertices.empty() or !s2vertices.empty() );
+   }
 
    return true;
 }
@@ -3467,7 +3912,7 @@ bool separate_close_surfaces(Surface& surf1, Surface& surf2, Surface& other, dou
  * @returns true if complete.
  */
 template<typename Surface> 
-bool separate_close_surfaces(Surface& surf1, Surface& surf2, double edge_movement=-0.5, double smoothing=0.25, int max_iter=400)
+bool separate_close_surfaces(Surface& surf1, Surface& surf2, double edge_movement, double smoothing, int max_iter)
 {
    typedef typename Surface::vertex_vector_map vertex_vector_map;
    typedef typename Surface::vertex_vector vertex_vector;  
@@ -3477,7 +3922,7 @@ bool separate_close_surfaces(Surface& surf1, Surface& surf2, double edge_movemen
    vertex_vector s1vertices = surf1.get_close_vertices(surf2);   
    vertex_vector s2vertices = surf2.get_close_vertices(surf1);
    
-   do
+   while( !s1vertices.empty() or !s2vertices.empty() ) 
    {
         vertex_vector_map vertex_displacement_1 = surf1.get_close_vertex_displacement(surf2, s1vertices, abs(edge_movement), smoothing);     
         vertex_vector_map vertex_displacement_2 = surf2.get_close_vertex_displacement(surf1, s2vertices, abs(edge_movement), smoothing);  
@@ -3485,8 +3930,8 @@ bool separate_close_surfaces(Surface& surf1, Surface& surf2, double edge_movemen
         surf1.set_adjacent_vertices(vertex_displacement_1);
         surf2.set_adjacent_vertices(vertex_displacement_2);  
         
-        auto max_element_1 = std::max_element( vertex_displacement_1.begin(), vertex_displacement_1.end(), typename Surface::find_largest_displacement());    
-        auto max_element_2 = std::max_element( vertex_displacement_2.begin(), vertex_displacement_2.end(), typename Surface::find_largest_displacement());    
+        //auto max_element_1 = std::max_element( vertex_displacement_1.begin(), vertex_displacement_1.end(), typename Surface::find_largest_displacement());    
+        //auto max_element_2 = std::max_element( vertex_displacement_2.begin(), vertex_displacement_2.end(), typename Surface::find_largest_displacement());    
                   
         if( surf1.num_self_intersections()>0 )
         {
@@ -3510,19 +3955,20 @@ bool separate_close_surfaces(Surface& surf1, Surface& surf2, double edge_movemen
            std::cout << "Recommend use istropic_remeshing before continuation"  << std::endl;
            return false;
         }
-        if(  max_element_1->second.squared_length() < 1.0e-18 and max_element_2->second.squared_length() < 1.0e-18) 
+        
+        /*if(  max_element_1->second.squared_length() < 1.0e-16 and max_element_2->second.squared_length() < 1.0e-16) 
         {
            std::cout << "Failed to converge, terminating" << std::endl;
            return false;   
-        } 
+        } */
 
-        if( iter++>max_iter) 
+        if( iter++>max_iter ) 
         {
            std::cout << "Failed to converge in "<< max_iter <<" steps, terminating" << std::endl;
            return false;                
         }
         
-   }while( !s1vertices.empty() or !s2vertices.empty() );
+   } 
    
 
    return true;
@@ -3553,34 +3999,79 @@ std::shared_ptr<Surface> union_partially_overlapping_surfaces( Surface& surf1, S
 {
      typedef typename Surface::vertex_vector_map vertex_vector_map;
      typedef typename Surface::vertex_vector vertex_vector;
- 
+     typedef typename Surface::Vector_3 Vector_3; 
      /*if( adjustment<0 )
          throw InvalidArgumentError("Adjusment must be positive.");*/
      
-
+    // FIXME TODO Correct parameters name 
    
      vertex_vector s1vertices,s2vertices;
      
      s1vertices  = surf1.get_vertices_inside(surf2); 
      s2vertices  = surf2.get_vertices_inside(surf1);
-   
-               
+     
+     /*s1vertices  = surf1.get_close_vertices(surf2); 
+     s2vertices  = surf2.get_close_vertices(surf1);    
+      */    
+     
+     Vector_3 disp1 = adjustment*surf1.average_normal_vertex(s1vertices);
+     Vector_3 disp2 = adjustment*surf2.average_normal_vertex(s2vertices);      
+
+     surf1.add_adjacent_vertices(s1vertices,angle_in_degree);
+     surf2.add_adjacent_vertices(s2vertices,angle_in_degree);              
+            
      int iter =0;
      while( !s1vertices.empty() or !s2vertices.empty() )
      {     
-           vertex_vector_map s1vertices_displacement = surf1.get_vertex_displacement(s1vertices, abs(adjustment), smoothing);
-           vertex_vector_map s2vertices_displacement = surf2.get_vertex_displacement(s2vertices, abs(adjustment), smoothing);            
+           //vertex_vector_map vertex_displacement_1  = surf1.collect_adjacent_faces( s1vertices , 70,0.33 );
+           //vertex_vector_map vertex_displacement_2  = surf2.collect_adjacent_faces( s2vertices, 70, 0.33);
+           //vertex_vector_map vertex_displacement_1 = surf1.get_close_vertex_displacement(surf2,s1vertices, abs(adjustment), smoothing);
+           //vertex_vector_map vertex_displacement_2 = surf2.get_close_vertex_displacement(surf1,s2vertices, abs(adjustment), smoothing);            
+   
+           //vertex_vector_map vertex_displacement_1 = surf1.get_vertex_displacement(s1vertices, abs(adjustment), smoothing);
+           //vertex_vector_map vertex_displacement_2 = surf2.get_vertex_displacement(s2vertices, abs(adjustment), smoothing);            
+   
+           vertex_vector_map vertex_displacement_1 = surf1.get_constant_vertex_displacement(s1vertices, disp1 , smoothing);
+           vertex_vector_map vertex_displacement_2 = surf2.get_constant_vertex_displacement(s2vertices, disp2 , smoothing);                
+            
+           //auto max_element_1 = std::max_element( vertex_displacement_1.begin(), vertex_displacement_1.end(), typename Surface::find_largest_displacement());    
+           //auto max_element_2 = std::max_element( vertex_displacement_2.begin(), vertex_displacement_2.end(), typename Surface::find_largest_displacement());    
+                  
+           //FIXME 
+           //surf1.adjust_vertices_in_region( s1vertices.begin() ,s1vertices.end(), disp1 ); 
+           //surf2.adjust_vertices_in_region( s2vertices.begin() ,s2vertices.end(), disp2 );   
            
-           surf1.set_adjacent_vertices(s1vertices_displacement); 
-           surf2.set_adjacent_vertices(s2vertices_displacement);            
-
+           surf1.set_adjacent_vertices(vertex_displacement_1); 
+           surf2.set_adjacent_vertices(vertex_displacement_2);            
+                  
            s1vertices = surf1.get_vertices_outside(surf2,s1vertices); 
            s2vertices = surf2.get_vertices_outside(surf1,s2vertices);
-           
+
+           //surf1.smooth_laplacian_region(s1vertices.begin() ,s1vertices.end(), 0.1);
+           //surf2.smooth_laplacian_region(s2vertices.begin() ,s2vertices.end(), 0.1);
+           //std::cout <<  max_element_1->second.squared_length()  << " " << max_element_2->second.squared_length() << std::endl;      
+           //std::cout << s1vertices.size() << " "  << s2vertices.size() << " "<< iter<<std::endl;
            if( iter++>max_iter )
               break;
-     }     
      
+           if( s1vertices.empty()) 
+           {
+               s1vertices  = surf1.get_vertices_inside(surf2); 
+               surf1.add_adjacent_vertices2(s1vertices,angle_in_degree);
+               s1vertices = surf1.get_vertices_outside(surf2,s1vertices);    
+           }
+           
+           
+           if( s2vertices.empty() ) 
+           {
+               s2vertices  = surf2.get_vertices_inside(surf1);
+               surf2.add_adjacent_vertices2(s2vertices,angle_in_degree);
+               s2vertices = surf2.get_vertices_outside(surf1,s2vertices);  
+           } 
+           //if(  max_element_1->second.squared_length() < 1.0e-16 and max_element_2->second.squared_length() < 1.0e-16) 
+           //     break;
+     }    
+
      surf1.repair_self_intersections();
      surf2.repair_self_intersections();     
      
@@ -3594,7 +4085,11 @@ std::shared_ptr<Surface> union_partially_overlapping_surfaces( Surface& surf1, S
        std::string output = "CGAL precondition error\n"+ surf1.CGAL_precondition_evaluation(surf2);
        throw PreconditionError(output.c_str());
      }  
+     
+     result->smooth_taubin(20);
 
      return result;
 }
+
+
 #endif
