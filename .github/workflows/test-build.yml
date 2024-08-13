@@ -26,8 +26,8 @@ jobs:
     - name: Install Eigen3, mpfr, boost (ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
-           apt-get update 
-           apt-get install -y libeigen3-dev libmpfr-dev libboost-dev cmake
+           sudo apt-get update 
+           sudo apt-get install -y libeigen3-dev libmpfr-dev libboost-dev cmake
 
     # - name: Install Eigen3, boost gmp (macos)
     #   if: matrix.os == 'macOS-latest'
