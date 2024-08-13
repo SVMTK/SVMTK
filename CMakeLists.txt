@@ -24,8 +24,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 
-
-
 option(BUILD_TESTING OFF "Build SVMTK tests")
 add_feature_info(BUILD_TESTING BUILD_TESTING  "Build SVMTK tests")
 
@@ -36,7 +34,9 @@ option(DOWNLOAD_CGAL "Download CGAL. Requires that git-repo has been cloned in r
 add_feature_info(DOWNLOAD_CGAL DOWNLOAD_CGAL "Download CGAL. Requires that git-repo has been cloned in recursive mode")
 
 if (DOWNLOAD_PYBIND11)
-  set(PYBIND11_FINDPYTHON ON)
+  set(PYBIND11_FINDPYTHON OFF) 
+  find_package(Python COMPONENTS Interpreter Development)
+#  message(${PYTHON_EXECUTABLE})
 endif()
 
 if (CMAKE_COMPILER_IS_GNUCXX)
@@ -60,7 +60,7 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
 if (DOWNLOAD_CGAL)
   set(CGAL_DIR external/cgal)
   find_package(CGAL REQUIRED COMPONENTS Core)
-  #include(${CGAL_USE_FILE}) 
+  include(${CGAL_USE_FILE}) 
 else()
     find_package(CGAL REQUIRED COMPONENTS Core)
 endif()
@@ -88,10 +88,10 @@ else()
 endif()
 
 pybind11_add_module(SVMTK SHARED python/src/SVMTK.cpp)
-set( CMAKE_CXX_FLAGS "-fPIC -flto=auto -std=gnu++1z -frounding-math -lgmpxx -lgmp -Wall -I${Boost_INCLUDE_DIRS}")  
+set( CMAKE_CXX_FLAGS "-fPIC -flto=auto -std=gnu++1z -frounding-math -lgmpxx -lgmp -Wall -I${Boost_INCLUDE_DIRS}")   
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-target_link_libraries(SVMTK PRIVATE CGAL::CGAL ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${GMP_LIBRARIES}
+target_link_libraries(SVMTK PRIVATE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${GMP_LIBRARIES}
                             ${MPFR_LIBRARIES} ${Eigen3} ${Boost}) 
 
 get_target_property(OUT SVMTK LINK_LIBRARIES)
