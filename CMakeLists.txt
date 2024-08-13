@@ -33,11 +33,16 @@ add_feature_info(DOWNLOAD_PYBIND11 DOWNLOAD_PYBIND11 "Download Pybind11. Require
 option(DOWNLOAD_CGAL "Download CGAL. Requires that git-repo has been cloned in recursive mode" ON)
 add_feature_info(DOWNLOAD_CGAL DOWNLOAD_CGAL "Download CGAL. Requires that git-repo has been cloned in recursive mode")
 
-if (DOWNLOAD_PYBIND11)
-  set(PYBIND11_FINDPYTHON OFF) 
-  find_package(Python COMPONENTS Interpreter Development)
-#  message(${PYTHON_EXECUTABLE})
-endif()
+
+find_package(Python COMPONENTS Interpreter Development)
+message(${PYTHON_EXECUTABLE})
+
+  
+#if (DOWNLOAD_PYBIND11)
+#  set(PYBIND11_FINDPYTHON OFF) 
+
+
+#endif()
 
 if (CMAKE_COMPILER_IS_GNUCXX)
   if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7)
