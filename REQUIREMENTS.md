@@ -47,7 +47,7 @@ and the submodule version can be switched with
 Tested CGAL versions 
   - 5.6.0
 
-## Python>=3.6 
+## Python>=3.8 Python <=3.12
 Installing python3.6
  
 `sudo apt-get update`

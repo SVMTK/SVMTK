@@ -30,8 +30,8 @@ if __name__ == "__main__":
    
    ###  Embed  ### 
    # Embed function parameters 
-   adjustment = -0.1 
-   smoothing  =  0.0
+   adjustment = -0.5 
+   smoothing  =  0.2
    max_iter   = 100
    sphere1.embed(sphere2,adjustment,smoothing, max_iter) 
    sphere1.save(str(outdir/"embed.stl"))
@@ -39,17 +39,17 @@ if __name__ == "__main__":
 
    ###  Expose  ### 
    # Expose function parameters 
-   adjustment = -0.1 
-   smoothing  = 0.0 
-   max_iter   = 100
+   adjustment = -0.5 
+   smoothing  = 0.4
+   max_iter   = 1000
    sphere3.expose(sphere2,adjustment,smoothing, max_iter)   
    sphere3.save(str(outdir/"expose.stl"))  
    
 
    ###  Enclose ### 
    # Enclose function parameters 
-   adjustment =  0.1 
-   smoothing  = 0.0 
+   adjustment =  0.5 
+   smoothing  = 0.2
    max_iter   = 100
    sphere4.enclose(sphere2,adjustment,smoothing, max_iter)     
    sphere4.save(str(outdir/"enclose.stl")) 

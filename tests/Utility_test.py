@@ -82,15 +82,14 @@ class Utility_Test(unittest.TestCase):
         s1.make_cube(1.,0.,1.,2.,1.,2.,.2) 
         s2.make_cube(1.,1.,1.,2.,2.,2.,.2) 
         s3.make_cube(1.2,0.5,1.2,1.8,1.5,1.8,.2) 
-
         self.assertTrue(SVMTK.separate_overlapping_surfaces(s1,s2,s3)) 
-
+          
 
 
     def test_union_partially_overlapping_surfaces(self): 
         s1 =SVMTK.Surface(f"{tests_dir}/Data/s1.off")
         s2 =SVMTK.Surface(f"{tests_dir}/Data/s2.off")       
-        s5  = SVMTK.union_partially_overlapping_surfaces(s1,s2,50,0.7,1,8)
+        s5  = SVMTK.union_partially_overlapping_surfaces(s1,s2)
         self.assertTrue(s5.num_faces()>0) 
 
 

@@ -1,6 +1,7 @@
 """ Create a 3D mesh with conforming bifurcation """
 
 import SVMTK as svm
+from pathlib import Path
 
 if __name__ == "__main__":
    print("Start ",__file__)   
@@ -30,8 +31,9 @@ if __name__ == "__main__":
    maker.add_feature(line2)
 
    # Create the mesh 
-   maker.create_mesh(24.) 
+   maker.create_mesh(16.) 
    maker.exude(100, 0)
+   print( maker.get_features( ) )
    maker.save(str(outdir/"bifurcation_in_cube.mesh"))
    print("Finish ",__file__)   
    

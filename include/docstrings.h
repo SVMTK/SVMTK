@@ -40,7 +40,7 @@ R"doc(Maps bistring to an integer using binary conversion to integer
 static const char *__doc_DefaultMap_make_interfaces =
 R"doc(Gives each interfaces an unique tag based on presence in mesh and from the highest cell tag. Ex:(Cell tags 1 2 -> Interface tags 3 4 5)
 
-:param interfaces: List of tuple with two integers that represent cell tag between a facet. FIXME
+:param interfaces: List of tuples integers, representing the interface between two cell tags. 
 
 :Returns: Dictonary with tuple of two integer as key and an unique integer as value.
 
@@ -56,7 +56,7 @@ Input surface are used to create `Polyhedral_mesh_domain_with_features_3 <https:
 
 `Mesh_Criteria <https://doc.cgal.org/latest/Mesh_3/classMeshCriteria__3.html>`_  defines construction process. The tetrahedra mesh is stored in `Mesh_complex_3_in_triangulation_3 <https://doc.cgal.org/latest/Mesh_3/classMeshComplex__3InTriangulation__3.html>`_ structure, where the data follows `Mesh_triangulation_3 <https://doc.cgal.org/latest/Triangulation_3/index.html>`_ triganulation data structure.
 
-Notabel CGAL declarations: |
+Notable CGAL declarations: |
 - `Exact predicates inexact constructions kernel <https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Exact__predicates__inexact__constructions__kernel.html>`_.
 - `Labeled_Mesh_Domain <https://doc.cgal.org/latest/Mesh_3/classCGAL_1_1Labeled__mesh__domain__3.html>`_.
 - `Mesh_domain_with_polyline_features_3 <https://doc.cgal.org/latest/Mesh_3/classCGAL_1_1Mesh__domain__with__polyline__features__3.html>`_.
@@ -96,6 +96,18 @@ R"doc(Constructor for meshing multiple surfaces
 
 )doc";
 
+
+static const char *__doc_Domain_Domain_4 =
+R"doc(Constructor for loading a volumetric mesh from file.
+
+Note: Supports only .mesh format with integer subdomain tag, and will rebind facet tags.
+
+:param filename: the filename of the volumetric mesh. 
+:param error_bound: the error bound of the surface representation.
+:param
+
+)doc";
+
 static const char *__doc_Domain_add_border =
 R"doc(Adds a polyline to the Domain attribute borders.
 
@@ -122,15 +134,89 @@ R"doc(Returns a set of integer that represents the cell tags in the mesh.
 )doc";
 
 
+static const char *__doc_Domain_get_facets =
+R"doc(Returns all triangles as a numpy array (N,3) with vertex indices. The first vertex index starts at 1.  
 
+:Returns: a numpy array of facets as vertex indices.
+
+)doc";
+
+static const char *__doc_Domain_get_facet_tags =
+R"doc(Returns all facet tags as a numpy array, with the option of excluding unmarked facets.  
+
+:param exclude_unmarked: boolean option to either exclude facets with tag equal to zero.
+
+:Returns: a numpy array of facet tags.
+
+)doc";
+
+static const char *__doc_Domain_get_cells =
+R"doc(Returns all tetrahedrons as a numpy array (N,4) with vertex indices. The first vertex index starts at 1.  
+
+:Returns: a numpy array of cells as vertex indices.
+
+)doc";
+
+static const char *__doc_Domain_get_cell_tags =
+R"doc(Returns all tetrahedron tags as a numpy array.   
+
+:Returns: a numpy array with tetrahedron tags.
+
+)doc";
+
+
+static const char *__doc_Domain_get_features =
+R"doc(Returns the added (internal) features to the :class:`Domain`.
+
+:Returns: an array with :class:`Point_3`
+
+)doc";
+
+static const char *__doc_Domain_get_borders =
+R"doc(Returns the added borders to the :class:`Domain`.
+
+:Returns: an array with :class:`Point_3`
+
+)doc";
+
+
+static const char *__doc_Domain_refine =
+R"doc(Refine the mesh to a target mesh_resolution.
+
+:param mesh_resolution: determines the ratio between the minimum bounding radius and the upper bound of the cell circumradi.
+
+)doc";
+
+
+static const char *__doc_Domain_get_points =
+R"doc(Returns the Cartesian coordinates for all vertices as a numpy array (N,3) with vertex locations.   
+
+:Returns: a numpy array of all vertex coordinates.
+
+)doc";
+
+
+
+static const char *__doc_Domain_tetrahedral_remeshing =
+R"doc( Tetrahedral remeshing of the tetrahedral mesh.
+
+See: `Tetrahedral remeshing <https://doc.cgal.org/latest/Tetrahedral_remeshing/index.html>`_.
+
+:param edge_length: is edge length after remeshing.
+:param nb_iter: the number of iterations for the sequence of atomic operations performed. 
+:param protect_borders: If true, constraint edges cannot be modified at all during the remeshing process. 
+
+:Returns: None 
+
+)doc";
 
 static const char *__doc_Domain_add_sharp_border_edges =
 R"doc(Adds sharp border edges from a SVMTK Surface object.
 
-Checks polyhedron for sharp edges, if these edges do not conflict/intersect previously stored edges, then the edges are stored in member variable borders. The use of 1D features in combination with ill-posed meshing paramteres can cause segmentation fault (crash).
+Checks polyhedron for sharp edges, if these edges do not conflict/intersect previously stored edges, then the edges are stored in member variable borders. The use of 1D features in combination with ill-posed meshing parameters can cause segmentation fault (crash).
 
 :param surface: :class:`Surface` object.
-:param threshold: the threshold angle in degree (0-90). Angles bewteen connected edges above the threshold angle is considered sharp.
+:param threshold: the threshold angle in degree (0-90). Angles between connected edges above the threshold angle is considered sharp.
 
 )doc";
 
@@ -139,12 +225,21 @@ R"doc(Adds sharp border edges from a SVMTK Surface object in a given plane.
 
 :param surface: :class:`Surface` object.
 :param plane: excludes all edges that is not within a given error of the plane.
-:param threshold: the threshold angle in degree (0-90). Angles bewteen connected edges above the threshold angle is considered sharp.
+:param threshold: the threshold angle in degree (0-90). Angles between connected edges above the threshold angle is considered sharp.
+
+)doc";
+
+static const char *__doc_Domain_add_sharp_border_edges_3 =
+R"doc(Adds sharp border edges from a SVMTK Surface object on the surface of another :class:`Surface`. 
+
+:param surface: :class:`Surface` object.
+:param clip: :class:`Surface` object used to excludes all edges that is not within a given error of the clip surface.
+:param threshold: the threshold angle in degree (0-90). Angles between connected edges above the threshold angle is considered sharp.
 
 )doc";
 
 static const char *__doc_Domain_boundary_segmentations =
-R"doc(Segments the boundary of a specified subdomain tag. Calls :func:`Surface.surface_segmentation` on the boundary surfaces specifiec by input, and updates the boundary facets with the segementation tags.
+R"doc(Segments the boundary of a specified subdomain tag. Calls :func:`Surface.surface_segmentation` on the boundary surfaces specific by input, and updates the boundary facets with the segmentation tags.
 
 :param subdmain_tag: An integer representing a subdomain in the mesh. 
 :param angle_in_degree: The threshold angle in degree used to detect sharp edges (0-90).
@@ -171,7 +266,7 @@ R"doc(Checks the connections in the mesh for bad vertices and bad edges, and pri
 
 A bad vertex is a boundary vertex that is shared by two non-adjacent cells A bad edge is a boundary edge that is shared by more than 2 facets.
 
-In order to remove bad edges and bad edges, the surfaces must be free of self intersection and have mesh resolution equal to the highest mesh resolution of the surfaces. The separation of narrow gaps and the thickning of thin mesh segments may also be required.  
+In order to remove bad edges and bad edges, the surfaces must be free of self intersection and have mesh resolution equal to the highest mesh resolution of the surfaces. The separation of narrow gaps and the thickening of thin mesh segments may also be required.  
 
 )doc";
 
@@ -182,10 +277,11 @@ R"doc(Creates the mesh stored in the class attribute c3t3 using `CGAL mesh crite
 :param cell_size: Sets the upper-bound for the circumradii of the mesh tetrahedra.
 :param facet_size: Sets the upper-bound or for the radii of the surface Delaunay balls.
 :param facet_angle: Sets the lower-bound for the angles (in degrees) of the surface mesh facets.
-:param facet_distance: Sets teh upper-bound for the distance between the facet circumcenter and the center of its surface Delaunay ball.
+:param facet_distance: Sets the upper-bound for the distance between the facet circumcenter and the center of its surface Delaunay ball.
 :param cell_radius_edge_ratio: Sets the upper-bound for the radius-edge ratio of the mesh tetrahedra.
 
 )doc";
+
 
 static const char *__doc_Domain_create_mesh_2 =
 R"doc(Creates the mesh stored in the class attribute c3t3. The mesh criteria is set based on mesh_resolution and the minimum bounding radius of the mesh.
@@ -194,10 +290,34 @@ R"doc(Creates the mesh stored in the class attribute c3t3. The mesh criteria is 
 
 )doc";
 
+
 static const char *__doc_Domain_create_mesh_3 =
 R"doc(Creates the mesh stored in the class attribute c3t3. The mesh resolution is set automatic to the highest mesh resolution of the surface(s).
 
 )doc";
+
+static const char *__doc_Domain_init_triangulation =
+R"doc(Inserts all points from a class:`Surface` object into the volumetric mesh before any triangulation.
+
+Note: 
+     Experimental, may result in failure.
+     
+:param surf: a class:`Surface` object:     
+      
+
+)doc";
+
+static const char *__doc_Domain_init_triangulation_2 =
+R"doc(Inserts all points from a list of  class:`Surface` objects into the volumetric mesh before any triangulation.
+
+Note: 
+     Experimental, may result in failure.
+     
+:param surf: a list of class:`Surface` object:     
+      
+
+)doc";
+
 
 static const char *__doc_Domain_dihedral_angles =
 R"doc(Computes the dihedral angle for all tetrahedron cells in complex (c3t3).
@@ -260,12 +380,6 @@ R"doc(Writes stored triangle data to file.
 
 )doc";
 
-static const char *__doc_Domain_get_borders =
-R"doc(Returns the borders add to the domain as vector of :class:`Point_3`.
-
-:Returns: Vector of :class:`Point_3` objects.
-    
-)doc";
 
 
 
@@ -279,7 +393,7 @@ R"doc(Returns the interface between two subdomain as a :class:`Surface` object.
 )doc";
 
 static const char *__doc_Domain_get_boundaries =
-R"doc(Iterates over all surface boundaries of subdomains and stores and returns it as a vector of Surface objects.
+R"doc(Iterates over all surface boundaries of subdomains and stores and returns it as a list of Surface objects.
 
 :Returns: List of :class:`Surface` objects.
     
@@ -325,49 +439,49 @@ Do not use lloyd after excude optimazation, it will cause failure.
 
 )doc";
 
-static const char *__doc_Domain_number_of_cells =
+static const char *__doc_Domain_num_cells =
 R"doc(Returns number of tetrahedron cells in stored volume mesh.
 
 :Returns: The number of tetrahedron cells in stored volume mesh.
 
 )doc";
 
-static const char *__doc_Domain_number_of_curves =
+static const char *__doc_Domain_num_curves =
 R"doc(Returns number of 1D polylines in stored volume mesh.
 
 :Returns: The number of 1D polylines in stored volume mesh.
 
 )doc";
 
-static const char *__doc_Domain_number_of_facets =
+static const char *__doc_Domain_num_facets =
 R"doc(Returns number of facets, triangles, in stored volume mesh.
 
 :Returns: The number of facets, triangles, in stored volume mesh.
 
 )doc";
 
-static const char *__doc_Domain_number_of_patches =
+static const char *__doc_Domain_num_patches =
 R"doc(Returns number of interface tags in stored volume mesh.
 
 :Returns: The number of interface tags in stored volume mesh.
 
 )doc";
 
-static const char *__doc_Domain_number_of_subdomains =
+static const char *__doc_Domain_num_subdomains =
 R"doc(Returns number of subdomains in stored volume mesh.
 
 :Returns: The number of subdomains in stored volume mesh.
 
 )doc";
 
-static const char *__doc_Domain_number_of_surfaces =
+static const char *__doc_Domain_num_surfaces =
 R"doc(Returns number of surfaces that was added in the constructor.
 
 :Returns: The number of surfaces that was added in the constructor.
 
 )doc";
 
-static const char *__doc_Domain_number_of_vertices =
+static const char *__doc_Domain_num_vertices =
 R"doc(Returns number of vertices in stored volume mesh.
 
 :Returns: The number of vertices in stored volume mesh.
@@ -489,7 +603,7 @@ static const char *__doc_Slice =
 R"doc(The SVMTK Slice class stores and manipulate triangulated surfaces in a plane, i.e. the third coordinate is neglected. The Slice class uses the `Exact predicates inexact constructions kernel <https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Exact__predicates__inexact__constructions__kernel.html>`_. The meshing is done by triangulation of constrainted with edges by using CGAL class `Constrained_triangulation_plus_2 <https://doc.cgal.org/latest/Triangulation_2/classCGAL_1_1Constrained__triangulation__plus__2.html>`_ . (REWRITE) 
 The Slice does not handle cavities, but cavities can be assigned with adding surfaces with :func:`add_surface_domains` and optional SVMTK :class:`SubdomainMap` object.
 
-Notabel CGAL declarations: 
+Notable CGAL declarations: 
 - `Constrained_Delaunay_triangulation_2 <https://doc.cgal.org/latest/Triangulation_2/classCGAL_1_1Constrained__Delaunay__triangulation__2.html>`_.
 - `Constrained_triangulation_plus_2 <https://doc.cgal.org/latest/Triangulation_2/classCGAL_1_1Constrained__triangulation__plus__2.html>`_
 - `Delaunay_mesh_size_criteria_2 <https://doc.cgal.org/latest/Mesh_2/classCGAL_1_1Delaunay__mesh__criteria__2.html>`_
@@ -504,14 +618,72 @@ Attributes:
 )doc";
 
 
-static const char *__doc_Slice_get_points = R"doc(Returns points in the 2D triangulation.)doc";
+/*static const char *__doc_Slice_get_points    = R"doc(Returns points in the 2D triangulation as a 2D numpy array.)doc";
 
-static const char *__doc_Slice_get_facets = R"doc(Returns the points for facets in the 2D triangulation.)doc";
+static const char *__doc_Slice_get_facets_points = R"doc(Returns the points for facets in the 2D triangulation.)doc";
+
+static const char *__doc_Slice_get_facet_tags = R"doc(Returns the points for facets in the 2D triangulation.)doc";
+
+static const char *__doc_Slice_get_edge_tags = R"doc(Returns the points for facets in the 2D triangulation.)doc";
+
+static const char *__doc_Slice_get_edges = R"doc(Returns the points for facets in the 2D triangulation.)doc";
+
+static const char *__doc_Slice_get_edges_2 = R"doc(Returns the edges with the edge index. :Returns: Dictonary of edges and edge index. )doc";
+*/ 
+
+
+
+static const char *__doc_Slice_get_points =
+R"doc( Returns points in the 2D triangulation as a numpy array with dim Nx3
+
+:Returns: points in the mesh.
+
+)doc";
+
+static const char *__doc_Slice_get_cell_tags =
+R"doc( Returns a numpy array of cell tags corresponding to the ouput of :func:`Slice.get_cells`. 
+
+
+:Returns: numpy array of integers, represented as cell tags.
+
+)doc";
+
+static const char *__doc_Slice_get_cells =
+R"doc( Returns all cells in the 2D triangulation, with a cell given by three vertex indices, as a numpy array.
+
+Note : Vertex indices starts with index 1.
+
+:Returns: numpy array of cells in the 2D triangulation.
+
+)doc";
+
+
+static const char *__doc_Slice_get_facets =
+R"doc( Returns all facets in the 2D triangulation, with a facet given by two vertex indices, as numpy array, with the option of excluding unmarked facets.
+
+Note : Vertex indices starts with index 1.
+
+:param exclude_unmarked: if true exlcudes unmarked facets from output. 
+
+:Returns: numpy array of facets in the mesh.
+
+)doc";
+
+static const char *__doc_Slice_get_facet_tags =
+R"doc( Returns a numpy array of facet tags corresponding to the ouput of :func:`Slice.get_facets`. 
+
+:param exclude_unmarked: if true exlcudes unmarked facets from output. 
+
+:Returns: numpy array of facet tags in the mesh.
+
+
+)doc";
+
 
 static const char *__doc_Slice_add_polygon_domain = 
 R"doc( Marks all cells within the polygon with the polygon tag.
 
-:param polygon: a closed vector of points in 2D.
+:param polygon: a closed list of :class:`Point_2` objects.
 
 :param polygon_tag: a integer for the polygon.
 
@@ -545,6 +717,12 @@ R"doc(Constructs a SVMTK Slice object with a specified plane_3. The plane is def
 
 )doc";
     
+static const char *__doc_Slice_remove_polygons = 
+R"doc(Removes small closed loops of points, i.e. polygons that are lower than an area threshold
+
+:param area_threshold: lower bound of the polygon area.
+
+)doc";    
 
 static const char *__doc_Slice_add_constraint =
 R"doc(Adds polyline to constraints .
@@ -587,7 +765,7 @@ R"doc(Add tags to the facets in the 2D mesh based on overlapping surfaces and De
 static const char *__doc_Slice_clear_costraints = R"doc(Clears all the constraints added to the class object)doc";
 
 static const char *__doc_Slice_connected_components =
-R"doc(Calculates and returns the number of connected components.
+R"doc(Returns the number of connected components.
 
 :Returns: The number of connected components.
 
@@ -626,12 +804,7 @@ R"doc(Get the constraints added to the class object
 
 )doc";
 
-static const char *__doc_Slice_get_edges =
-R"doc(Returns the edges with the edge index.
 
-:Returns: Dictonary of edges and edge index.
-
-)doc";
 
 static const char *__doc_Slice_get_plane =
 R"doc(Get the plane attribut.
@@ -651,21 +824,21 @@ R"doc(Returns the subdomain tags in the mesh.
 
 static const char *__doc_Slice_keep_largest_connected_component = R"doc(Calculates and keeps the largest connected component.)doc";
 
-static const char *__doc_Slice_number_of_constraints =
+static const char *__doc_Slice_num_constraints =
 R"doc(Returns the number of constraints.
 
 :Returns: The number of constraints.
 
 )doc";
 
-static const char *__doc_Slice_number_of_faces =
+static const char *__doc_Slice_num_cells =
 R"doc(Returns the number of faces.
 
 :Returns: The number of faces, i.e triangles.
 
 )doc";
 
-static const char *__doc_Slice_number_of_subdomains =
+static const char *__doc_Slice_num_subdomains =
 R"doc(Returns the number of subdomains.
 
 :Returns: The number of subdomains.
@@ -705,24 +878,41 @@ R"doc(Set the plane attribute.
 static const char *__doc_Slice_simplify =
 R"doc(Simplify number of constraints to be a specific fraction.
 
-:param point_density: Fraction threshold.
+:param threshold: Stops when ratio of remaining vertices is lower than the threshold. 
 
 )doc";
 
 static const char *__doc_Slice_slice_surfaces =
-R"doc(Slice a number of surfaces with the same plane, and store the constraints.
+R"doc(Slices surfaces with the :class:`Slice` plane and adds the intersections as constraints in object.
 
 :param surfaces: List of :class:`Surface` objects.
 
 )doc";
 
+static const char *__doc_Slice_slice_mesh =
+R"doc(Slices a volumetric mesh with the :class:`Slice` plane and adds the intersections as constraints in object.
+
+:param mesh: :class:`Domain` object.
+
+)doc";
+
+
+static const char *__doc_Slice_bifurcation_split =
+R"doc( Divides constraints with a bifurcation point into separate constraints 
+
+If a point is shared with multiple grahps, then split all edge to point into different constraints.
+
+
+)doc";
+
+
 static const char *__doc_SubdomainMap =
 R"doc(This class is used for setting the subdomain tag during the construction of the mesh. 
 
 
-A vertex position relative to the surface can be written as a bitstring, i.e. inside or outside of the surface. The evaulation of the binary string that can be used to map a point to have a specific tag.
+A vertex position relative to the surface can be written as a bitstring, i.e. inside or outside of the surface. The evaluation of the binary string that can be used to map a point to have a specific tag.
 
-In the constrcution of the mesh, cells will be taged based on the location of the cell relative to the surfaces ovelaps
+In the construction of the mesh, cells will be tagged based on the location of the cell relative to the surfaces ovelaps.
 
 
 Attributes: 
@@ -753,7 +943,7 @@ R"doc(Transforms a string of 0 and 1 to a binarystring.
 static const char *__doc_SubdomainMap_add_interface =
 R"doc(Adds a tag value for surfaces patches between subdomains defined by a pair of integer the class attribute patches.
 
-:param interface: Tuple of two integers that defines the suface interface between two subdomains.
+:param interface: Tuple of two integers that defines the surface interface between two subdomains.
 :param tag: The tag that the specified surface interface will have in the stored mesh.
 
 )doc";
@@ -798,7 +988,7 @@ R"doc(Returns the content of class attribute patches between subdomains with the
 static const char *__doc_SubdomainMap_print =
 R"doc(Prints subdomain binarystring and patches map.)doc";
 
-static const char *__doc_SubdomainMap_set_number_of_surfaces =
+static const char *__doc_SubdomainMap_set_num_surfaces =
 R"doc(Sets the number of surfaces
 
 The number of surfaces is used to automatically fill binary combinations when adding a sting with asterix. 
@@ -814,7 +1004,7 @@ CGAL is implemented with different kernels, that have different properties, and 
 
 SVMTK Surface class is used to handle operations related to triangualted surfaces in 3D CGAL `Surface_mesh <https://doc.cgal.org/latest/Surface_mesh/index.html>`_. It should be noted that most operations can also be used with CGAL `Polyhedron_3 <https://doc.cgal.org/latest/Polyhedron/index.html>`_.
 
-Notabel CGAL declarations: 
+Notable CGAL declarations: 
 - `Surface_mesh_default_triangulation_3 <https://doc.cgal.org/latest/Surface_mesher/classCGAL_1_1Surface__mesh__default__triangulation__3.html>`_.
 - `Side_of_triangle_mesh <https://doc.cgal.org/latest/Polygon_mesh_processing/classCGAL_1_1Side__of__triangle__mesh.html>`_.
  
@@ -865,6 +1055,9 @@ R"doc(Computes the centeroid point of the surface.
 
 static const char *__doc_Surface_clear = R"doc(Clears mesh.)doc";
 
+static const char *__doc_Surface_copy = R"doc(Creates a deepcopy of the :class:`Surface` object.)doc";
+
+
 static const char *__doc_Surface_clip =
 R"doc(Clips the surface mesh for a given :class:`Plane_3` object.
 
@@ -887,7 +1080,7 @@ R"doc(Clips the surface mesh for a given :class:`Plane_3` object.
 :param vector: :class:`Vector_3` object normal to the plane.
 :param preserve_manifold: - true to preserve manifold.
 
-:Returns: True if succesfull.
+:Returns: True if successful.
 
 )doc";
 
@@ -897,7 +1090,7 @@ R"doc(Clips the surface mesh for a given :class:`Plane_3` object.
 :param plane: :class:`Plane_3` object.
 :param preserve_manifold:  True will preserve manifold.
 
-:Returns: True if succesfull.
+:Returns: True if successful.
 
 
 )doc";
@@ -909,7 +1102,7 @@ R"doc(Clips a surface mesh given another SVMTK Surface object.
 :param preserve_manifold: True to preserve manifold.
 :param invert: True will invert clip plane.
 
-:Returns: True if succesfull.
+:Returns: True if successful.
 
 )doc";
 
@@ -924,9 +1117,41 @@ Creates a circle in a specified plane, and uses this circle to clip the surface 
 :param invert: True will invert clip plane.
 :param preserve_manifold: True will preserve manifold
 
-:Returns: True if succesfull.
+:Returns: True if successful.
 
 )doc";
+
+
+static const char *__doc_Surface_get_perpendicular_cut=
+R"doc(Constructs a circular surface in a given plane, which is intersects the perpendicular to the :func:`mean_curvature_flow.
+
+Computes the nearest point in the mean curvature flow to the point query, and creates a circular surface in the plane that is perpendicular to mean curvature flow.
+
+See:
+`mean_curvature_flow <https://doc.cgal.org/latest/Surface_mesh_skeletonization/index.html>`_.
+
+:param point: :class:`Point_3` query to located the nearest point of the mean curvature flow.
+:param radius: Radius of the circle.
+
+:Returns: :class:`Surface` 
+
+)doc";
+
+static const char *__doc_Surface_get_perpendicular_cut_2=
+R"doc(Constructs a circular surface in a given plane, which is intersects the perpendicular to the :func:`mean_curvature_flow.
+
+Computes where the plane and mean curvature flow intersectes, and creates a circular surface in the plane that is perpendicular to mean curvature flow.
+
+See:
+`mean_curvature_flow <https://doc.cgal.org/latest/Surface_mesh_skeletonization/index.html>`_.
+
+:param plane: :class:`Plane_3`. 
+:param radius: Radius of the circle.
+
+:Returns: :class:`Surface` that can be used to clip the surface.
+
+)doc";
+
 
 static const char *__doc_Surface_collapse_edges =
 R"doc(Combines smaller edges together, so that all edges are larger than the input parameter
@@ -948,6 +1173,28 @@ R"doc(Collapses smaller edges together if these edges can be represented as a lo
 :Returns: The number of collapsed edges.
 
 )doc";
+
+
+static const char *__doc_Surface_remove_degenerate_faces =
+R"doc( Finds and removes degenerate faces in the surface and subsequent hole filling of the surface.
+
+)doc";
+
+static const char *__doc_Surface_make_circle_in_plane_2 =
+R"doc( Finds and removes degenerate faces in the surface.
+
+:param point: the center point of the circle. 
+:param vec  : the normal of the plane. 
+:param radius : the radius of the circle. 
+:param edge_length : the target edge length for the surface construction.  
+
+
+)doc";
+
+
+
+
+
 
 
 static const char *__doc_Surface_convex_hull =
@@ -1016,7 +1263,7 @@ static const char *__doc_Surface_embed =
 R"doc(Moves incrementally vertices in a negative normal direction so that they are inside specified surface.
 
 :param other: :class:`Surface` object.
-:param adjustment:  Multiplier of the smallest connecteded edge of a vertex, which equals the displacement of the vertices for each iteration. 
+:param adjustment:  Multiplier of the smallest connected edge of a vertex, which equals the displacement of the vertices for each iteration. 
 :param smoothing: Laplacian smoothing factor for each increment, see :func:`laplacian_smoothing`.
 :param max_iter: The maximum number of iterations for a while loop.
 
@@ -1030,7 +1277,7 @@ R"doc(Moves incrementally vertices in a positiv normal direction so that they ar
 :Precondition: The surfaces must not intersect.
 
 :param other: :class:`Surface` object.
-:param adjustment:  Multiplier of the smallest connecteded edge of a vertex, which equals the displacement of the vertices for each iteration. 
+:param adjustment:  Multiplier of the smallest connected edge of a vertex, which equals the displacement of the vertices for each iteration. 
 :param smoothing: Laplacian smoothing factor for each increment, see :func:`laplacian_smoothing`.
 :param max_iter: The maximum number of iterations for a while loop.
 
@@ -1044,7 +1291,7 @@ R"doc(Moves incrementally vertices in a negative normal direction so that they a
 
 
 :param other: :class:`Surface` object.
-:param adjustment: Multiplier of the smallest connecteded edge of a vertex, which equals the displacement of the vertices for each iteration. 
+:param adjustment: Multiplier of the smallest connected edge of a vertex, which equals the displacement of the vertices for each iteration. 
 :param smoothing: Laplacian smoothing factor for each increment, see :func:`laplacian_smoothing`.
 :param max_iter: The maximum number of iterations for a while loop.
 
@@ -1052,6 +1299,38 @@ R"doc(Moves incrementally vertices in a negative normal direction so that they a
 
 
 )doc";
+
+static const char *__doc_Surface_set_proximity_ratio =
+R"doc(Sets the proximity ratio. 
+
+Note: If the distance between two vertices exceeds the proximity ratio times edge length,
+      then the vertices are considered close. Value should be between 1 and 2. 
+
+:param proximity_ratio: used to determine close vertice:  
+
+)doc";
+
+static const char *__doc_Surface_set_smoothing_reduction =
+R"doc( Sets the smoothing_reduction. 
+
+Note: When the displacment is lower than the lower displacment bound, 
+      then the smoothing reduction is used to decrease the smoothing.  
+      
+:param smooth_reduction: used to decrease smoothing if incremental displacement is lower than the bound. 
+
+
+)doc";
+static const char *__doc_Surface_set_displacment_ratio =
+R"doc(Sets the displacement ratio. 
+
+Note: The displacment ratio times average egde length determines the lower displacement bound 
+
+:param displacment_ratio: 
+
+)doc";
+
+
+
 
 static const char *__doc_Surface_fill_holes =
 R"doc(Finds and fills holes in surface mesh. 
@@ -1109,7 +1388,7 @@ R"doc(Removes self intersection from surface. This function uses experimental CG
 :param volume_threshold: Ratio value of the volume such that only connected components whose volume is larger than this value are kept (only applies to closed connected components)
 :param cap_thresold: Anlge between 160 180 degrees CGAL explanation->the cosine of a minimum angle such that if `f` has an angle greater than this bound, it is a cap. The threshold is in range `[-1 0]` and corresponds to an angle between `90` and `180` degrees.
 :param needle_threshold: Long edge divided by the short edge of a cell.
-:param collapse_threshold: Ratio of the average edge length. FIXME
+:param collapse_threshold: Ratio of the average edge length.
 
 :Returns: True if complete and number of remaining self-intersections.
 
@@ -1183,13 +1462,22 @@ See also:
 
 )doc";
 
+static const char *__doc_Surface_connected_components =
+R"doc(Creates :class:`Surface` object for each connected component.
+
+
+:Returns: List of :class:`Surface` object for each connected component 
+
+)doc";
+
+
 static const char *__doc_Surface_make_circle_in_plane =
 R"doc(Constructs a circle in the a given surface plane.
 
 
 :param px: x-coordinate of circle center in plane.  
 :param py: y-coordinate of circle center in plane. 
-:param pz: z-coordinate ofcircle center in plane.  
+:param pz: z-coordinate of circle center in plane.  
 :param vx: x-coordinate of the plane normal vector.
 :param vy: y-coordinate of the plane normal vector.
 :param vz: z-coordinate of the plane normal vector.
@@ -1393,7 +1681,7 @@ R"doc(Moves incrementally vertices that are close to another surface in opposite
 
 :Parameters:
 :param other: :class:`Surface` object.
-:param adjustment:  Multiplier of the smallest connecteded edge of a vertex, which equals the displacement of the vertices for each iteration. 
+:param adjustment:  Multiplier of the smallest connected edge of a vertex, which equals the displacement of the vertices for each iteration. 
 :param smoothing: Laplacian smoothing factor for each increment, see :func:`laplacian_smoothing`.
 :param max_iter: The maximum number of iterations. 
 
@@ -1409,7 +1697,7 @@ R"doc(Incrementally separates close non-connected surface mesh vertices.
 
 Separates close non-connected surface mesh vertices so that the closest surface mesh vertex is one that is connected, i.e. shares a edge.
 
-:param adjustment:  Multiplier of the smallest connecteded edge of a vertex, which equals the displacement of the vertices for each iteration. 
+:param adjustment:  Multiplier of the smallest connected edge of a vertex, which equals the displacement of the vertices for each iteration. 
 :param max_iter: the maximum number of iterations.
 
 :Returns: True if completed and number of remaining vertices to move.
@@ -1419,7 +1707,7 @@ Separates close non-connected surface mesh vertices so that the closest surface 
 static const char *__doc_Surface_separate_narrow_gaps =
 R"doc(Separates unconnected surface mesh vertices that are close in a positive normal direction by moving vertices in a negative surface normal direction, i.e. contraction.
 
-:param adjustment: Multiplier of the smallest connecteded edge of a vertex, which equals the displacement of the vertices for each iteration. 
+:param adjustment: Multiplier of the smallest connected edge of a vertex, which equals the displacement of the vertices for each iteration. 
 
 :Returns: True if completed and number of remaining vertices to move.
 
@@ -1581,6 +1869,111 @@ R"doc(Creates a :class`Vector_2` object as difference between two points.
 
 )doc";
 
+
+static const char *__doc_convex_hull =
+R"doc(Creates the convex hull of the surface points and return :class:`Surface`. 
+
+See `CGAL convex hull <https://doc.cgal.org/latest/Convex_hull_3/index.html>`_.
+
+:Return: :class:`Surface_3`
+)doc";
+
+static const char *__doc_smooth_polylines =
+R"doc( Smooth polyline in 2D, with the endpoints remain fixed.
+
+Auxillary function to smooth a list of :class:`Point_2`. 
+
+:param polyline: a list of :class:`Point_2`.
+:param beta: the laplacian smoothin factor. 
+
+:Return: smoothed list of :class:`Point_2`.
+)doc";
+
+static const char *__doc_smooth_polylines_2 =
+R"doc(Smooth polyline in 3D, with the endpoints remain fixed.
+
+Auxillary function to smooth a list of :class:`Point_3`. 
+
+:param polyline: a list of :class:`Point_3`.
+:param beta: the laplacian smoothin factor. 
+
+:Return: smoothed list of :class:`Point_3`.
+
+)doc";
+
+static const char *__doc_embed =
+R"doc(Embeds the primary surface inside the secondary, and subsequently separates the surfaces. 
+
+The function will embed the primary surface into the secondary by incrementally shrink the surface until all 
+surface points are inside the secondary surface. Then, the surfaces are separate until the closest point for all 
+points in the primary surfaces are connected with an edge, i.e. not a point in the secondary surface. 
+This function make use of the function :func:`Surface::embed` and :func:`Surface::separate`.
+
+
+:param surf1: the primary :class:`Surface`. 
+:param surf2: the secondary :class:`Surface`. 
+:param adjustment: edge factor of the displacment for each iteration.  
+:param smoothing: smoothing factor of the displacment for each iteration.  
+:param max_iter: maximum number of iterations.  
+
+:Returns: True if successful.
+
+)doc";
+
+static const char *__doc_expose =
+R"doc(Disjoins two surfaces, and subsequently separates the surfaces. 
+
+The function will disjoin two surfaces by incrementally shrink the primary surfaces until all 
+surface points are outside the secondary surface. Then, the surfaces are separate until the closest 
+point in the primary surfaces is connected with an edge, i.e. not a point in the secondary surface. 
+This function make use of the function :func:`Surface::expose` and :func:`Surface::separate`
+
+
+:param surf1: the primary :class:`Surface`. 
+:param surf2: the secondary :class:`Surface`. 
+:param adjustment: edge factor of the displacment for each iteration.  
+:param smoothing: smoothing factor of the displacment for each iteration.  
+:param max_iter: maximum number of iterations.  
+
+:Returns: True if successful.
+
+)doc";
+
+
+static const char *__doc_enclose =
+R"doc(Enclose the primary surface inside the secondary, and subsequently separates the surfaces. 
+
+The function will cause the primary surface to enclose the secondary by incrementally expanding the surface until all 
+surface points are outside the secondary surface. Then, the surfaces are separate until the closest point for all 
+points in the primary surfaces are connected with an edge, i.e. not a point in the secondary surface.  
+This function make use of the function :func:`Surface::embed` and :func:`Surface::separate`.
+
+
+:param surf1: the primary :class:`Surface`. 
+:param surf2: the secondary :class:`Surface`. 
+:param adjustment: edge factor of the displacment for each iteration.  
+:param smoothing: smoothing factor of the displacment for each iteration.  
+:param max_iter: maximum number of iterations.  
+
+:Returns: True if successful.
+
+)doc";
+
+static const char *__doc_inside_polygon =
+R"doc( Checks if a point in 2D is inside a polygon.
+
+Checks if a :class:`Point_2` is inside a closed list of :class:`Point_2`
+
+:param polygon: a closed loop of :class:`Point_2`
+:param query: :class:`Point_2` to be checked 
+
+:Return: true if point is inside polygon otherwise false.
+
+)doc";
+
+
+
+
 static const char *__doc_separate_close_surfaces =
 R"doc(Separates two close surfaces outside a third surface. 
 
@@ -1620,7 +2013,7 @@ apart.
 
 :param surf1: :class:`Surface` object.
 :param surf2: :class:`Surface` object.
-:param edge_movement: Multiplier of the smallest connecteded edge of a vertex, which equals the displacement of the vertices for each iteration. 
+:param edge_movement: Multiplier of the smallest connected edge of a vertex, which equals the displacement of the vertices for each iteration. 
 :param smoothing: Laplacian smoothing factor for each increment, see :func:`laplacian_smoothing`.
 :param max_iter: The maximum number of iterations. 
 
@@ -1631,12 +2024,12 @@ apart.
 static const char *__doc_separate_surface_overlapp_2 =
 R"doc(Separates two overlapping surfaces outside a third surface.
 
-Separates the points of two surfaces that are outside a third surface iteratively by moving the vertices in the negative normal direction that is determined by the multiplication of a negative value and the shortest edge length of each vertex. This continues until the closest vertex is adjacent/connecteded. The centeroids of the surfaces should be sufficiently apart. 
+Separates the points of two surfaces that are outside a third surface iteratively by moving the vertices in the negative normal direction that is determined by the multiplication of a negative value and the shortest edge length of each vertex. This continues until the closest vertex is adjacent/connected. The centeroids of the surfaces should be sufficiently apart. 
 
 :param surf1: :class:`Surface` object.
 :param surf2: :class:`Surface` object.
 :param other: :class:`Surface` object, the algorithm is not applied to vertices inside this surface.
-:param edge_movement: Multiplier of the smallest connecteded edge of a vertex, that gives the displacement of the vertices for each iteration. 
+:param edge_movement: Multiplier of the smallest connected edge of a vertex, that gives the displacement of the vertices for each iteration. 
 :param smoothing: Laplacian smoothing factor for each increment, see :func:`laplacian_smoothing`.
 :param max_iter: The maximum number of iterations.
  
@@ -1647,12 +2040,12 @@ Separates the points of two surfaces that are outside a third surface iterativel
 static const char *__doc_union_partially_overlapping_surfaces =
 R"doc(Takes surface union of surfaces that partially overlapp each other.
 
-Requires that the surfaces overlap. First, surface vertices inside the other surface are found. Then adjacent vertices within a threshold angle of the vertex normal are added to the vertex vector. The points corresponding to the vertex vector are iteratively moved in the vertex normal direction until there is suffient overlapp between surfaces. 
+Requires that the surfaces overlap. First, surface vertices inside the other surface are found. Then adjacent vertices within a threshold angle of the vertex normal are added to the vertex vector. The points corresponding to the vertex vector are iteratively moved in the vertex normal direction until there is sufficent overlapp between surfaces. 
 
 :param surf1: :class:`Surface` object. 
 :param surf2: :class:`Surface` object.
 :param angle_in_degree: Threshold angle for vertex normal clustering, i.e. vertices with normal more than the threshold angle is not included in cluster.
-:param adjustment: Multiplier of the smallest connecteded edge of a vertex, which equals the displacement of the vertices for each iteration. 
+:param adjustment: Multiplier of the smallest connected edge of a vertex, which equals the displacement of the vertices for each iteration. 
 :param smoothing: Laplacian smoothing factor for each increment, see :func:`laplacian_smoothing`.
 :param max_iter: The maximum number of iterations. 
 

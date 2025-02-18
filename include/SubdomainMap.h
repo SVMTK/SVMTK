@@ -160,7 +160,7 @@ class SubdomainMap :virtual public AbstractMap
          * 
          * @param number_of_surfaces integer that equal the number of surfaces.
          */
-        void set_number_of_surfaces(int number_of_surfaces) 
+        void set_num_surfaces(int number_of_surfaces) 
         {
             if (number_of_surfaces<1)
                throw InvalidArgumentError("Invalid number of surfaces"); 
@@ -198,6 +198,18 @@ class SubdomainMap :virtual public AbstractMap
              }
         }
         
+        void fill_zero(std::string istring, int pos, int tag)
+        {
+             std::vector<std::string>  strings; 
+             std::string dummy;
+             int num_zeros = this->num_surfaces - static_cast<int>(istring.length());  
+             std::string i(num_zeros, '0');
+             if(pos==0)
+                this->add(i+istring,tag); 
+             else
+                this->add(istring+i,tag);
+        }
+
         // DocString: add  
         /**
          * @brief Transforms a string of 0 and 1 to a binarystring 
@@ -209,6 +221,7 @@ class SubdomainMap :virtual public AbstractMap
          */
         void add(std::string string, int subdomain)
         {
+        
            if ( string.find("*") !=std::string::npos)
            {
               if (this->num_surfaces==0)
@@ -220,6 +233,17 @@ class SubdomainMap :virtual public AbstractMap
                 fill(string,pos,subdomain); 
               else 
                 throw InvalidArgumentError("Bitstring exceeds number of surfaces");                   
+           }
+           else if ( string.find("-") !=std::string::npos)
+           {
+                if (this->num_surfaces==0)
+                    throw InvalidArgumentError("Use of dash require that number of surfaces to set.");      
+                int pos = static_cast<int>(string.find("-"));
+                string.erase(pos,1);
+                if(static_cast<int>( string.length()) < this->num_surfaces)                                            
+                   fill_zero(string,pos,subdomain); 
+                else 
+                   throw InvalidArgumentError("Bitstring exceeds number of surfaces");                     
            }
            else 
            {
@@ -276,7 +300,7 @@ class SubdomainMap :virtual public AbstractMap
               os << "Subdomain: " << dummy << " " << it->second << " " << std::endl;
            }
            for( std::map<std::pair<int,int>,int>::iterator it=patches.begin();it!=patches.end();++it )
-              os << "Patches: " << it->first.first << " " << it->first.second << " " << it->second << " " << std::endl;
+              os << "Patches: " << "("<< it->first.second << "," << it->first.first << ") " << it->second << " " << std::endl;
               
            return os.str();  
         }
@@ -316,7 +340,6 @@ class SubdomainMap :virtual public AbstractMap
         /**
          * @brief Adds a tag value for surfaces patches between subdomains defined by a pair of integer 
          * the class member variable patches 
-         * FIXME WHy? 
          * @param interface a integer pair that represents the suface interface between two subdomains 
          * @param tag the value used to represent the surface interface in the save file. 
          */

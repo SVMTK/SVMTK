@@ -16,7 +16,6 @@
 // along with SVM-Tk.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef __Slice_H
 
-
 #define __Slice_H
 
 /* --- Includes -- */
@@ -54,13 +53,12 @@
 #include <CGAL/IO/write_VTU.h>
 #include <CGAL/IO/Triangulation_off_ostream_2.h>
 
-#include <CGAL/Polygon_2_algorithms.h>
 #include <CGAL/Polygon_2.h>
-#include <CGAL/Bbox_2.h>
-
 #include <CGAL/Polygon_2_algorithms.h>
-#include <CGAL/lloyd_optimize_mesh_2.h>
-#define PI 3.14159265
+
+#include <CGAL/Bbox_2.h>
+#include <CGAL/convex_hull_2.h>
+
 //#include <CGAL/Arr_segment_traits_2.h>
 //#include <CGAL/intersections.h>
 /**
@@ -75,7 +73,7 @@ double length_polyline( InputIterator begin , InputIterator end)
 {
   double length = 0.0;
   for(; begin != end; ++begin)
-     length += static_cast<double>( CGAL::sqrt(CGAL::squared_distance(*begin, *(begin+1))));        
+     length += CGAL::to_double( CGAL::sqrt(CGAL::squared_distance(*begin, *(begin+1))));        
   return length; 
 } 
 
@@ -129,7 +127,6 @@ std::vector<Point_d> smooth_polyline( std::vector<Point_d>& polyline, double bet
          smoothed.push_back(p0);
     }
     smoothed.push_back(polyline.back() );
- 
     return smoothed; 
 } 
 
@@ -160,7 +157,7 @@ double area_of_facet_vector( InputIterator begin , InputIterator end)
 {
   double area = 0.0;
   for(; begin != end; ++begin)
-      area += static_cast<double>( CGAL::area(begin->vertex(0)->point(),
+      area += CGAL::to_double( CGAL::area(begin->vertex(0)->point(),
                                               begin->vertex(1)->point(),
                                               begin->vertex(2)->point()));        
   
@@ -236,19 +233,17 @@ class Slice
     public :
        typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
  
-       typedef Kernel::Plane_3          Plane_3;
-       typedef Kernel::Point_2          Point_2;
-       typedef Kernel::Point_3          Point_3;
-       typedef Kernel::Vector_3         Vector_3;
-       typedef Kernel::Segment_2        Segment_2;       
-       typedef Kernel::Intersect_2      Intersect_2;
+       typedef Kernel::Plane_3      Plane_3;
+       typedef Kernel::Point_2      Point_2;
+       typedef Kernel::Point_3      Point_3;
+       typedef Kernel::Vector_3     Vector_3;
+       typedef Kernel::Segment_2    Segment_2;       
+       typedef Kernel::Intersect_2  Intersect_2;
+       typedef Kernel::FT           FT; 
+       
        typedef CGAL::Polygon_2<Kernel>  Polygon_2;
-       typedef Kernel::FT FT; 
-        // DelaunayMeshVertexBase_2` and `DelaunayMeshFaceBase_2`
-       //typedef CGAL::Delaunay_mesh_vertex_base_2<Kernel>                Vbk;
-       //typedef CGAL::Delaunay_mesh_face_base_2<Kernel>                  Fbk;
-       typedef CGAL::Triangulation_vertex_base_with_info_2<int,Kernel>    Vb;
-       //typedef CGAL::Triangulation_vertex_base_2<int,Kernel>    Vb;
+       
+       typedef CGAL::Polyline_simplification_2::Vertex_base_2<Kernel> Vb;
        
        typedef CGAL::Delaunay_mesh_vertex_base_2<Kernel,Vb> Vbk;
               
@@ -257,15 +252,15 @@ class Slice
 
        typedef CGAL::Delaunay_mesh_face_base_2<Kernel,C_fb_w_i> Fb;
     
-
        typedef CGAL::Triangulation_data_structure_2<Vbk, Fb> Tds;
 
-       typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, Tds,CGAL::Exact_predicates_tag> CDT1; //CGAL:No_constraint_intersection_requiring_constructions_tag
+       typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, Tds, CGAL::Exact_predicates_tag> CDT1; 
        
        typedef CGAL::Constrained_triangulation_plus_2<CDT1> CDT;
        
        typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
-       typedef CGAL::Delaunay_mesher_2<CDT, Criteria> Mesher; // TODO test
+
+       typedef CGAL::Delaunay_mesher_2<CDT, Criteria> Mesher; 
 
        typedef CGAL::Polyline_simplification_2::Stop_below_count_ratio_threshold Stop;
        typedef CGAL::Polyline_simplification_2::Squared_distance_cost Cost;
@@ -279,7 +274,9 @@ class Slice
        
        typedef std::vector<Point_2>      Polyline_2;
        typedef std::vector<Polyline_2>   Polylines_2;   
-       typedef std::vector<int>          Face;
+      
+       typedef std::array<int,3> Face;
+ 
 
       /** 
        *  stuct 
@@ -293,7 +290,7 @@ class Slice
        
      /** 
       *  stuct 
-      *  @brief Used to sort polylines based on the area FIXME 
+      *  @brief Used to sort polylines based on the area.
       */
       struct sort_vectors_by_area {
                   template<typename T>
@@ -326,7 +323,7 @@ class Slice
       /** 
       * @brief Create an empty SVMTK Slice object.
       */
-      Slice(){}
+      Slice(): plane(0,0,1,0) {}
       
      // DocString: Slice
       /** 
@@ -411,7 +408,7 @@ class Slice
       * @brief Returns the number of subdomains. 
       * @returns the number of subdomains
       */  
-      int number_of_subdomains()
+      int num_subdomains()
       {   
           return get_subdomains().size();
       } 
@@ -421,7 +418,7 @@ class Slice
       * @brief Returns the number of constraints 
       * @returns the number of constraints 
       */  
-      int number_of_constraints()
+      int num_constraints()
       {   
          return constraints.size();
       }
@@ -431,35 +428,90 @@ class Slice
       * @brief Returns the number of faces 
       * @return the number of faces, i.e triangles.
       */  
-      int  number_of_faces()
+      int  num_cells()
       {   
          return cdt.number_of_faces();
       } 
      
-     // DocString: get_edges
-     /** 
-      * @brief Returns the edges with the edge index.
-      * @return map of edges and edge index.
-      */  
-      std::map<Edge,int>& get_edges()
-      {  
-          return this->edges;
-      }    
-      
      //DocString: get_points 
      /**
       * @brief Returns all points in the triangulation.
       * @return vector of points.
       */
-      std::vector<Point_2> get_points()
+      std::vector< std::array<double,2 > > get_points()
       {
-         std::vector<Point_2> out; 
+         std::vector< std::array<double,2> > out; 
          for(CDT::Point_iterator it = cdt.points_begin();  it!=cdt.points_end(); ++it)
-            out.push_back(*it);
-         
+         {
+            std::array<double,2> point_2;
+            point_2[0] = it->x();
+            point_2[1] = it->y();
+            out.push_back(point_2); 
+            
+         }
          return out;
       }
 
+     /**
+      * @brief Returrns the facets in the triangulation.
+      * @return vector of facets.
+      */          
+     std::vector< std::array<int,2>> get_facets(  bool exclude_unmarked)
+     {
+         boost::unordered_map<Vertex_handle, int> V;
+         int inum = 1;
+         std::vector< std::array<int,2>> out_edges;
+         
+         for(Vertex_iterator vit=cdt.vertices_begin(); vit!=cdt.vertices_end(); ++vit)
+            V[vit] = inum++;
+     
+         std::map<std::pair<Vertex_handle,Vertex_handle>,int> set_edges; 
+         for(Face_iterator fit=cdt.finite_faces_begin(); fit!=cdt.finite_faces_end(); ++fit) 
+         {
+            for(int i =0; i<3; ++i)
+            {  
+               Edge eit(fit,i);
+               
+               
+               Vertex_handle vh1 = fit->vertex(cdt.ccw(i));
+               Vertex_handle vh2 = fit->vertex(cdt.cw(i));
+               if( V[vh1]>V[vh2] ) // Handles doubling of edges
+                  set_edges[std::pair<Vertex_handle,Vertex_handle>(vh1,vh2)]=this->edges[eit];
+               else
+                  set_edges[std::pair<Vertex_handle,Vertex_handle>(vh2,vh1)]=this->edges[eit];  
+            }
+         }
+         
+         for(auto eit : set_edges)      
+         {    
+             std::array<int,2> edge;
+             if ( exclude_unmarked and eit.second == 0) 
+                  continue;
+
+             edge[0] = V[eit.first.first]; 
+             edge[1] = V[eit.first.second];      
+             out_edges.push_back(edge);
+         }   
+         return out_edges;     
+     }   
+     
+     /**
+      * @brief Returns the tag for each facet in the triangulation.
+      * @param exclude_unmarked excludes unmarked facets from the ouput.
+      * @return vector of facet tags.
+      */     
+     std::vector<int> get_facet_tags(  bool exclude_unmarked)
+     {
+         std::vector<int> edge_tags;
+         for(auto eit : edges)      
+         {    
+             if ( exclude_unmarked and eit.second == 0) 
+                  continue;
+             edge_tags.push_back(eit.second);
+         }             
+         return edge_tags;     
+     }       
+     
      //DocString: get_facet_points 
      /**
       * @brief Returns the mid points of each facet in the triangulation.
@@ -515,40 +567,35 @@ class Slice
           double r = min_sphere.get_bounding_sphere_radius();
           double edge_size = r/mesh_resolution;
           std::cout<< "Edge size " << edge_size << std::endl;
-          
-          //remove_small_polygons( 10*edge_size ); -> FIXME 
-          
+
           set_constraints(); 
-          
+
           Mesher mesher(cdt);    
           mesher.set_criteria(Criteria(0.125, edge_size));
 
-          std::cout << "Start  meshing."  << std::endl;
+          std::cout << "Start  meshing. " << std::endl;
           mesher.refine_mesh(); 	
-          //CGAL::lloyd_optimize_mesh_2(cdt,CGAL::parameters::number_of_iterations(10));
           std::cout << "Done  meshing."   << std::endl;
-          
-          
           std::map<Vertex_handle,bool> vertex_map;
-          add_constraint_tags( ); 
-
+          
+          add_constraint_tags(); 
+          
+          // Remove unbounded constraints 
           for(Vertex_iterator vit=cdt.vertices_begin(); vit!=cdt.vertices_end(); ++vit)       
           {
             if ( !cdt.is_infinite(vit) )
                  vertex_map[vit] = false;  
           }
-
           for(CDT::Face_iterator fit=cdt.faces_begin(); fit!=cdt.faces_end(); ++fit) // finite_faces_begin()
           {
              fit->info()=0;
              for(int i =0; i<3; ++i)
              {
-                fit->vertex(i)->info()=0;
+                //fit->vertex(i)->info()=0;
                 if ( fit->is_in_domain() ) 
                     vertex_map[fit->vertex(i)] = true;
              }  
           }
-          
           for(std::map<Vertex_handle, bool>::const_iterator it = vertex_map.begin();it != vertex_map.end(); ++it)   
           {
 
@@ -558,6 +605,27 @@ class Slice
                     cdt.remove_incident_constraints(it->first); 
               }
           }
+       
+          bool _remove;
+          for( auto cid = this->cids.begin() ; cid != this->cids.end(); ) 
+          {    
+            _remove=false;
+            for( CDT::Vertices_in_constraint_iterator it1  = cdt.vertices_in_constraint_begin(*cid); 
+                                                      it1 != cdt.vertices_in_constraint_end(*cid); ++it1 ) 
+            {
+                if( !vertex_map[*it1] )
+                {
+                     _remove =true;
+                     break;
+                }
+            
+            }    
+            if( _remove)
+              cid = this->cids.erase(cid);
+            else 
+              cid++;
+          }
+          
           cdt.remove_points_without_corresponding_vertex();
           remove_unbounded_structures();
       }
@@ -572,7 +640,7 @@ class Slice
           cdt.clear();
           set_constraints(); 
  
-          double B = 0.5/std::sin( min_angle*PI/180.0) ;
+          double B = 0.5/std::sin( min_angle*CGAL_PI/180.0) ;
 
           Mesher mesher(cdt);    
           mesher.set_criteria(Criteria(B, edge_size));
@@ -585,27 +653,26 @@ class Slice
              if( fit->is_in_domain() )  
                  fit->info()=0;
              else 
-                 fit->info()=-1; // FIXME    
-             for(int i =0; i<3; ++i)
-                fit->vertex(i)->info()=0;
+                 fit->info()=-1; 
           }
       }
 
       // DocString: simplify
      /** 
       * @brief Simplify constraints to a specific point density.
-      * @param point_density the number of points pr. average length unit 
+      * @param threshold determines the stop criteria. 
+      * @note  The stop criteria is when the ratio between points and initial points 
+      *        goes below the threshold value, i.e. threshold =0.5 will half the number of points.
       */
       void simplify(const double threshold=1.0)
       {       
           Polylines_2 result;
-          std::cout<< "Start" << std::endl; 
-          double accurate;
+          double stp_crit;
           for(auto c = this->constraints.begin(); c !=this->constraints.end(); ++c) 
           {   
              Polyline_2 temp; 
-             accurate = std::max( threshold, 2./c->size() ) ;
-             CGAL::Polyline_simplification_2::simplify(c->begin(), c->end(), Cost() , Stop(accurate), std::back_inserter(temp));
+             stp_crit = std::max( threshold, 2./c->size() ) ;
+             CGAL::Polyline_simplification_2::simplify(c->begin(), c->end(), Cost() , Stop(stp_crit), std::back_inserter(temp));
              result.push_back(temp); 
           }
           this->constraints.clear();
@@ -620,21 +687,23 @@ class Slice
       int connected_components() 
       {
          assert_non_empty_mesh();
-         std::vector<Face_handle> queue;
+         std::stack<Face_handle> queue;
          std::map<Face_handle,bool> handled; 
          int num_cc=0;
          for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
             handled[fit] = false; 
+         
          Face_handle fiq,fin;
          for(Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
          {
             if(handled[fit]) 
               continue;
-            queue.push_back(fit);     
+            
+            queue.push(fit);
             while(!queue.empty())
             {
-               fiq = queue.back(); 
-               queue.pop_back();         
+               fiq = queue.top();
+               queue.pop();        
                if(handled[fiq]) 
                  continue;  
                handled[fiq] = true;
@@ -643,7 +712,7 @@ class Slice
                   fin = fiq->neighbor(i); 
                   if(handled.find(fin) == handled.end()) 
                     continue;       
-                  queue.push_back(fin);
+                  queue.push(fin);
                }
             }
             num_cc++;      
@@ -658,7 +727,8 @@ class Slice
       void keep_largest_connected_component() 
       {
           assert_non_empty_mesh();
-          std::vector<Face_handle> queue;
+          std::stack<Face_handle> queue;
+          
           std::map<Face_handle,bool> handled; 
           std::vector<std::vector<Face_handle>> connected_components;
           int num_cc=0;
@@ -670,11 +740,11 @@ class Slice
              std::vector<Face_handle> connnected_component;
              if(handled[fit]) 
                continue;
-             queue.push_back(fit);       
+             queue.push(fit);
              while(!queue.empty())
              {
-                fiq = queue.back(); 
-                queue.pop_back();         
+                fiq = queue.top();
+                queue.pop();
                 if(handled[fiq]) 
                   continue;  
                 handled[fiq] = true;
@@ -684,7 +754,7 @@ class Slice
                    fin = fiq->neighbor(i); 
                    if(handled.find(fin) == handled.end()) 
                      continue;     
-                   queue.push_back(fin);
+                   queue.push(fin);
                 }
              }
              num_cc++;
@@ -715,63 +785,195 @@ class Slice
      /** 
       * @brief Adds polylines to constraints.
       * @param polylines vector of vector of points in 2D.
-
       */
       void add_constraints(Polylines_2 &polylines) 
       {  
          for( auto polyline : polylines) 
               add_constraint(polyline); 
       }
+ 
+     /**
+      *  @brief Removes edges with no length, i.e. if in successive order two points are the same. 
+      *  @param polyline a vector of SVMTK Point_2 objects.
+      *  @returns repaired polyline  
+      */ 
+      Polyline_2 remove_degenerate_edges(Polyline_2 &polyline) 
+      {
+         Polyline_2 repaired;
+         for( auto pit1 = polyline.begin(), pit2 = std::next(polyline.begin()); pit2 != polyline.end(); pit1++, pit2++ )
+         {
+              if( *pit1 == *pit2) 
+                 continue;     
+              repaired.push_back(*pit1);
+         }    
+         repaired.push_back(polyline.back());
+         return repaired;     
+      }
            
      // DocString: add_connstraint
      /** 
       * @brief Adds polyline to constraints .
+      * @note remove edges that have zero length.
       * @param polyline vector of points in 2D.
       */
       void add_constraint(Polyline_2 &polyline) 
       {  
          std::vector<Point_2> update;
          Polylines_2 updates;
+         
+         Polyline_2 repaired = remove_degenerate_edges(polyline);
          if( !this->constraints.empty() )
-         {  
+         {
             // Update constraints 
             for( auto line : this->constraints )
-                updates.push_back(add_intersecting_point(line, polyline));       
-                                
+            {
+                Polyline_2 nline = add_intersecting_point(line, repaired);
+                nline =  remove_degenerate_edges(nline);
+                updates.push_back(nline);       
+            }
             // Update polyline
-            Polyline_2 temp = polyline;  
+            Polyline_2 temp = repaired;  
             for( auto line : this->constraints )
                  temp = add_intersecting_point(temp, line); 
+            
+            updates.push_back(remove_degenerate_edges(temp));      
 
-            updates.push_back(temp);      
-                  
             min_sphere.add_polylines(updates);
             this->constraints.clear();
             this->constraints = updates;
- 
          }            
          else 
          {
-            min_sphere.add_polyline(polyline);
-            this->constraints.push_back(polyline);
+            min_sphere.add_polyline(repaired);
+            this->constraints.push_back(repaired);
          }
- 
       }
       
-      /**
-         TODO 
-         @brief 
-         
-         @note
-               
-         @param area_threshold lower bound of polygon area.
-         @return none                 
-      
+     /**
+      * @brief Counts the number of ocurrences of points in constraints.
+      * @returns a map with the points and number of ocurrences.
       */
+      std::map<Point_2,int> point_count() 
+      {
+         std::map<Point_2,int> count; 
+         for( auto constraint : this->constraints )  
+         {
+            for( auto pit : constraint) 
+            {
+                if( count.find(pit) == count.end() )
+                    count[pit]=1;
+                else 
+                    count[pit]++;
+            }
+         }
+         return count;
+      }
+      
+     /**
+      * @brief Splits all constraints at duplicate points, i.e. points shared by multiple constraints.
+      *        
+      */         
+      void bifurcation_split() 
+      {
+         auto countmap = point_count(); 
+         std::vector<std::vector<Point_2>> updated;
+         
+         for( auto constraint : this->constraints )  
+         {
+             if( constraint.back()==constraint.front() ) 
+                 updated.push_back(constraint);
+             else 
+             {    
+                std::vector<Point_2> temp;
+                //for( auto pit=  constraint.begin() ; pit!= std::prev(constraint.end()); pit++  )
+                for( auto pit : constraint )
+                {  
+
+                   if ( pit == constraint.front() ) 
+                   {    
+                       temp.clear();
+                       temp.push_back(pit);
+                   }
+                   else if ( pit == constraint.back() )
+                   {
+                       temp.push_back(pit);
+                       updated.push_back(temp);
+                   }
+                   else 
+                   {
+                       if ( countmap[pit] > 1 )
+                       {
+                          temp.push_back(pit);
+                          updated.push_back(temp);
+                          temp.clear();
+                          temp.push_back(pit); 
+
+                       }  
+                       else    
+                          temp.push_back(pit);
+                   }
+                   
+               }
+
+             }
+         }
+         this->constraints= updated;
+      }
+ 
+      /**
+      * @brief Removes any constraints that are inside polygons.
+      */      
+      void remove_constraints( std::vector<std::vector<Point_2>> polygons)
+      {
+         for( auto polygon : polygons) 
+         {
+             remove_constraints_in_polygon(polygon);
+         }
+      } 
+
+     /**
+      * @brief Removes any constraints that are inside a polygon.
+      */    
+      void remove_constraints_in_polygon(std::vector<Point_2> polygon)
+      {
+           if( polygon.front() != polygon.back() ) 
+               return; 
+
+           Polylines_2 update; 
+           int count,size; 
+           for( auto pl = this->constraints.begin(); pl!= this->constraints.end();  )  
+           {
+               if( pl->front() == pl->back())
+                   pl++;
+               else 
+               {
+                  count = 0; 
+                  size = 0;
+                  for( auto pt = pl->begin(); pt  != pl->end(); pt++)  
+                  {
+                     size++;
+                     if( CGAL::ON_BOUNDED_SIDE == CGAL::bounded_side_2(polygon.begin(), polygon.end(), *pt ) or 
+                         CGAL::ON_BOUNDARY == CGAL::bounded_side_2(polygon.begin(), polygon.end(), *pt ) ) 
+                         count++;       
+                  }
+                  if( count > 1 and size <= 2 + count )  // 
+                     pl = this->constraints.erase(pl);
+                  else
+                     pl++; 
+               } 
+           }   
+      }
+ 
+      /**
+       *  @brief Removes small polygons that are lower than an area threshold
+       *  @param area_threshold lower bound of polygon area.
+       *  @return none                 
+       */
       void remove_small_polygons(double area_threshold=10.)
       {
            for( auto cit = constraints.begin();  cit != constraints.end(); ) 
            {
+               // polygons are a closed loop of points 
                if( cit->back() == cit->front()  )
                {
                    auto polygon = Polygon_2(cit->begin(),cit->end());
@@ -787,11 +989,11 @@ class Slice
       }
       
 
-     /**
-     TODO
-       @brief 
-       @param 
-       @return 
+    /**
+     * @brief Adds an intersecting points when a polyline overlaps with an added constraint 
+     * @param constraint
+     * @param polyline 
+     * @return polyline with added intersecting point, updates constraints.
      */
      std::vector<Point_2> add_intersecting_point(std::vector<Point_2> constraint, std::vector<Point_2> polyline )
      {
@@ -804,7 +1006,7 @@ class Slice
                 auto res = find_intersection(*pit1,*pit2,*cit1,*cit2);
                 if( res.first )
                 {
-                   if( update.front() != res.second ) 
+                   if( update.back() != res.second ) 
                        update.push_back(res.second); 
                 } 
             }
@@ -814,11 +1016,13 @@ class Slice
          return update;
      }  
      
-     /**
-     TODO
-       @brief 
-       @param 
-       @return 
+    /**
+     * @brief Determiens if two segments intersect, and returns the point of intersection  if true 
+     * @param p1  source point of first segment  
+     * @param p2  target point of first segment 
+     * @param q1  source point of second segment
+     * @param q2  target point of second segment
+     * @return pair<bool,Point_3> true if intesecting, else false | point of intersection 
      */
      std::pair<bool,Point_2> find_intersection(Point_2 p1,Point_2 p2, Point_2 q1 , Point_2 q2)
      {
@@ -827,7 +1031,7 @@ class Slice
          const auto result = CGAL::intersection(edge,query);
          if (result) 
          {
-            const Point_2* p = boost::get<Point_2 >(&*result);
+            const Point_2* p = std::get_if<Point_2 >(&*result);
             return std::make_pair(true,Point_2(*p));
          }
          return std::make_pair(false, p1) ;
@@ -865,6 +1069,21 @@ class Slice
             this->add_constraints(*temp.get()); 
          }
       }  
+
+
+      template<typename Domain, typename Surface> 
+      void slice_mesh(std::shared_ptr<Domain> domain) 
+      {
+      
+         auto surfaces = domain->template get_boundaries<Surface>(); 
+         for(auto surf : surfaces) 
+         {
+            std::shared_ptr<Slice> temp = surf->template get_slice<Slice>(this->plane);              
+            this->add_constraints(*temp.get()); 
+         }
+      }    
+  
+  
   
      // DocString: get_subdomains      
      /**
@@ -893,7 +1112,6 @@ class Slice
       std::shared_ptr<Surface> export_as_surface() 
       {
          assert_non_empty_mesh(); 
-         typedef std::vector<std::size_t> Face;
          typedef CDT::Vertex_handle Vertex_handle;
 
          std::vector<Point_3> points;
@@ -908,9 +1126,8 @@ class Slice
          for(CDT::Face_iterator fit = cdt.faces_begin(); fit!=cdt.faces_end(); ++fit)
          {
             Face temp;
-            temp.push_back( index_of_vertex[fit->vertex(0)]);
-            temp.push_back( index_of_vertex[fit->vertex(1)]);
-            temp.push_back( index_of_vertex[fit->vertex(2)]);
+            for( int i = 0 ; i<3 ;i++) 
+                 temp[i] = index_of_vertex[fit->vertex(i)];  
             faces.push_back(temp);
          }
          std::shared_ptr<Surface> surf(new Surface(points, faces)); 
@@ -943,10 +1160,9 @@ class Slice
          }
          for(CDT::Face_iterator fit = cdt.faces_begin(); fit!=cdt.faces_end(); ++fit)
          {
-            Face temp;
-            temp.push_back( index_of_vertex[fit->vertex(0)]);
-            temp.push_back( index_of_vertex[fit->vertex(1)]);
-            temp.push_back( index_of_vertex[fit->vertex(2)]);
+            Face temp; 
+            for( int i = 0 ; i<3 ;i++) 
+                 temp[i] = index_of_vertex[fit->vertex(i)]; 
             faces.push_back(temp);
          }
          std::shared_ptr<Surface> surf(new Surface(points, faces)); 
@@ -1037,26 +1253,34 @@ class Slice
          for(Vertex_iterator vit=cdt.vertices_begin(); vit!=cdt.vertices_end(); ++vit)
          {
             V[vit] = inum++;
-            vit->info() = 0; 
             os << *vit <<" "<< 0 <<'\n';
          }
-         // FIXME 
+
+         int opposite;
          std::map<std::pair<Vertex_handle,Vertex_handle>,int> set_edges; 
          for(Face_iterator fit=cdt.finite_faces_begin(); fit!=cdt.finite_faces_end(); ++fit) 
          {
             for(int i =0; i<3; ++i)
             {  
                Edge eit(fit,i);
+               Face_handle fn = fit->neighbor(i);
+               fn->has_neighbor(fit,opposite);
+               
+               Edge ein(fn,opposite);
+               
                Vertex_handle vh1 = fit->vertex(cdt.ccw(i));
                Vertex_handle vh2 = fit->vertex(cdt.cw(i));
+                              
                if( V[vh1]>V[vh2] ) // Handles doubling of edges
                   set_edges[std::pair<Vertex_handle,Vertex_handle>(vh1,vh2)]=this->edges[eit];
                else
-                  set_edges[std::pair<Vertex_handle,Vertex_handle>(vh2,vh1)]=this->edges[eit];  
+                  set_edges[std::pair<Vertex_handle,Vertex_handle>(vh2,vh1)]=this->edges[eit]; 
+                   
             }
          }
          os << "Edges\n" 
             << set_edges.size() << '\n';
+            
          for(auto eit : set_edges)      
             os << V[eit.first.first] << " " << V[eit.first.second]  <<" " << eit.second <<std::endl;         
          os << "Triangles\n" 
@@ -1067,7 +1291,7 @@ class Slice
       }
 
      // DocString: add_surface_domains
-     /** FIXME 
+     /** 
       * @brief Add tags to the facets in the 2D mesh based on overlapping surfaces and SubdomainMaps.  
       *                                    
       * Adds tags to faces dependent on position (inside/outside) according to closed 
@@ -1112,7 +1336,6 @@ class Slice
             if( bit.first->info()==0 )
               cdt.delete_face(bit.first);
          }
-         Edge ei;
 
          for(Face_iterator fit=cdt.finite_faces_begin(); fit!=cdt.finite_faces_end(); ++fit) 
          {
@@ -1142,18 +1365,11 @@ class Slice
          }        
       } 
       
-     // DocString: add_surface_domains
-     /** FIXME 
-      * @brief Add tags to the facets in the 2D mesh based on overlapping surfaces and SubdomainMaps.  
-      *                                    
-      * Adds tags to faces dependent on position (inside/outside) according to closed 
-      * triangulated surface in 3D.
-      *  
-      * @tparam Surface SVMTK Surface object.
-      * @param surfaces a vector of SVMTK surface objects 
-      * @param map derived from SVMTK AbstractMap objects, @see SubdomainMap.h 
+     /** 
+      * @brief Set interface tags in the 2D triangulation based on subdomains.  
+      * Adds tags to facets dependent on the subdomain of connected cells. a
       */
-      void set_interface_tags()
+      void set_interface_tags() 
       {
            typedef std::pair<int,int>         Pid; 
            typedef std::map<Pid,int>      Pid_map;      
@@ -1162,13 +1378,27 @@ class Slice
            int fn,fi;
            Pid_map pid_map_;
            Pid spp;      
-           int index_counter=1;
+           
+           int max_index = 0;
+
+           for( auto eit : this->edges) 
+           { 
+               if( eit.second > max_index )
+                   max_index = eit.second;
+           }
+           
+           int index_counter= max_index +1 ; 
+
            for(Face_iterator fit=cdt.finite_faces_begin(); fit!=cdt.finite_faces_end(); ++fit) 
            {
                fi = fit->info();
+               
                for(int i =0;i<3;++i)
                {
                   Edge ei(fit,i); 
+                  if ( this->edges[ei]!= 0 )
+                       continue;
+                  
                   if( fit->neighbor(i)->is_in_domain() )
                       fn = fit->neighbor(i)->info();
                   else 
@@ -1180,7 +1410,9 @@ class Slice
                          spp={fn,fi};
                       else
                          spp={fi,fn};
+                     
                       std::pair<Pid_map::iterator, bool> is_insert_successful = pid_map_.insert(std::make_pair(spp,index_counter));
+                     
                       if( is_insert_successful.second )
                          index_counter++;
                       this->edges[ei] = pid_map_[spp];    
@@ -1192,32 +1424,35 @@ class Slice
       
       }
 
-      void set_interface_tag(int subdomain, int tag)
+     /** 
+      * @brief Set interface tag for a specific subdomain in the 2D triangulation.  
+      * @param subdomain_tag 
+      * @param interface_tag 
+      */
+      void set_interface_tag(int subdomain_tag, int interface_tag)
       {
            if( !this->edges.empty() ) 
                return;
-           
            for(Face_iterator fit=cdt.finite_faces_begin(); fit!=cdt.finite_faces_end(); ++fit) 
            {
-               if( fit->info()!=subdomain ) 
+               if( fit->info()!=subdomain_tag ) 
                   continue; 
                for(int i =0;i<3;++i)
                {
                   Edge ei(fit,i); 
-                  if ( fit->neighbor(i)->info()!=subdomain)
-                       this->edges[ei] = tag; 
+                  if ( fit->neighbor(i)->info()!=subdomain_tag)
+                       this->edges[ei] = interface_tag; 
                }
            }             
-      
       }      
 
      /**
       * @brief Add triangles tags to triangles inside a given polygon.  
         @param polygon vector of 2D points with first and last element are the same 
         @param polygon_tag integer marker 
-        @param replace_tag, overwriting a specific integer marker.  
+        @param overwrite_tag, overwriting a specific integer marker.  
       */      
-      bool add_polygon_domain(std::vector<Point_2> polygon, int polygon_tag , int replace_tag=0) //TODO rename to overwrite? 
+      bool add_polygon_domain(std::vector<Point_2> polygon, int polygon_tag , int overwrite_tag=0) 
       {
            bool update = false;
            CGAL::Bbox_2 pbbox; 
@@ -1229,7 +1464,7 @@ class Slice
            update = true;
            for( CDT::Face_iterator fit=cdt.faces_begin(); fit!=cdt.faces_end(); ++fit )
            {  
-               if( fit->info() != replace_tag) 
+               if( fit->info() != overwrite_tag) 
                    continue;
                Point_2 facet_point = CGAL::centroid( fit->vertex(0)->point(),
                                                      fit->vertex(1)->point(),
@@ -1239,10 +1474,7 @@ class Slice
                    fit->info() =  polygon_tag;
            }
            return update;
-           
-           
       }     
-      
       
      // DocString: add_surface_domains       
      /**  
@@ -1257,15 +1489,14 @@ class Slice
            DefaultMap map =DefaultMap();
            add_surface_domains(surfaces,map);
       }  
-      
-     /**
-      * @brief Returns vector of Faces.
-      * @param None
-      * @return vector of Faces  
-      */
-      std::vector<Face> get_facets() 
-      {
 
+     /**
+      * @brief Returns vector of cell,i.e. triangles.
+      * @param None
+      * @return vector of cells 
+      */
+      std::vector<Face> get_cells() 
+      {
          std::vector<Face> face_vector;
          boost::unordered_map<Vertex_handle, int> V;
          int inum = 1;
@@ -1273,10 +1504,29 @@ class Slice
          for(Vertex_iterator vit=cdt.vertices_begin(); vit!=cdt.vertices_end(); ++vit)
             V[vit] = inum++;
          for(Face_iterator fit=cdt.finite_faces_begin(); fit!=cdt.finite_faces_end(); ++fit) 
-              face_vector.push_back( {V[fit->vertex(0)], V[fit->vertex(1)], V[fit->vertex(2)]} );
+         {
+              Face temp; 
+              for( int i = 0 ; i<3 ; i++ ) 
+                   temp[i] = V[fit->vertex(i)];
+              face_vector.push_back(temp);
+          }    
               
           return face_vector;
       }      
+
+      /**
+      * @brief Returns vector of cell tags ,i.e. triangle tags.
+      * @param None
+      * @return vector of cell tags
+      */
+      std::vector<int> get_cell_tags() 
+      {
+         std::vector<int> facet_tags;
+         for(Face_iterator fit=cdt.finite_faces_begin(); fit!=cdt.finite_faces_end(); ++fit) 
+              facet_tags.push_back( fit->info() );            
+              
+          return facet_tags;
+      }            
       
       /**
        * @brief Marks edges in each constraint with an unique tag  
@@ -1288,32 +1538,47 @@ class Slice
       {
          int tag=0;
          Face_handle fit; 
- 	 int i; 
+ 	 int index=0;
          for( auto cid : this->cids ) 
          {    
               tag++;
-              for( CDT::Vertices_in_constraint_iterator it1 = cdt.vertices_in_constraint_begin(cid), 
-                   it2 = ++cdt.vertices_in_constraint_begin(cid); it2 != cdt.vertices_in_constraint_end(cid); ++it1,++it2 ) 
+              std::vector<Vertex_handle> line;
+              for( CDT::Vertices_in_constraint_iterator vc  = cdt.vertices_in_constraint_begin(cid),
+                                                        vn  = std::next(cdt.vertices_in_constraint_begin(cid)); 
+                                                        vn != cdt.vertices_in_constraint_end(cid); vn++ , vc++) 
               {
-                  if( cdt.is_edge(*it1,*it2, fit, i) ) // error ? 
-	             this->edges[Edge(fit,i) ] = tag;
-                  if( cdt.is_edge(*it2,*it1, fit, i) ) 
-	             this->edges[Edge(fit,i) ] = tag;
+                      if( cdt.is_edge(*vc,*vn)) 
+                      {
+                         cdt.is_edge(*vc,*vn, fit, index);
+                         this->edges[Edge(fit,index)] = tag;
+                      
+                      }
+                      if ( cdt.is_edge(*vn,*vc) )
+                      {
+                         cdt.is_edge(*vn,*vc, fit, index);
+                         this->edges[Edge(fit,index)] = tag; 
+                         
+                      }                      
+
               }
- 	  }   
+             
+ 	  }  
+ 	 
+ 	  
+	   
+	   
       }
 
-
       /**
-       * @brief TODO FIXME
+       * @brief Returns all featured vertices
        * @param none 
        * @return vertex_indicies for all features.
        */
       std::vector<std::vector<int>> get_feature_vertices() 
       {
-    
- 	  std::vector<std::vector<int>> lines;
- 	  boost::unordered_map<Vertex_handle, int> V;
+         assert_non_empty_mesh();
+ 	 std::vector<std::vector<int>> lines;
+ 	 boost::unordered_map<Vertex_handle, int> V;
          int inum = 0;
          for(Vertex_iterator vit=cdt.vertices_begin(); vit!=cdt.vertices_end(); ++vit)
          {
@@ -1325,7 +1590,7 @@ class Slice
               std::vector<int> line;
               
               for( CDT::Vertices_in_constraint_iterator vit = cdt.vertices_in_constraint_begin(cid);
-                                                      vit != cdt.vertices_in_constraint_end(cid); ++vit) 
+                                                        vit != cdt.vertices_in_constraint_end(cid); ++vit) 
               {
                   if ( V.find(*vit) != V.end() )
                        line.push_back(V[*vit]);
@@ -1365,6 +1630,15 @@ class Slice
           }
       }
       
+     /**
+      * @brief get bounding radius of the added constraints 
+      * @param none 
+      * @return double the minimum bounding radius of the constraints  
+      */ 
+      double get_bounding_radius() 
+      {
+            return min_sphere.get_bounding_sphere_radius();
+      }         
       
     private:
        boost::unordered_map<Face_handle,double>  triangle_data  ;
