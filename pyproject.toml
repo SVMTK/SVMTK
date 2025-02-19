@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.2"]
+requires = ["setuptools>=61.2", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,7 +8,7 @@ version = "2.0"
 license = {text = "GNU GENERAL PUBLIC LICENSE"}
 description = "A collection of tools for volume and surface meshing"
 keywords = ["Surface", "Volume", "Meshing", "Toolkit"]
-urls = {Homepage = ""}
+urls = {Homepage = "https://github.com/SVMTK/SVMTK"}
 requires-python = ">=3"
 dependencies = ["numpy"]
 authors = [
@@ -24,11 +24,17 @@ content-type = "text/markdown"
 test = ["pytest"]
 
 [tool.setuptools]
+include-package-data = true
+package-dir = {"" = "python"}
 zip-safe = false
-test-suite = "tests"
-include-package-data = false
 
 [tool.setuptools.packages.find]
-include = ["SVMTK"] # SVMTK.*
+include = ["SVMTK","python"] # SVMTK.*
 namespaces = false
 
+
+[tool.aliases]
+test = "pytest"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
