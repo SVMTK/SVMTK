@@ -9,13 +9,13 @@ SVMTK was designed to create volume meshes of soft organic tissue surfaces, like
 
 First, ensure that all of the prerequisites needed by SVMTK are installed.  Installation instructions for all of the SVMTK requirements can be found in [REQUIREMENTS.md](REQUIREMENTS.md)
 
-Next, clone the SVMT repository by
+Next, clone the SVMTK repository by
 
 ```
 git clone --recursive https://github.com/SVMTK/SVMTK
 ```
 
-If you have already installed SVMTK you can update your installation with the following command executed in the /SVMTK directory
+If you have already installed SVMTK, you can update your installation with the following command executed in the /SVMTK directory
 
 ```
 git pull
@@ -35,27 +35,21 @@ the option `{:.--break-system-packages} should be used.
 python3 -m pip install . --break-system-packages
 ```
 
-After updating the SVMTk installation, you should first clean any residual files by issuing the following command
-
-```
-python3 setup.py clean
-```
-
 It is advised, but not required, that you use a virtual environment for python.  (see [https://docs.python.org/3/tutorial/venv.html] for instructions on using a python virtual environment)
 
 You may see warnings as the setup process runs; these warnings arise from the CGAL source code, which is used by SVMTk, and are no cause for concern.
+
+### Checking the installation
+
+The tests can be compiled with the following command:   
+```
+python3 -m pip install .[test] --config-settings=cmake.define.CMAKE_BUILD_TESTING=ON
+```
 
 Finally, you can test your SVMTk installation by running
 
 ```
 pytest -v tests
-```
-
-Note that, if you do not use a virtual environment, you may need to preface the above commands, for setting up and testing SVMTk, with the `sudo' keyword.  Thus,
-
-```
-sudo python3 setup.py install
-sudo python3 setup.py clean
 ```
 
 If the test is successful you should see the following output
@@ -69,13 +63,6 @@ OK
 ```
 
 Also check the installation with any of the examples in `examples/`
-
-### Python>=3.13 
-
-In python version 3.13, the support for setup.py is removed (see [https://packaging.python.org/en/latest/discussions/setup-py-deprecated/] ), and the user should install using 
-```
-python -m pip install .
-```
 
 ## Docker
 
@@ -93,9 +80,6 @@ conda create --name SVMTk-env python=3.9
 conda activate SVMTk-env
 conda install -c conda-forge svmtk 
 ```
-
-
-
 
 ## Build instructions on SAGA HPC Cluster
 

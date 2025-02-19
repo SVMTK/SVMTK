@@ -9,7 +9,7 @@ license = {text = "GNU GENERAL PUBLIC LICENSE"}
 description = "A collection of tools for volume and surface meshing"
 keywords = ["Surface", "Volume", "Meshing", "Toolkit"]
 urls = {Homepage = "https://github.com/SVMTK/SVMTK"}
-requires-python = ">=3"
+requires-python = ">=3.8"
 dependencies = ["numpy"]
 authors = [
   {name = "Lars Magnus Valnes"},
@@ -31,10 +31,11 @@ zip-safe = false
 [tool.setuptools.packages.find]
 include = ["SVMTK","python"] # SVMTK.*
 namespaces = false
-
+exclude = ["tests", "tests.*", "examples"]
 
 [tool.aliases]
 test = "pytest"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests","include"]
+addopts = "-v "

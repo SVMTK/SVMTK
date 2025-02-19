@@ -4,9 +4,9 @@ cmake_minimum_required(VERSION 3.13)
 cmake_policy(SET CMP0077 NEW) 
 
 # Policy CMP0127 fromcmake 3.22 
-if(POLICY CMP0127)
-  cmake_policy(SET CMP0127 OLD)
-endif()
+#if(POLICY CMP0127)
+#  cmake_policy(SET CMP0127 OLD)
+#endif()
 
 
 #set(Python3_FIND_REGISTRY "LAST")

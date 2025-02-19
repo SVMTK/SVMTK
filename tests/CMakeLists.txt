@@ -11,7 +11,7 @@ set(TEST_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/test_Slice.cpp
 
 )
-
+message("AFSFAFAGEAGEFA") 
 find_package (Eigen3 3.2 REQUIRED)
 include(${EIGEN3_USE_FILE})
 
@@ -20,8 +20,8 @@ target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
 
 add_executable(SVMTK_test ${TEST_SOURCES})
 
-target_link_libraries(SVMTK_test PRIVATE SVMTK Catch ) 
-target_include_directories(SVMTK_test PRIVATE  ${CATCH_INCLUDE_DIR} ${SVMTK_INCLUDE_DIR} )
+target_link_libraries(SVMTK_test PRIVATE CGAL::CGAL SVMTK Catch ) 
+target_include_directories(SVMTK_test PRIVATE CGAL::Eigen3_support ${CATCH_INCLUDE_DIR} ${SVMTK_INCLUDE_DIR} )
 
 set_target_properties(SVMTK_test
     PROPERTIES
