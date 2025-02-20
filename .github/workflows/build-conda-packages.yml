@@ -24,7 +24,7 @@ jobs:
           - "3.10"
           - "3.11"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Conda environment with Micromamba
         uses: mamba-org/provision-with-micromamba@main
@@ -39,7 +39,7 @@ jobs:
           CONDA_PY: ${{ matrix.py_version }}
 
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: conda-build-{{ matrix.py_version }}
           path: "/home/runner/micromamba-root/envs/root/conda-bld/linux-64/*"
