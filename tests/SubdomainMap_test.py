@@ -15,7 +15,6 @@ class SubdomainMap_Test(unittest.TestCase):
         a = smap.get_tags()    
         self.assertEqual(a[2],3) 
 
-
     def test_asterix_only(self):    
         smap = SVMTK.SubdomainMap(2) 
         smap.add("*",2)   
@@ -25,14 +24,29 @@ class SubdomainMap_Test(unittest.TestCase):
         self.assertEqual( bitmap['10'],2)     
         self.assertEqual( bitmap['11'],2)    
 
-    def test_asterix_prefix(self):
-        smap = SVMTK.SubdomainMap(2) 
-        smap.add("01",2)
-        smap.add("*1",1)
+    def test_dash_prefix(self):
+        smap = SVMTK.SubdomainMap(3) 
+        smap.add("-10",2)
+        smap.add("-1",1)
         bitmap = smap.get_map()
-        self.assertEqual( bitmap['01'],2)    
-        self.assertEqual( bitmap['11'],1)
+        self.assertEqual( bitmap['010'],2)    
+        self.assertEqual( bitmap['001'],1)
         
+    def test_dash_suffix(self):  
+        smap = SVMTK.SubdomainMap(3) 
+        smap.add("1-",2)
+        smap.add("01-",1)
+        bitmap = smap.get_map()
+        self.assertEqual( bitmap['100'],2)    
+        self.assertEqual( bitmap['010'],1)
+  
+    def test_dash_and_astrix(self):     
+        smap = SVMTK.SubdomainMap(3) 
+        smap.add("*1-",2)
+        bitmap = smap.get_map()
+        self.assertEqual( bitmap['110'],2)    
+        self.assertEqual( bitmap['010'],2)            
+ 
     def test_asterix_suffix(self):
         smap = SVMTK.SubdomainMap(3) 
         smap.add("100",2)
@@ -47,7 +61,7 @@ class SubdomainMap_Test(unittest.TestCase):
         flag = False
         smap = SVMTK.SubdomainMap(0)
         try: 
-              smap.add("*1",1)
+            smap.add("*1",1)
         except SVMTK.InvalidArgumentError:
             flag = True
         self.assertTrue(flag)     
@@ -67,7 +81,7 @@ class SubdomainMap_Test(unittest.TestCase):
         smap = SVMTK.SubdomainMap(3) 
         flag = False
         try: 
-             smap.add("01",2)
+            smap.add("01",2)
         except SVMTK.InvalidArgumentError:
             flag = True
         self.assertTrue(flag)       
@@ -77,7 +91,7 @@ class SubdomainMap_Test(unittest.TestCase):
         smap = SVMTK.SubdomainMap(2) 
         flag = False
         try: 
-             smap.add("00001",2)
+            smap.add("00001",2)
         except SVMTK.InvalidArgumentError:
             flag = True
         self.assertTrue(flag)     
@@ -87,8 +101,7 @@ class SubdomainMap_Test(unittest.TestCase):
         smap = SVMTK.SubdomainMap(2) 
         smap.add_interface((1,0),2) 
         interfaces = smap.get_interfaces()
-
-        
+        self.assertEqual(interfaces[(0,1)],2)     
                    
 
 if __name__ == '__main__':

@@ -4,6 +4,8 @@ import SVMTK as svm
 from pathlib import Path
 
 if __name__ == "__main__":
+
+
    print("Start ",__file__)    
    outdir = Path("results")
    outdir.mkdir(exist_ok=True)
@@ -15,10 +17,8 @@ if __name__ == "__main__":
  
    # Implicit surface fucntion parameters  
    bounding_sphere_radius = 6.0
-   angular_bound = 30 
-   radius_bound = 0.1
-   distance_bound =0.1
+   mesh_resolution = 8.0
    # Creates surface mesh given implicit function.
-   surf.implicit_surface(torus,bounding_sphere_radius ,angular_bound ,radius_bound ,distance_bound ) 
+   surf.implicit_surface(torus,mesh_resolution ,bounding_sphere_radius) 
    surf.save(str(outdir/"torus.stl"))
    print("Finish ",__file__)

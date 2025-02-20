@@ -24,7 +24,7 @@ if __name__ == "__main__":
    distance_bound =0.1
    # Creates surface mesh given implicit function.
    surf.implicit_surface(chair_function, bounding_sphere_radius ,angular_bound ,radius_bound ,distance_bound )
-   maker = svm.Domain(surf)
+   maker = svm.Domain(chair_function, bounding_sphere_radius )
    maker.create_mesh(20)
    maker.save(str(outdir/"chair.mesh"))
    print("Start ",__file__)      

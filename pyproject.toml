@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "SVMTK"
+version = "2.0"
+license = {text = "GNU GENERAL PUBLIC LICENSE"}
+description = "A collection of tools for volume and surface meshing"
+keywords = ["Surface", "Volume", "Meshing", "Toolkit"]
+urls = {Homepage = "https://github.com/SVMTK/SVMTK"}
+requires-python = ">=3.8"
+dependencies = ["numpy"]
+authors = [
+  {name = "Lars Magnus Valnes"},
+  {name = "Jakob Schreiner"},
+]
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools]
+include-package-data = true
+package-dir = {"" = "python"}
+zip-safe = false
+
+[tool.setuptools.packages.find]
+include = ["SVMTK","python"] # SVMTK.*
+namespaces = false
+exclude = ["tests", "tests.*", "examples"]
+
+[tool.aliases]
+test = "pytest"
+
+[tool.pytest.ini_options]
+testpaths = ["tests","include"]
+addopts = "-v "

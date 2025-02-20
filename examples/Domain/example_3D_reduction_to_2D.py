@@ -39,8 +39,13 @@ if __name__ == "__main__":
    bo1.save("bo1.stl")
    bo2.save("bo2.stl")
    print(maker.number_of_facets()  ) 
-   maker.subdomain_reduction("test.dat",1)
+   import time
+   start_time = time.time()
+   maker.set_collision_spheres(1,0)
+   print("--- %s seconds ---" % (time.time() - start_time))
 
+   maker.remove_subdomain(1)
+   maker.write_facet_data("facetdata_2.dat")
    print(maker.number_of_facets() )
    
    """   

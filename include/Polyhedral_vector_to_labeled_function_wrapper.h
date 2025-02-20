@@ -5,13 +5,12 @@
 /* --- Includes -- */
 #include "SubdomainMap.h" 
 
-
-
 /*
  * CGAL Polyhedron to CGAL labeled mesh.
  * Combines the option of using CGAL polyhedrons to create mesh 
  * with specific tags for overlapping surfaces.
  * 
+ * Inspiration see [] 
  */
 namespace CGAL {
         template<class Function_, class BGT>
@@ -21,7 +20,7 @@ namespace CGAL {
 
                 typedef int return_type;  
                 typedef std::vector<Function_*>   Function_vector;
-                typedef typename BGT::Point_3       Point_3;
+                typedef typename BGT::Point_3     Point_3;
                 typedef boost::dynamic_bitset<>   Bmask;
                 typedef typename BGT::Sphere_3    Sphere_3;
                 
@@ -33,7 +32,7 @@ namespace CGAL {
                  */
                 Polyhedral_vector_to_labeled_function_wrapper(const std::vector<Function_*>& v, std::shared_ptr<AbstractMap> map) : function_vector_(v)
                 {
-                    subdmap =std::move(map);
+                    subdmap = std::move(map);
                 }
 
                 ~Polyhedral_vector_to_labeled_function_wrapper() {}

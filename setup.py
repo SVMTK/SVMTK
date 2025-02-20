@@ -1,5 +1,5 @@
 import os
-
+import sys
 import subprocess
 
 from setuptools import setup, find_packages, Extension
@@ -12,7 +12,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 
 # Version number
-MAJOR = 1
+MAJOR = 2
 MINOR = 0
 
 
@@ -40,7 +40,7 @@ class CMakeBuild(build_ext):
             self.get_ext_fullpath(ext.name)))
 
         cmake_args = [
-            # , "-DPYTHON_EXECUTABLE={}".format(sys.executable)
+             "-DPYTHON_EXECUTABLE={}".format(sys.executable),
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(extdir)
         ]
 

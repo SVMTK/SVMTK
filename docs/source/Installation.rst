@@ -8,7 +8,7 @@ Installation
 First, ensure that all of the prerequisites needed by SVMTK are installed.  Installation instructions for all of the SVMTK requirements can be found in 
 :ref:`Requirementsdoc`.
 
-Next, clone the SVMT repository by:: 
+Next, clone the SVMTk repository by:: 
 
    git clone --recursive https://github.com/SVMTK/SVMTK
 
@@ -21,8 +21,12 @@ Third, you will need to setup SVMTK if you have not already done so.  To do this
 
    python3 setup.py install
 
-from within the SVMT directory.  If you have, instead, updated an existing SVMT installation 
-you should first clean any residual files by issuing the following command::
+from within the SVMTk directory. If you are installing SVMTk system-wide on your computer, then for newer version of python>=3.12, 
+the option :code:`--break-system-packages` should be used::
+
+    python3 -m pip install . --break-system-packages
+
+After updating the SVMTk installation, you should first clean any residual files by issuing the following command::
 
    python3 setup.py clean
 
@@ -59,6 +63,19 @@ Docker
 There is a Dockerfile in the main directory.
 
 For more information on how to use docker, take a look at the docker `tutorial <https://docs.docker.com/get-started/>`_.
+
+.. _Anacondadoc:
+
+Anaconda 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+SVMTk can also be installed from `conda-forge <https://github.com/conda-forge/svmtk-feedstock>`_ with the following code::
+     
+     conda create --name SVMTk-env python=3.9
+     conda activate SVMTk-env 
+     conda install -c conda-forge svmtk 
+
+
 
 Build instructions on SAGA HPC Cluster
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

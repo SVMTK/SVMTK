@@ -9,13 +9,13 @@ SVMTK was designed to create volume meshes of soft organic tissue surfaces, like
 
 First, ensure that all of the prerequisites needed by SVMTK are installed.  Installation instructions for all of the SVMTK requirements can be found in [REQUIREMENTS.md](REQUIREMENTS.md)
 
-Next, clone the SVMT repository by
+Next, clone the SVMTK repository by
 
 ```
 git clone --recursive https://github.com/SVMTK/SVMTK
 ```
 
-If you have already installed SVMTK you can update your installation with the following command executed in the /SVMTK directory
+If you have already installed SVMTK, you can update your installation with the following command executed in the /SVMTK directory
 
 ```
 git pull
@@ -28,28 +28,28 @@ Third, you will need to setup SVMTK if you have not already done so.  To do this
 python3 -m pip install .
 ```
 
-from within the SVMT directory.  If you have, instead, updated an existing SVMT installation
-you should first clean any residual files by issuing the following command
+from within the SVMTk directory. If you are installing SVMTk system-wide on your computer, then for newer version of python>=3.12, 
+the option `{:.--break-system-packages} should be used. 
 
 ```
-python3 setup.py clean
+python3 -m pip install . --break-system-packages
 ```
 
 It is advised, but not required, that you use a virtual environment for python.  (see [https://docs.python.org/3/tutorial/venv.html] for instructions on using a python virtual environment)
 
-You may see warnings as the setup process runs; these warnings arise from the CGAL source code, which is used by SVMTK, and are no cause for concern.
+You may see warnings as the setup process runs; these warnings arise from the CGAL source code, which is used by SVMTk, and are no cause for concern.
 
-Finally, you can test your SVMTK installation by running
+### Checking the installation
+
+The tests can be compiled with the following command:   
+```
+python3 -m pip install .[test] --config-settings=cmake.define.CMAKE_BUILD_TESTING=ON
+```
+
+Finally, you can test your SVMTk installation by running
 
 ```
 pytest -v tests
-```
-
-Note that, if you do not use a virtual environment, you may need to preface the above commands, for setting up and testing SVMTK, with the `sudo' keyword.  Thus,
-
-```
-sudo python3 setup.py install
-sudo python3 setup.py clean
 ```
 
 If the test is successful you should see the following output
@@ -70,6 +70,16 @@ There is a Dockerfile in the directory `docker/`.
 
 For more information on how to use docker, take a look at the docker tutorial:
 [https://docs.docker.com/get-started/]
+
+## Anaconda 
+
+SVMTk can also be installed from conda-forge[https://github.com/conda-forge/svmtk-feedstock] with the following code. 
+
+```
+conda create --name SVMTk-env python=3.9
+conda activate SVMTk-env
+conda install -c conda-forge svmtk 
+```
 
 ## Build instructions on SAGA HPC Cluster
 
@@ -104,6 +114,7 @@ python setup.py install --prefix=$PROJECT_HOME/src/SVMTK/local
 
 ### Running SVMTK on SAGA HPC Cluster
 
+Outdated 
 ```
 export PROJECT_HOME=path-to-base-install-dir
 

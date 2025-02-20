@@ -16,7 +16,11 @@ the [README.md](README.md)
 
 The relevant files can be found in the folder external/pybind11 after
 
-`git clone --recursive https://github.com/SVMTK/SVMTK`
+`git clone --recursive https://github.com/SVMTK/SVMTK --branch v1.3.0` 
+
+It is recommended to use latest release by specificing branch: 
+1. v2.0.0
+2. v1.3.0
 
 The submodule can be updated with
 
@@ -42,12 +46,12 @@ and the submodule version can be switched with
 
 `cd external/cgal`
 
-`git checkout v5.3`
+`git checkout v6.0.1`
 
 Tested CGAL versions 
-  - 5.3.0
+  - 6.0.1
 
-## Python>=3.6 
+## Python>=3.8 Python <=3.12
 Installing python3.6
  
 `sudo apt-get update`
@@ -215,4 +219,7 @@ Complete the installation with
 `make install`
 
 Further details can be found at <http://eigen.tuxfamily.org>
+
+
+
 
