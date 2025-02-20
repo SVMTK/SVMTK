@@ -165,25 +165,25 @@ class Surface_Test(unittest.TestCase):
     def test_extension(self):
         surface=SVMTK.Surface()   
         surface.make_cube(-1.,-1.,-1.,1.,1.,1.,0.5) 
-        cylinder = surface.extension(SVMTK.Point_3(0,0,2),1,1,0.5,True)
+        cylinder = surface.extension(SVMTK.Point_3(0,0,2),0.5,0.5,0.25,True)
         self.assertTrue(cylinder.num_edges()>0) 
         del surface
 
     def test_separate_narrow_gaps(self):
-         surface=SVMTK.Surface(f"{tests_dir}/Data/narrow_gap.off")
-         result = surface.separate_narrow_gaps(-0.5,0.5)
-         self.assertTrue( result[0]) 
-         self.assertEqual(result[1],0) 
-         del surface
+        surface=SVMTK.Surface(f"{tests_dir}/Data/narrow_gap.off")
+        result = surface.separate_narrow_gaps(-0.5,0.5)
+        self.assertTrue( result[0]) 
+        self.assertEqual(result[1],0) 
+        del surface
 
     def test_separate_close_vertices(self):
-         surface =SVMTK.Surface()  
-         surface.set_proximity_ratio(1.0)
-         surface.make_cube(0.,0.,0.,0.1 , 1., 1.,.01) 
-         result = surface.separate_close_vertices(0.5)
-         self.assertTrue(result[0]) 
-         self.assertEqual(result[1],0) 
-         del surface
+        surface =SVMTK.Surface()  
+        surface.set_proximity_ratio(1.0)
+        surface.make_cube(0.,0.,0.,0.1 , 1., 1.,.01) 
+        result = surface.separate_close_vertices(0.5)
+        self.assertTrue(result[0]) 
+        self.assertEqual(result[1],0) 
+        del surface
          
     def test_enclose(self):
         surface1 =SVMTK.Surface()  

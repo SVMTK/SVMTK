@@ -1994,7 +1994,9 @@ class Surface
            
       Vector_3 normal;
      
-      vertex_vector vertices = get_closest_vertices(point,6);
+      int num_search_vertices = std::min( static_cast<int>(num_vertices()*0.5) , 6) ;
+       
+      vertex_vector vertices = get_closest_vertices(point, num_search_vertices );
       
       std::vector<Point_3> points = get_points(vertices);  
       
@@ -2006,7 +2008,7 @@ class Surface
           {
               normal += CGAL::Polygon_mesh_processing::compute_vertex_normal(i,mesh);
           }
-          if ( CGAL::sqrt(normal.squared_length()) >0)
+          if ( CGAL::sqrt(normal.squared_length()) > 0)
           {
              normal /= CGAL::sqrt(normal.squared_length());
           }
@@ -2019,8 +2021,7 @@ class Surface
       else 
       {
           closest_point = mesh.point(vertices[0]); 
-                    
-          if( point==closest_point)   
+          if( point==closest_point )   
           {
              normal = CGAL::Polygon_mesh_processing::compute_vertex_normal(vertices[0],mesh);
           }
@@ -2029,7 +2030,6 @@ class Surface
              normal = Vector_3(closest_point, point);
           }
       }
-      
       Point_3 target = closest_point + normal*length;  
       Point_3 source = closest_point - normal*radius;
       
@@ -3111,8 +3111,7 @@ class Surface
       double dy =(y1-y0);
       double dz =(z1-z0);
      
-      //if( abs(dx)<edge_length || abs(dy)<edge_length ||  abs(dz)<edge_length) 
-      //   throw InvalidArgumentError("Select smaller edge length.");    
+
       if( abs(dx)<edge_length || abs(dy)<edge_length ||  abs(dz)<edge_length) 
           edge_length = std::min( abs(dx), std::min(abs(dy), abs(dz)));
 
