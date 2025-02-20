@@ -46,10 +46,10 @@ and the submodule version can be switched with
 
 `cd external/cgal`
 
-`git checkout releases/CGAL-5.6.0`
+`git checkout v6.0.1`
 
 Tested CGAL versions 
-  - 5.6.0
+  - 6.0.1
 
 ## Python>=3.8 Python <=3.12
 Installing python3.6
