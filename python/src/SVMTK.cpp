@@ -11,7 +11,6 @@
 #include "Surface.h"
 #include "Domain.h"
 #include "Slice.h"
-//#include "Mesh.h"
 
 namespace py = pybind11;
 
@@ -409,7 +408,6 @@ PYBIND11_MODULE(SVMTK, m)
         
         .def("get_slice", py::overload_cast<Plane_3>(&Surface::get_slice<Slice>),py::return_value_policy::move,  DOC(Surface, get_slice, 2))
        
-        //.def("get_slice", py::overload_cast<Point_3,Vector_3>(&Surface::get_slice<Slice>),DOC(Surface,get_slice,3))
         
 
         .def("clear", &Surface::clear, DOC(Surface, clear))

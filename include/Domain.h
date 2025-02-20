@@ -1095,55 +1095,10 @@ class Domain
         Point_3 mp;
         if( this->borders.size()>0 )
         { 
-        
           protect_borders();
-          /*Polylines temp;
-          Polyline_3 update;
-          double edge_distance, ratio;
-          int rate;
-          Vector_3 vec;
-          Point_3 p;
-          for( auto polyline : this->borders ) 
-          {    
-            update.push_back(polyline.front());
-            for( auto pit1 = polyline.begin(), pit2 = std::next(polyline.begin()); pit2 != polyline.end(); pit1++, pit2++ )
-            {
-                edge_distance = static_cast<double>(CGAL::sqrt(CGAL::squared_distance(*pit1,*pit2)));
-                if (edge_distance < min_distance)
-                    min_distance = edge_distance; 
-
-                if(  ratio < 1.4 ) 
-                    continue;
-                else if ( ratio > 3 ) 
-                {
-                    p = *pit1;
-                    rate =std::ceil(ratio);
-                    for( int i = 1 ; i <  std::floor(ratio)  ; i++)
-                    {
-                         vec = Vector_3( *pit1,*pit2);
-                         p += vec/rate;
-                         update.push_back(p);
-                    }
-                }
-                else
-                {
-                       mp = CGAL::midpoint(*pit1,*pit2);
-                       update.push_back(mp);
-                } 
-                update.push_back(*pit2);
-            }
-            //temp.push_back(update);
-            //update.clear();
-            
-          }
-          std::cout << this->borders.size() << std::endl;*/
           domain_ptr.get()->add_features(this->borders.begin(), this->borders.end());
         }
      }
-
-
-
-
 
     /**
      * @brief Sets 1-D features located not on the boundary. This is done automatically 
@@ -1187,9 +1142,6 @@ class Domain
         set_borders();
         set_features();
         
-        
-        
-        
         Mesh_criteria criteria(CGAL::parameters::edge_size(edge_size).
                                                  facet_size(facet_size).
                                                  cell_size(cell_size).
@@ -1208,15 +1160,7 @@ class Domain
         c3t3.rescan_after_load_of_triangulation();
         rebind_missing_facets();        
         std::cout << "Done meshing" << std::endl;
-        
-        
-        
-        
      }
-     
-
-
-
           
     /** 
      * @brief Refines the stored mesh. 
@@ -1382,7 +1326,6 @@ class Domain
         std::map<std::pair<int,int>,int> facet_map = this->map_ptr->make_interfaces(this->get_patches());
 
         output_to_medit_(medit_file, c3t3, vertex_pmap, facet_map, cell_pmap, facet_twice_pmap , false, exclude_unmarked_facets ,save_edge_features);
-        
         
         medit_file.close();
      }
@@ -2258,6 +2201,7 @@ class Domain
          std::vector< std::array<std::size_t,4>> cells; 
          std::array<std::size_t,4> cell;
          std::size_t inum = 1;
+         
          for( Finite_vertices_iterator vit = tr.finite_vertices_begin(); vit != tr.finite_vertices_end(); ++vit )
              V[vit] = inum++;
          
@@ -2269,6 +2213,7 @@ class Domain
               }
               cells.push_back(cell);
          }
+         std::cout <<"Cell size " <<cells.size() << std::endl;
          return cells;
     }  
 
@@ -2411,17 +2356,17 @@ class Domain
       typedef Read_Tr::Weighted_point Weighted_point;
            
       std::ifstream   medit_file(filename);
+      // Required as main triangulation uses (int,int) as interface tag,
+      // and from file has int interface tag.
       Triangulation_3  tr2;
       if(!CGAL::IO::read_MEDIT(medit_file, tr2))
       {
          std::cerr << "Failed to read" << std::endl;
       }
-      
       std::vector< Point_3 > points;  
       std::vector<std::array<int, 4> > finite_cells;
       std::array<int, 4> cell;
       std::vector< Subdomain_index > cell_tags;  
-            
       boost::unordered_map<Vertex_handle, int> V;
       int inum = 0;
       
@@ -2432,19 +2377,14 @@ class Domain
             points.push_back( Point_3(  CGAL::to_double(p.x()),
                                         CGAL::to_double(p.y()),
                                         CGAL::to_double(p.z()) ));
-
       }
-      
+
       for(  auto cit =  tr2.finite_cells_begin(); cit != tr2.finite_cells_end(); ++cit )
       {
-           
            for (int i=0; i<4; i++)
-           {         
                 cell[i] = V[cit->vertex(i)];     
-           }
            cell_tags.push_back(static_cast<int>(cit->subdomain_index()));
            finite_cells.push_back(cell);
-
       }
       reconstruct_mesh(points, finite_cells, cell_tags); 
     }
@@ -2452,10 +2392,11 @@ class Domain
     
    /**
     * @brief Reconstruct the mesh after loading from file.
+    * @note After loading, some cells might be missing. 
     */   
     void reconstruct_mesh(std::vector<Point_3> points , std::vector<std::array<int, 4> >  cells, std::vector<int> cell_tags) 
     {
-         c3t3.triangulation() = CGAL::tetrahedron_soup_to_triangulation_3<Tr>(points, cells, CGAL::parameters::subdomain_indices(cell_tags));      
+         c3t3.triangulation() = CGAL::tetrahedron_soup_to_triangulation_3<Tr>(points, cells, CGAL::parameters::subdomain_indices(cell_tags)  );
          c3t3.rescan_after_load_of_triangulation();
          rebind_missing_facets(); 
     }

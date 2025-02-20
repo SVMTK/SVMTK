@@ -16,7 +16,11 @@ the [README.md](README.md)
 
 The relevant files can be found in the folder external/pybind11 after
 
-`git clone --recursive https://github.com/SVMTK/SVMTK`
+`git clone --recursive https://github.com/SVMTK/SVMTK --branch v1.3.0` 
+
+It is recommended to use latest release by specificing branch: 
+1. v2.0.0
+2. v1.3.0
 
 The submodule can be updated with
 
