@@ -20,12 +20,11 @@ requirements:
   host:
     # boost-cpp pin neede for cgal pin
     - boost-cpp=1.74
-    # cgal 5.4.1 needed due to compatibility issue in clipping
-    - cgal-cpp=5.4.1
+    - cgal-cpp=6.0.1
     - eigen
     - gmp
     - mpfr
-    - pybind11
+    - pybind11=2.13.5
     - python
     - pip
   run:
