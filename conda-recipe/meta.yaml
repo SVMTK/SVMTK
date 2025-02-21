@@ -20,8 +20,8 @@ requirements:
   host:
     # boost-cpp pin neede for cgal pin
     - boost-cpp=1.74
+    - libboost-devel
     - cgal-cpp=6.0.1
-    - libboost-devel 
     - eigen
     - gmp
     - mpfr
