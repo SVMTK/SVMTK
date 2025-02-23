@@ -19,9 +19,9 @@ requirements:
     - make
   host:
     # boost-cpp pin neede for cgal pin
-    - boost-cpp=1.74
+    #- boost-cpp=1.85
     - libboost-devel
-    - cgal-cpp=6.0.1
+    - cgal-cpp=6.0.0
     - eigen
     - gmp
     - mpfr
@@ -43,4 +43,4 @@ test:
     - SVMTK
 
   commands:
-    - pytest -v tests/Surface_test.py
+    - pytest -v tests
