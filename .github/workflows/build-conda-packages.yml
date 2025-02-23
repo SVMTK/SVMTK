@@ -45,7 +45,7 @@ jobs:
           path: "/home/runner/micromamba/envs/root/conda-bld/linux-64/*"
           if-no-files-found: error
 
-      - name: Upload to Anaconda
+      - name: Upload to Anaconda ${{ matrix.py_version }}-${{ matrix.machine }}-${{ matrix.cloud }}-${{ matrix.region }}-${{ matrix.arch }}-${{ matrix.distro }}
         env:
           BINSTAR_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
         run: |
