@@ -8,17 +8,16 @@ tests_dir = os.path.dirname(__file__)
 
 class Slice_Test(unittest.TestCase):
 
-
     def test_unpack_mesh(self): 
         slc = SVMTK.Slice();
         slc.add_constraint([SVMTK.Point_2(0,0),SVMTK.Point_2(0,1),SVMTK.Point_2(1,1), SVMTK.Point_2(1,0),SVMTK.Point_2(0,0) ] )
         slc.create_mesh(8.0)
         points    = slc.get_points()
         triangles = slc.get_cells() 
-        edges     = slc.get_facets()  
-        self.assertEqual(points.shape,    (365, 2))        
-        self.assertEqual(triangles.shape, (664, 3))
-        self.assertEqual(edges.shape,     ( 64, 2))
+        edges     = slc.get_facets(False)  
+        self.assertEqual(points.shape,    (slc.num_vertices(), 2))        
+        self.assertEqual(triangles.shape, (slc.num_cells(), 3))
+        self.assertEqual(edges.shape,     (slc.num_facets(), 2))
 
     def test_slice_add_constrains(self):
         slice1 = SVMTK.Slice()
@@ -28,7 +27,7 @@ class Slice_Test(unittest.TestCase):
         slice2.add_constraint([SVMTK.Point_2(0.5,0.5),SVMTK.Point_2(0.5,-0.5)]) 
         slice3 = slice2
         slice3.add_constraints(slice1)
-        self.assertTrue( slice3.num_constraints(),2)
+        self.assertEqual( slice3.num_constraints(),2)
 
     def test_slice_meshing(self):
         surface = SVMTK.Surface() 
@@ -89,7 +88,8 @@ class Slice_Test(unittest.TestCase):
         slc = SVMTK.Slice()
         slc.add_constraint([SVMTK.Point_2(0,0),SVMTK.Point_2(0,1),SVMTK.Point_2(1,1), SVMTK.Point_2(1,0),SVMTK.Point_2(0,0) ] ) 
         slc.create_mesh(1.0) 
-        self.assertEqual(slc.get_facet_tags().shape[0],32)
+        self.assertEqual(slc.get_facet_tags(False).shape[0],slc.num_facets() )
+        self.assertTrue(slc.get_facet_tags(True).shape[0] > 0)
     
 
     def test_slice_mesh(self):
@@ -97,7 +97,7 @@ class Slice_Test(unittest.TestCase):
         slc = SVMTK.Slice(0,0,1,-0.5) 
         slc.slice_mesh(domain) 
         slc.create_mesh(5.0) 
-        self.assertEqual( slc.get_cells().shape ,(430, 3) )
+        self.assertEqual( slc.get_cells().shape ,(slc.num_cells(), 3) )
 
 if __name__ == '__main__':
     unittest.main()

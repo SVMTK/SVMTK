@@ -265,7 +265,6 @@ PYBIND11_MODULE(SVMTK, m)
        
         .def("bifurcation_split", &Slice::bifurcation_split, DOC(Slice,bifurcation_split) ) 
        
-       
         .def("get_points",[]( Slice &self){
              auto points = self.get_points();
              return py::array(py::cast(std::move(points))); },  py::return_value_policy::copy, DOC(Slice,get_points) )
@@ -288,16 +287,11 @@ PYBIND11_MODULE(SVMTK, m)
              return py::array(py::cast(std::move(facet_tags))); },
              py::arg("exclude_unmarked")=true,
              py::return_value_policy::move, DOC(Slice,get_facet_tags) )          
-                           
 
         .def("get_constraints",&Slice::get_constraints, DOC(Slice, get_constraints))
              
-        
         .def("get_feature_vertices", &Slice::get_feature_vertices, py::return_value_policy::move ) 
-        
               
-        
-        
         .def("add_polygon_domain", py::overload_cast<std::vector<Point_2>, int, int >(&Slice::add_polygon_domain) , 
              py::arg("polygon"), 
              py::arg("polygon_tag"), 
@@ -327,6 +321,9 @@ PYBIND11_MODULE(SVMTK, m)
         .def("num_constraints", &Slice::num_constraints, DOC(Slice, num_constraints))
         .def("num_subdomains", &Slice::num_subdomains, DOC(Slice, num_subdomains))
         .def("num_cells", &Slice::num_cells, DOC(Slice, num_cells))
+
+        .def("num_facets", &Slice::num_facets, DOC(Slice, num_facets))
+        .def("num_vertices", &Slice::num_vertices, DOC(Slice, num_vertices))
 
         .def("connected_components", &Slice::connected_components, DOC(Slice, connected_components))
         .def("keep_largest_connected_component", &Slice::keep_largest_connected_component, DOC(Slice, keep_largest_connected_component))

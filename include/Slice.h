@@ -423,7 +423,7 @@ class Slice
          return constraints.size();
       }
       
-     // DocString: number_of_faces
+     // DocString: num_cells
      /** 
       * @brief Returns the number of faces 
       * @return the number of faces, i.e triangles.
@@ -432,7 +432,39 @@ class Slice
       {   
          return cdt.number_of_faces();
       } 
-     
+
+     // DocString: num_facets
+     /** 
+      * @brief Returns the number of facets    
+      * @return the number of facets, i.e edges.
+      */  
+      int  num_facets()
+      {   
+          Edge ein;
+          int num_edges=0; 
+          std::map<Edge,bool> handled;
+          
+          for( auto eit = cdt.finite_edges_begin(); eit!=cdt.finite_edges_end();eit++) 
+          {
+               if( handled[*eit]) 
+                   continue;
+               num_edges++;
+               ein = cdt.mirror_edge(*eit) ; 
+               handled[ein] = true;
+               handled[*eit] = true;
+          }
+          return num_edges;
+      } 
+
+     // DocString: num_vertices
+     /** 
+      * @brief Returns the number of vertices 
+      * @return the number of edges, i.e triangles.
+      */
+      int  num_vertices()
+      {   
+         return cdt.number_of_vertices();
+      }      
      //DocString: get_points 
      /**
       * @brief Returns all points in the triangulation.
@@ -472,7 +504,6 @@ class Slice
             {  
                Edge eit(fit,i);
                
-               
                Vertex_handle vh1 = fit->vertex(cdt.ccw(i));
                Vertex_handle vh2 = fit->vertex(cdt.cw(i));
                if( V[vh1]>V[vh2] ) // Handles doubling of edges
@@ -503,12 +534,34 @@ class Slice
      std::vector<int> get_facet_tags(  bool exclude_unmarked)
      {
          std::vector<int> edge_tags;
-         for(auto eit : edges)      
+         ///////////////////////
+         boost::unordered_map<Vertex_handle, int> V;
+         int inum = 1; 
+         for(Vertex_iterator vit=cdt.vertices_begin(); vit!=cdt.vertices_end(); ++vit)
+            V[vit] = inum++;
+     
+         std::map<std::pair<Vertex_handle,Vertex_handle>,int> set_edges; 
+         for(Face_iterator fit=cdt.finite_faces_begin(); fit!=cdt.finite_faces_end(); ++fit) 
+         {
+            for(int i =0; i<3; ++i)
+            {  
+               Edge eit(fit,i);
+               Vertex_handle vh1 = fit->vertex(cdt.ccw(i));
+               Vertex_handle vh2 = fit->vertex(cdt.cw(i));
+               if( V[vh1]>V[vh2] ) // Handles doubling of edges
+                  set_edges[std::pair<Vertex_handle,Vertex_handle>(vh1,vh2)]=this->edges[eit];
+               else
+                  set_edges[std::pair<Vertex_handle,Vertex_handle>(vh2,vh1)]=this->edges[eit];  
+            }
+         }
+         /////////////////////////       
+         for(auto eit : set_edges)      
          {    
              if ( exclude_unmarked and eit.second == 0) 
                   continue;
              edge_tags.push_back(eit.second);
          }             
+         
          return edge_tags;     
      }       
      

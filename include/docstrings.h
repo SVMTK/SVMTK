@@ -832,9 +832,23 @@ R"doc(Returns the number of constraints.
 )doc";
 
 static const char *__doc_Slice_num_cells =
-R"doc(Returns the number of faces.
+R"doc(Returns the number of cells.
 
-:Returns: The number of faces, i.e triangles.
+:Returns: The number of cells, i.e triangles.
+
+)doc";
+
+static const char *__doc_Slice_num_facets =
+R"doc(Returns the number of facets.
+
+:Returns: The number of facets, i.e edges.
+
+)doc";
+
+static const char *__doc_Slice_num_vertices =
+R"doc(Returns the number of vertices.
+
+:Returns: The number of vertices.
 
 )doc";
 
