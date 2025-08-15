@@ -2213,7 +2213,6 @@ class Domain
               }
               cells.push_back(cell);
          }
-         std::cout <<"Cell size " <<cells.size() << std::endl;
          return cells;
     }  
 
