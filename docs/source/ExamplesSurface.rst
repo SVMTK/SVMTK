@@ -5,7 +5,7 @@
 Surface Examples
 =================================
 
-We will give a few examples of SVMTK Surface class and its functionality. (Write More) 
+We will give a few examples of SVMTK Surface class and its functionality. 
 
 
 Triangulate vertices
@@ -161,7 +161,7 @@ In this example, we will use the function :func:`SVMTK.Surface.implicit_surface`
 Clip a surface.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-(Rewrite) We can use :func:`SVMTK.Surface.clip` surface given a plane or another surface, and this will be shown in this example. 
+The function :func:`SVMTK.Surface.clip` can clip a surface given a plane or another surface, and this will be shown in this example. 
 
 
 .. literalinclude:: ../../examples/Surface/example_clip.py
@@ -297,7 +297,7 @@ This example shows the function :func:`SVMTK.Surface.poisson_reconstruction`, wh
 
 .. _separate:
 
-Separate narrow gaps (TODO)
+Separate narrow gaps
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Complex geometries can often have vertex connection problems in the volume meshes due to narrow gaps in the surface. Thus, in this example we show the usage of the function :func:`SVMTK.Surface.separate_narrow_gaps` to separate narrow gaps in the surfaces.
@@ -372,7 +372,7 @@ In example :ref:separate`, we separate narrow gaps in a surface. We will in this
    Spheres that do not overlap.
    
 
-.. literalinclude:: ../../examples/Surface/example_surface_overlapp.py
+.. literalinclude:: ../../examples/Surface/example_surface_overlap.py
    :lines: 32-        
    
 .. figure::  ../Images/spheres_separate.png 
@@ -459,7 +459,7 @@ We will consider two spheres that overlap, and show how the different functions 
 
 
 .. literalinclude:: ../../examples/Surface/example_increment_operations.py
-   :lines: 26-32 
+   :lines: 1-30 
    
 .. figure:: ../Images/init_increment.png   
    :width: 90%
@@ -475,7 +475,7 @@ The function :func:`SVMTK.Surface.embed` works by contracting the vertices outsi
 
 
 .. literalinclude:: ../../examples/Surface/example_increment_operations.py
-   :lines: 26-32 
+   :lines: 31-37 
 
 
 .. figure:: ../Images/embed.png   
@@ -492,7 +492,7 @@ The function :func:`SVMTK.Surface.embed` works by contracting the vertices outsi
 Then, we have the function :func:`SVMTK.Surface.enclose` that works by expanding the vertices inside the region of the overlapping spheres, thus causing the surface to be enclosed. 
 
 .. literalinclude:: ../../examples/Surface/example_increment_operations.py
-   :lines: 35-41 
+   :lines: 40-46 
 
 
 .. figure:: ../Images/enclose.png   
@@ -509,7 +509,7 @@ Next, we have the function :func:`SVMTK.Surface.expose` that works by contractin
 
 
 .. literalinclude:: ../../examples/Surface/example_increment_operations.py
-   :lines: 35-41 
+   :lines: 49-55
 
 
 .. figure:: ../Images/expose.png   
@@ -524,7 +524,7 @@ Next, we have the function :func:`SVMTK.Surface.expose` that works by contractin
 Finally, we have the function :func:`SVMTK.Surface.separate` that moves vertices away from the other surface, either contracting or expanding, and therefore the surfaces can not overlap. 
 
 .. literalinclude:: ../../examples/Surface/example_increment_operations.py
-   :lines: 35-41 
+   :lines: 58-64 
 
 
 .. figure:: ../Images/separate.png   
@@ -535,6 +535,83 @@ Finally, we have the function :func:`SVMTK.Surface.separate` that moves vertices
    ..
    
    Separated surfaces
+   
+.. _incsurfop:
+
+Incremental surface operations with separation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In this example, we will go through the module operations 
+:func:`SVMTK.embed`, 
+:func:`SVMTK.enclose` and
+:func:`SVMTK.expose`, which are similar to the funtions in `ref:incsurfop`.  
+
+We will consider two spheres that overlap, and show how the different functions works.
+
+.. literalinclude:: ../../examples/Surface/example_increment_operations_with_separation.py
+   :lines: 1-28 
+   
+.. figure:: ../Images/c1.png   
+   :width: 90%
+   :alt: Smoothing shape surface
+   :align: center    
+   
+   ..
+   
+   The initial surfaces.
+
+   
+The function :func:`SVMTK.Surface.embed` works by contracting the vertices outside the region of the overlapping spheres, thus causing the surface to be embedded.
+
+
+.. literalinclude:: ../../examples/Surface/example_increment_operations_with_separation.py
+   :lines: 31-37 
+
+
+.. figure:: ../Images/c3.png   
+   :width: 50%
+   :alt: Smoothing shape surface
+   :align: center    
+  
+   ..
+   
+   Embedded surface 
+
+
+
+Then, we have the function :func:`SVMTK.Surface.enclose` that works by expanding the vertices inside the region of the overlapping spheres, thus causing the surface to be enclosed. 
+
+.. literalinclude:: ../../examples/Surface/example_increment_operations.py
+   :lines: 40-46
+
+
+.. figure:: ../Images/c4.png   
+   :width: 50%
+   :alt: Smoothing shape surface
+   :align: center   
+
+   ..
+   
+   Enclosed surface 
+
+
+Next, we have the function :func:`SVMTK.Surface.expose` that works by contracting the vertices inside the region of overlapping spheres, thus causing the surface to be exposed.
+
+
+.. literalinclude:: ../../examples/Surface/example_increment_operations.py
+   :lines: 49-55 
+
+
+.. figure:: ../Images/c5.png   
+   :width: 50%
+   :alt: Smoothing shape surface
+   :align: center   
+
+   ..
+   
+   Exposed surface
+   
+   
    
    
 .. raw:: latex

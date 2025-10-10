@@ -1,5 +1,5 @@
 
-.. _Guides:
+.. _Guides_:
 
 Guides
 -------------------------------------
@@ -11,8 +11,7 @@ The construction of volumetric mesh of complex surface can be difficult, more so
     :maxdepth: 1
 
     SubdomainMap
-    Connectivity
-    Repair
+
 
 
 

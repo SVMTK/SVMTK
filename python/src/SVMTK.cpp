@@ -253,6 +253,7 @@ PYBIND11_MODULE(SVMTK, m)
    
         .def("set_num_surfaces", &SubdomainMap::set_num_surfaces, DOC(SubdomainMap, set_num_surfaces))
         .def("add_interface", &SubdomainMap::add_interface, DOC(SubdomainMap, add_interface))
+        .def("make_interfaces", &SubdomainMap::make_interfaces, DOC(SubdomainMap, make_interfaces))
         .def("get_interfaces", &SubdomainMap::get_interfaces, DOC(SubdomainMap, get_interfaces))
         .def("erase", &SubdomainMap::erase, DOC(SubdomainMap, erase))
         .def("add", &SubdomainMap::add, DOC(SubdomainMap, add));
@@ -604,7 +605,7 @@ PYBIND11_MODULE(SVMTK, m)
              py::arg("error_bound") = 1.e-3, 
              py::arg("surface")= Surface(), DOC(Domain, Domain, 4))         
         
-        .def(" tetrahedral_remeshing",&Domain::tetrahedral_remeshing,
+        .def("tetrahedral_remeshing",&Domain::tetrahedral_remeshing,
              py::arg("edge_length")=1.0,
              py::arg("nb_iter")=5, 
              py::arg("protect_borders")=false, DOC(Domain,tetrahedral_remeshing))       
@@ -730,7 +731,7 @@ PYBIND11_MODULE(SVMTK, m)
         
         .def("write_facet_data", &Domain::write_facet_data, DOC(Domain, write_facet_data)) 
         
-        .def("get_collision_distances", &Domain::get_collision_distances<Surface>, DOC(Domain, get_collision_distances) )
+        .def("get_collision_distances", &Domain::get_collision_distances<Surface>, DOC(Domain, get_collision_distances))
         .def("get_collision_spheres"  , &Domain::get_collision_spheres<Surface>,DOC(Domain, get_collision_spheres))
               
         .def("boundary_segmentations", py::overload_cast<std::pair<int, int>, double>(&Domain::boundary_segmentations<Surface>),
