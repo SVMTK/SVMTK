@@ -1,6 +1,5 @@
 /*
   This file contains docstrings for use in the Python bindings.
-  Do not edit! They were automatically extracted by pybind11_mkdoc.
  */
 
 #define __EXPAND(x)                                      x
@@ -104,7 +103,7 @@ Note: Supports only .mesh format with integer subdomain tag, and will rebind fac
 
 :param filename: the filename of the volumetric mesh. 
 :param error_bound: the error bound of the surface representation.
-:param
+:param surface: abstraction  
 
 )doc";
 
@@ -200,7 +199,8 @@ R"doc(Returns the Cartesian coordinates for all vertices as a numpy array (N,3) 
 static const char *__doc_Domain_tetrahedral_remeshing =
 R"doc( Tetrahedral remeshing of the tetrahedral mesh.
 
-See: `Tetrahedral remeshing <https://doc.cgal.org/latest/Tetrahedral_remeshing/index.html>`_.
+See:
+`Tetrahedral remeshing <https://doc.cgal.org/latest/Tetrahedral_remeshing/index.html>`_.
 
 :param edge_length: is edge length after remeshing.
 :param nb_iter: the number of iterations for the sequence of atomic operations performed. 
@@ -340,34 +340,40 @@ See also:
 `excude_optimize_mesh <https://doc.cgal.org/latest/Mesh_3/group__PkgMesh3Functions.html>`_.
 
 :param time_limit: Sets, in seconds, a CPU time limit after which the optimization process is stopped.
-:sliver_bound: Sets a targeted lower-bound on dihedral angles of mesh cells.
+:param sliver_bound: Sets a targeted lower-bound on dihedral angles of mesh cells.
 
 )doc";
 
 static const char *__doc_Domain_get_collision_distances =
-R"doc( Experimental: This function computes the collision distance in the negative normal for each facet on the interface for a subdomain. If
-the collision occurs with a specified interface, then the collision distance is set as negative. The collisions distance is stored as 
-triangle data, and can be written to file.
+R"doc(Computes the collision distance in the negative normal direction for each facet on am interface or subdomain boundary.
 
-The purpose of this function is to approximate to the hydrolic resistance for a subdomain, then remove the 
-subdomain, and simulate flow on the interface. 
+This function computes the collision distance in the negative normal for each facet on the interface for a subdomain. If
+the collision occurs with a specified interface, then the collision distance is set as negative. The collisions distance is stored as 
+triangle data, and can be written to file. The purpose of this function is to approximate to the hydrolic resistance for a subdomain, then remove the 
+subdomain, and simulate flow on the interface.
+
+Note: 
+This function is experimental.
 
 :param subdomain_tag: An integer representing a subdomain in the mesh.  
+:param boundary_tag:  An integer, default 0, used in combination with the subdomain_tag gives an iterface in the mesh.
 
-:int boundary_tag=0:  An integer, which in combination wit the subdomain_tag gives an iterface in the mesh.
-
+:Returns: None, updates facet data.
 
 )doc";
 
 static const char *__doc_Domain_get_collision_spheres =
-R"doc(Experimental: This function computes the collision spheres for each facet on the interface for a subdomain. 
-The collisions distance is stored as triangle data, and can be written to file.
+R"doc(Computes smallest collision sphere in the negative normal direction for each facet on am interface or subdomain boundary.
 
-The purpose of this function is to approximate to the hydrolic resistance for a subdomain, then remove the 
-subdomain, and simulate flow on the interface. 
+The collisions distance is stored as triangle data, and can be written to file. The purpose of this function is to approximate to the hydrolic resistance for a subdomain, 
+then remove the subdomain, and simulate flow on the interface. 
+
+Note: 
+This function is experimental.
 
 :param subdomain_tag: An integer representing a subdomain in the mesh.  
 
+:Returns: None, updates facet data.
 
 )doc";
 
@@ -961,6 +967,14 @@ R"doc(Adds a tag value for surfaces patches between subdomains defined by a pair
 :param tag: The tag that the specified surface interface will have in the stored mesh.
 
 )doc";
+static const char *__doc_SubdomainMap_make_interfaces =
+R"doc( Returns stored interfaces and tag. If no interfaces are stored, generates an unique tag for all interfaces present in the mesh starting from the highest cell tag.  
+
+
+:param interfaces: contains a set of all interfaces between cells used in the mesh. 
+:Returns: map containing the interface between subdomains as key, and the interface tag as value. 
+)doc";
+
 
 static const char *__doc_SubdomainMap_erase =
 R"doc(Erase binary string from SubdomainMap.
@@ -988,15 +1002,6 @@ R"doc(Returns all tags that is added to the class object.
 
 )doc";
 
-
-static const char *__doc_SubdomainMap_make_interfaces =
-R"doc(Returns the content of class attribute patches between subdomains with the corresponding tag value. If patches is empty, gives each interfaces an unique tag based on presence in mesh and the highest cell tag.
-
-:param interfaces: Tuple of two integers that defines the suface interface between two subdomains.
-
-:Returns: Dictonary with tuple of two integers as key and a integer tag value.
-
-)doc";
 
 
 static const char *__doc_SubdomainMap_print =
@@ -1137,22 +1142,21 @@ Creates a circle in a specified plane, and uses this circle to clip the surface 
 
 
 static const char *__doc_Surface_get_perpendicular_cut=
-R"doc(Constructs a circular surface in a given plane, which is intersects the perpendicular to the :func:`mean_curvature_flow.
+R"doc(Constructs a circular surface in a given plane, which is intersects the perpendicular to the :func:`mean_curvature_flow`.
 
 Computes the nearest point in the mean curvature flow to the point query, and creates a circular surface in the plane that is perpendicular to mean curvature flow.
 
-See:
-`mean_curvature_flow <https://doc.cgal.org/latest/Surface_mesh_skeletonization/index.html>`_.
+See: `mean_curvature_flow <https://doc.cgal.org/latest/Surface_mesh_skeletonization/index.html>`_.
 
 :param point: :class:`Point_3` query to located the nearest point of the mean curvature flow.
 :param radius: Radius of the circle.
 
-:Returns: :class:`Surface` 
+:Returns: :class:`Surface`.
 
 )doc";
 
 static const char *__doc_Surface_get_perpendicular_cut_2=
-R"doc(Constructs a circular surface in a given plane, which is intersects the perpendicular to the :func:`mean_curvature_flow.
+R"doc(Constructs a circular surface in a given plane, which is intersects the perpendicular to the :func:`mean_curvature_flow`.
 
 Computes where the plane and mean curvature flow intersectes, and creates a circular surface in the plane that is perpendicular to mean curvature flow.
 
@@ -1195,13 +1199,14 @@ R"doc( Finds and removes degenerate faces in the surface and subsequent hole fil
 )doc";
 
 static const char *__doc_Surface_make_circle_in_plane_2 =
-R"doc( Finds and removes degenerate faces in the surface.
+R"doc( Creates open surface circle in a plane 
 
 :param point: the center point of the circle. 
-:param vec  : the normal of the plane. 
-:param radius : the radius of the circle. 
-:param edge_length : the target edge length for the surface construction.  
+:param vec: the normal of the plane. 
+:param radius: the radius of the circle. 
+:param edge_length: the target edge length for the surface construction.  
 
+:Returns: None 
 
 )doc";
 
@@ -1503,7 +1508,7 @@ R"doc(Constructs a circle in the a given surface plane.
 static const char *__doc_Surface_make_cone =
 R"doc(Creates a surface mesh structure with vertices and facets connecting vertices for a cone. The function also handles the special cases of sharp cone and cylinder.
 
-:Parameters: |
+
 :param x0: x-coordinate of the first cone center.
 :param y0: y-coordinate of the first cone center.
 :param z0: z-coordinate of the first cone center.

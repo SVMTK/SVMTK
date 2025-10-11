@@ -1972,7 +1972,7 @@ class Domain
      *        the collision distance is negative.
      * 
      * @note : We do not use the facets as identifier, since options like remove subdomains will cause 
-     *         problems with pointers and addresses. Thus, the data is identified as Trinagle_3, which can be 
+     *         problems with pointers and addresses. Thus, the data is identified as Triangle_3, which can be 
      *         used to find the the matching Facet.
      *       
      * @param subdomain_tag 

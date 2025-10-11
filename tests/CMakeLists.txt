@@ -11,7 +11,6 @@ set(TEST_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/test_Slice.cpp
 
 )
-message("AFSFAFAGEAGEFA") 
 find_package (Eigen3 3.2 REQUIRED)
 include(${EIGEN3_USE_FILE})
 

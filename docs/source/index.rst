@@ -21,8 +21,8 @@ Welcome to SVMTK's documentation!
     Requirements
     Examples 
     Guides
-    Literature <https://github.com/SVMTK>    
-    SVMTK
+    Literature  <https://link.springer.com/book/10.1007/978-3-030-95136-8>             
+    SVMTK 
 
 .. only:: html
  

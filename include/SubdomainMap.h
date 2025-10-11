@@ -345,7 +345,7 @@ class SubdomainMap :virtual public AbstractMap
          */
         void add_interface(std::pair<int,int> interface, int tag)
         {
-              if(interface.second < interface.first) 
+              if(interface.second > interface.first)  //#####
                 std::swap(interface.second, interface.first);
               patches[interface] = tag;
         } 

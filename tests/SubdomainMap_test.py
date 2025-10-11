@@ -95,13 +95,31 @@ class SubdomainMap_Test(unittest.TestCase):
         except SVMTK.InvalidArgumentError:
             flag = True
         self.assertTrue(flag)     
-             
+          
+          
+    def test_make_interfaces(self):
+        s1 = SVMTK.Surface()
+        s1.make_sphere(0.0,1.5,0.0,3.0,1.0)
+        s2 = SVMTK.Surface()
+        s2.make_sphere(0.0,-1.5,0.0,3.0,1.0)
+        smap = SVMTK.SubdomainMap(2) 
+        domain = SVMTK.Domain([s1,s2])
+        domain.create_mesh(1.0)
+        patches = domain.get_patches()
+        interfaces = smap.make_interfaces(patches)
+        self.assertEqual( len(interfaces), len(patches)) 
+        smap.add_interface((1,0),9)  
+        interfaces = smap.make_interfaces(patches)
+        self.assertEqual( interfaces[(1,0)],9)
+        
+                  
              
     def test_add_interface(self):        
         smap = SVMTK.SubdomainMap(2) 
         smap.add_interface((1,0),2) 
         interfaces = smap.get_interfaces()
-        self.assertEqual(interfaces[(0,1)],2)     
+        print(interfaces)
+        self.assertEqual(interfaces[(1,0)],2)     
                    
 
 if __name__ == '__main__':

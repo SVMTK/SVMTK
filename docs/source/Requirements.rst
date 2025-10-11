@@ -54,22 +54,22 @@ and the submodule version can be switched with::
 Tested CGAL versions 
   - 5.3.0
 
-Python>=3.6 
+Python>=3.8 
 -------------------------------------------
-Installing python3.6::
+Installing python3.8::
  
    sudo apt-get update
 
-   sudo apt-get install -y python3.6
+   sudo apt-get install -y python3.8
 
 Check version of python3:: 
 
    python3 --version
 
-In case that the version does not correspond to python3.6, we 
+In case that the version does not correspond to python3.8, we 
 can change the default version python3 with::
 
-   sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6
+   sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8
 
    sudo update-alternatives --config python3
 

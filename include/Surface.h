@@ -2680,7 +2680,7 @@ class Surface
      return clip(clipper, true, preserve_manifold);
    }
    
-  //DocString: get_perpendicular_cut
+  // DocString: get_perpendicular_cut
   /**
    * @brief Constructs a clip surface where a given plane intersects the mean curvature flow[], the clip surface will be  
    *        perpendicular to mean curvature flow.
@@ -2741,7 +2741,7 @@ class Surface
        
    }
    
-  //DocString: get_perpendicular_cut
+  // DocString: get_perpendicular_cut
   /**
    * @brief Constructs a clip surface near a query point. The clip surface will be  
    *        perpendicular to mean curvature flow.
