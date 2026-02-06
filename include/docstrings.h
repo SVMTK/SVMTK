@@ -47,9 +47,9 @@ R"doc(Gives each interfaces an unique tag based on presence in mesh and from the
 
 
 static const char *__doc_Domain =
-R"doc(The SVMTK Domain class is used to create and tetrahedra mesh by utilizing `CGAL <https://www.cgal.org/>`_. 
+R"doc(The :class:`Domain` is used to create and tetrahedra mesh by utilizing `CGAL <https://www.cgal.org/>`_. 
 
-The SVMTK Domain class was implemented with the `Exact predicates inexact constructions kernel <https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Exact__predicates__inexact__constructions__kernel.html>`_.  The construction of tetrahedra mesh in CGAL require `CGAL Domain <https://doc.cgal.org/latest/Mesh_3/group__PkgMesh3Domains.html>`_. 
+:class:`Domain` was implemented with the `Exact predicates inexact constructions kernel <https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Exact__predicates__inexact__constructions__kernel.html>`_.  The construction of tetrahedra mesh in CGAL require `CGAL Domain <https://doc.cgal.org/latest/Mesh_3/group__PkgMesh3Domains.html>`_. 
 
 Input surface are used to create `Polyhedral_mesh_domain_with_features_3 <https://doc.cgal.org/latest/Mesh_3/classCGAL_1_1Polyhedral__mesh__domain__with__features__3.html>`_. which are function wrapped to create a `Labeled_Mesh_Domain <https://doc.cgal.org/latest/Mesh_3/classCGAL_1_1Labeled__mesh__domain__3.html>`_. This allows the construction of meshes to create cell tags so that we may speicify different subdomains. The Labeled mesh domain properties are then used to declare `Mesh_domain_with_polyline_features_3 <https://doc.cgal.org/latest/Mesh_3/classCGAL_1_1Mesh__domain__with__polyline__features__3.html>`_.
 
@@ -67,6 +67,12 @@ Attributes:
 - **c3t3** - `Mesh_complex_3_in_triangulation_3 <https://doc.cgal.org/latest/Mesh_3/classMeshComplex__3InTriangulation__3.html>`_ object.
 - **borders** - list of sequential points that does not overlapp in a non-conforming way.
 - **features** - list of sequential points.
+- **triangle_data** - unorderd map container for facet data.
+- **domain_ptr** - unique pointer to Mesh domain object, derived from CGAL.
+- **map_ptr** - a shared pointer to :class:`AbstractMap`. 
+- **min_sphere** - a :struct:`Minimum_sphere` object used to store the minimum sphere to bound all added constructs.
+- **resolution** - stores the highest resolution of add :class:`Surface`objects.  
+
 
 )doc";
 
@@ -90,7 +96,7 @@ static const char *__doc_Domain_Domain_3 =
 R"doc(Constructor for meshing multiple surfaces
 
 :param surfaces: List of :class:`Surface` objects.
-:param map: :class:`SubDomainMap` object, used to set subdomain and boundary tags.
+:param map: :class:`SubDomainMap` object derived from :class:`AbstractMap`, used to set subdomain and boundary tags.
 :param error_bound: the error bound of the surface representation.
 
 )doc";
@@ -101,9 +107,9 @@ R"doc(Constructor for loading a volumetric mesh from file.
 
 Note: Supports only .mesh format with integer subdomain tag, and will rebind facet tags.
 
-:param filename: the filename of the volumetric mesh. 
+:param filename: the filename of the volumetric mesh.
+:param surface: :class:`SubDomainMap` object derived from :class:`AbstractMap`, used to set subdomain and boundary tags.
 :param error_bound: the error bound of the surface representation.
-:param surface: abstraction  
 
 )doc";
 
@@ -134,9 +140,11 @@ R"doc(Returns a set of integer that represents the cell tags in the mesh.
 
 
 static const char *__doc_Domain_get_facets =
-R"doc(Returns all triangles as a numpy array (N,3) with vertex indices. The first vertex index starts at 1.  
+R"doc(Returns all triangles as an array (N,3) with vertex indices. 
 
-:Returns: a numpy array of facets as vertex indices.
+:param first_index: index of the first vertex, default is 1. 
+
+:Returns: an array of facets as vertex indices.
 
 )doc";
 
@@ -145,21 +153,23 @@ R"doc(Returns all facet tags as a numpy array, with the option of excluding unma
 
 :param exclude_unmarked: boolean option to either exclude facets with tag equal to zero.
 
-:Returns: a numpy array of facet tags.
+:Returns: an array of facet tags.
 
 )doc";
 
 static const char *__doc_Domain_get_cells =
-R"doc(Returns all tetrahedrons as a numpy array (N,4) with vertex indices. The first vertex index starts at 1.  
+R"doc(Returns all tetrahedrons as a numpy array (N,4) with vertex indices.   
 
-:Returns: a numpy array of cells as vertex indices.
+:param first_index: index of the first vertex, default is 1. 
+
+:Returns: an array of cells as vertex indices.
 
 )doc";
 
 static const char *__doc_Domain_get_cell_tags =
 R"doc(Returns all tetrahedron tags as a numpy array.   
 
-:Returns: a numpy array with tetrahedron tags.
+:Returns: an array with tetrahedron tags.
 
 )doc";
 
@@ -190,7 +200,7 @@ R"doc(Refine the mesh to a target mesh_resolution.
 static const char *__doc_Domain_get_points =
 R"doc(Returns the Cartesian coordinates for all vertices as a numpy array (N,3) with vertex locations.   
 
-:Returns: a numpy array of all vertex coordinates.
+:Returns: an array of all vertex coordinates as tuples.
 
 )doc";
 
@@ -211,7 +221,7 @@ See:
 )doc";
 
 static const char *__doc_Domain_add_sharp_border_edges =
-R"doc(Adds sharp border edges from a SVMTK Surface object.
+R"doc(Adds sharp border edges from a :class:`Surface` object.
 
 Checks polyhedron for sharp edges, if these edges do not conflict/intersect previously stored edges, then the edges are stored in member variable borders. The use of 1D features in combination with ill-posed meshing parameters can cause segmentation fault (crash).
 
@@ -221,22 +231,33 @@ Checks polyhedron for sharp edges, if these edges do not conflict/intersect prev
 )doc";
 
 static const char *__doc_Domain_add_sharp_border_edges_2 =
-R"doc(Adds sharp border edges from a SVMTK Surface object in a given plane. 
+R"doc(Adds sharp border edges from a :class:`Surface` object in a given :class:`Plane_3`. 
 
 :param surface: :class:`Surface` object.
-:param plane: excludes all edges that is not within a given error of the plane.
+:param plane: :class:`Plane_3` used for filtering out edges whose distance from the :class:`Plane_3` exceeds 0.1 times the average edge length.
 :param threshold: the threshold angle in degree (0-90). Angles between connected edges above the threshold angle is considered sharp.
 
 )doc";
 
 static const char *__doc_Domain_add_sharp_border_edges_3 =
-R"doc(Adds sharp border edges from a SVMTK Surface object on the surface of another :class:`Surface`. 
+R"doc(Adds sharp border edges from :class:`Surface` object within the proximity of another :class:`Surface` object. 
+This can be useful in combitation with the clip function. (TODO see example) 
 
 :param surface: :class:`Surface` object.
-:param clip: :class:`Surface` object used to excludes all edges that is not within a given error of the clip surface.
+:param clip: :class:`Surface` object used for filtering out edges whose distance from the object exceeds 0.1 times the average edge length.
 :param threshold: the threshold angle in degree (0-90). Angles between connected edges above the threshold angle is considered sharp.
 
 )doc";
+
+static const char *__doc_Domain_add_sharp_border_edges_4 =
+R"doc(Adds sharp border edges from a :class:`Surface` object in a given plane. 
+
+:param surface: :class:`Surface` object.
+:param plane: as a tuple (a,b,c,d) used for filtering out edges whose distance from the plane exceeds 0.1 times the average edge length.
+:param threshold: the threshold angle in degree (0-90). Angles between connected edges above the threshold angle is considered sharp.
+
+)doc";
+
 
 static const char *__doc_Domain_boundary_segmentations =
 R"doc(Segments the boundary of a specified subdomain tag. Calls :func:`Surface.surface_segmentation` on the boundary surfaces specific by input, and updates the boundary facets with the segmentation tags.
@@ -299,23 +320,19 @@ R"doc(Creates the mesh stored in the class attribute c3t3. The mesh resolution i
 static const char *__doc_Domain_init_triangulation =
 R"doc(Inserts all points from a class:`Surface` object into the volumetric mesh before any triangulation.
 
-Note: 
-     Experimental, may result in failure.
-     
+Note: Experimental.  
+
 :param surf: a class:`Surface` object:     
       
-
 )doc";
 
 static const char *__doc_Domain_init_triangulation_2 =
 R"doc(Inserts all points from a list of  class:`Surface` objects into the volumetric mesh before any triangulation.
 
-Note: 
-     Experimental, may result in failure.
+Note: Experimental.
      
 :param surf: a list of class:`Surface` object:     
       
-
 )doc";
 
 
@@ -329,7 +346,7 @@ R"doc(Computes the dihedral angle for all tetrahedron cells in complex (c3t3).
 static const char *__doc_Domain_dihedral_angles_min_max =
 R"doc(Returns the maximum and minimum dihedral angles of cells in mesh.
 
-:Returns: Tuple of floats with first as the minimum and second as maximum.
+:Returns: tuple of floats with first as the minimum and second as maximum.
 
 )doc";
 
@@ -352,13 +369,12 @@ the collision occurs with a specified interface, then the collision distance is 
 triangle data, and can be written to file. The purpose of this function is to approximate to the hydrolic resistance for a subdomain, then remove the 
 subdomain, and simulate flow on the interface.
 
-Note: 
-This function is experimental.
+Note: This function is experimental.
 
 :param subdomain_tag: An integer representing a subdomain in the mesh.  
 :param boundary_tag:  An integer, default 0, used in combination with the subdomain_tag gives an iterface in the mesh.
 
-:Returns: None, updates facet data.
+:Returns: None, updates triangle data.
 
 )doc";
 
@@ -368,12 +384,11 @@ R"doc(Computes smallest collision sphere in the negative normal direction for ea
 The collisions distance is stored as triangle data, and can be written to file. The purpose of this function is to approximate to the hydrolic resistance for a subdomain, 
 then remove the subdomain, and simulate flow on the interface. 
 
-Note: 
-This function is experimental.
+Note: This function is experimental.
 
 :param subdomain_tag: An integer representing a subdomain in the mesh.  
 
-:Returns: None, updates facet data.
+:Returns: None, updates triangle data.
 
 )doc";
 
@@ -387,8 +402,6 @@ R"doc(Writes stored triangle data to file.
 )doc";
 
 
-
-
 static const char *__doc_Domain_get_interface =
 R"doc(Returns the interface between two subdomain as a :class:`Surface` object.
 
@@ -399,14 +412,14 @@ R"doc(Returns the interface between two subdomain as a :class:`Surface` object.
 )doc";
 
 static const char *__doc_Domain_get_boundaries =
-R"doc(Iterates over all surface boundaries of subdomains and stores and returns it as a list of Surface objects.
+R"doc(Iterates over all surface boundaries of subdomains and stores and returns it as a list of :class:`Surface` objects.
 
 :Returns: List of :class:`Surface` objects.
     
 )doc";
 
 static const char *__doc_Domain_get_boundary =
-R"doc(Returns the boundary of a subdomain tag stored in a Surface object.
+R"doc(Returns the boundary of a subdomain tag stored in a :class:`Surface` object.
 
 :param tag: An integer representing a subdomain in the mesh.  
 
@@ -548,10 +561,14 @@ R"doc(Removes all cells in the mesh with tags in a list, but perserves the inter
 static const char *__doc_Domain_save =
 R"doc(Writes the mesh stored in the class attribute c3t3 to file.
 
-The interface tags are loaded from :class:`SubdomainMap` added in the constructor. If there are no interfaces in :class:`SubDomainMap`, then default interfaces are selected.
+The interface tags are loaded from :class:`SubdomainMap` added in the constructor.
+If there are no interfaces in :class:`SubDomainMap`, then default interfaces are selected.
+
+Valid mesh formats are: .mesh and numpy .npz.
 
 :param filename: The path to the output file. 
-:param save_1Dfeatures: Option to save the edges with tags.
+:param exclude_unmarked: boolean option to exclude_unmarked facets.
+:param save_edge_feature: boolean option to save the edges with tags.
 
 )doc";
 
@@ -562,7 +579,7 @@ R"doc(Wrapper for `CGAL Plane_3 class <https://doc.cgal.org/latest/Kernel_23/cla
 )doc";
 
 static const char *__doc_Plane3_Plane3 =
-R"doc(Creates a SVMTK Plane_3 object by setting the coefficients of the plane equation.
+R"doc(Creates :class:`Plane_3` object by setting the coefficients of the plane equation.
 
 :param a: Sets the first coefficient of the plane equation. 
 :param b: Sets the second coefficient of the plane equation.
@@ -572,7 +589,7 @@ R"doc(Creates a SVMTK Plane_3 object by setting the coefficients of the plane eq
 )doc";
 
 static const char *__doc_Plane3_Plane3_2 =
-R"doc(Creates a SVMTK Plane_3 object by providing a point on the plane and the plane normal vector.
+R"doc(Creates a :class:`Plane_3` object by providing a point on the plane and the plane normal vector.
 
 :param point: :class:`Point_3` object of a point on the plane.
 :param vector: :class:`Vector_3` of the plane normal. 
@@ -584,7 +601,7 @@ R"doc(Wrapper for `CGAL Point_2 class <https://doc.cgal.org/latest/Kernel_23/cla
 
 
 static const char *__doc_Point2_Point2 =
-R"doc(Creates a SVMTK Point_2 object, i.e. a point in xy plane.
+R"doc(Creates a :class:`Point_2` object, a point in xy plane.
 
 :param x: Sets the x-coordinate of the point.
 :param y: sets the y-coordinate of the point.
@@ -596,7 +613,7 @@ static const char *__doc_Point3 =
 R"doc(Wrapper for `CGAL Point_3 class <https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Point__3.html>`_.)doc";
 
 static const char *__doc_Point3_Point3 =
-R"doc(Creates a SVMTK Point_3 object.
+R"doc(Creates a  :class:`Point_3` object.
 
 :param x: Sets the x coordinate of the point.
 :param y: Sets the y coordinate of the point.
@@ -606,8 +623,8 @@ R"doc(Creates a SVMTK Point_3 object.
 
 
 static const char *__doc_Slice =
-R"doc(The SVMTK Slice class stores and manipulate triangulated surfaces in a plane, i.e. the third coordinate is neglected. The Slice class uses the `Exact predicates inexact constructions kernel <https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Exact__predicates__inexact__constructions__kernel.html>`_. The meshing is done by triangulation of constrainted with edges by using CGAL class `Constrained_triangulation_plus_2 <https://doc.cgal.org/latest/Triangulation_2/classCGAL_1_1Constrained__triangulation__plus__2.html>`_ . (REWRITE) 
-The Slice does not handle cavities, but cavities can be assigned with adding surfaces with :func:`add_surface_domains` and optional SVMTK :class:`SubdomainMap` object.
+R"doc(The :class:`Slice` stores and manipulate triangulated surfaces in a plane, i.e. the third coordinate is neglected. The Slice class uses the `Exact predicates inexact constructions kernel <https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Exact__predicates__inexact__constructions__kernel.html>`_. The meshing is done by triangulation of constrainted with edges by using CGAL class `Constrained_triangulation_plus_2 <https://doc.cgal.org/latest/Triangulation_2/classCGAL_1_1Constrained__triangulation__plus__2.html>`_ . (REWRITE) 
+The Slice does not handle cavities, but cavities can be assigned with adding surfaces with :func:`add_surface_domains` and optional :class:`SubdomainMap` object.
 
 Notable CGAL declarations: 
 - `Constrained_Delaunay_triangulation_2 <https://doc.cgal.org/latest/Triangulation_2/classCGAL_1_1Constrained__Delaunay__triangulation__2.html>`_.
@@ -624,19 +641,51 @@ Attributes:
 )doc";
 
 
-/*static const char *__doc_Slice_get_points    = R"doc(Returns points in the 2D triangulation as a 2D numpy array.)doc";
+static const char *__doc_Slice_remove_constraints =
+R"doc( Remove constraints added in :class:`Slice` object located inside polygons. 
 
-static const char *__doc_Slice_get_facets_points = R"doc(Returns the points for facets in the 2D triangulation.)doc";
+:param polygons: a vector of polgoyns, i.e. a closed vector of class:`Point_2` objects.
 
-static const char *__doc_Slice_get_facet_tags = R"doc(Returns the points for facets in the 2D triangulation.)doc";
+)doc";
 
-static const char *__doc_Slice_get_edge_tags = R"doc(Returns the points for facets in the 2D triangulation.)doc";
 
-static const char *__doc_Slice_get_edges = R"doc(Returns the points for facets in the 2D triangulation.)doc";
+static const char *__doc_Slice_remove_constraints_2 =
+R"doc( Remove constraints added in :class:`Slice` object located inside a polygon. 
 
-static const char *__doc_Slice_get_edges_2 = R"doc(Returns the edges with the edge index. :Returns: Dictonary of edges and edge index. )doc";
-*/ 
+:param polygons: a closed vector of class:`Point_2` objects.
 
+)doc";
+
+
+static const char *__doc_Slice_remove_constraints_3 =
+R"doc( Remove constraints added in :class:`Slice` object located inside polygons. 
+
+:param polygons: a vector of polgoyns, where polygon is a closed vector of points (x,y).
+
+)doc";
+
+static const char *__doc_Slice_remove_constraints_4 =
+R"doc( Remove constraints added in :class:`Slice` object located inside a polygon. 
+
+:param polygons: a closed vector of points (x,y).
+
+)doc";
+
+static const char *__doc_Slice_smooth_constraints =
+R"doc( Smooths the added constraints in :class:`Slice` object.
+
+:param beta: the smoothing parameter 
+
+)doc";
+
+
+static const char *__doc_Slice_reconstruct_constraints =
+R"doc( Reconstructs the added constraints in :class:`Slice` object.
+
+:param target_edge_length: the edge length of the reconstructed constraints.
+:param merge: will
+
+)doc";
 
 
 static const char *__doc_Slice_get_points =
@@ -647,40 +696,39 @@ R"doc( Returns points in the 2D triangulation as a numpy array with dim Nx3
 )doc";
 
 static const char *__doc_Slice_get_cell_tags =
-R"doc( Returns a numpy array of cell tags corresponding to the ouput of :func:`Slice.get_cells`. 
+R"doc( Returns an array of cell tags corresponding to the ouput of :func:`Slice.get_cells`. 
 
-
-:Returns: numpy array of integers, represented as cell tags.
+:Returns: an array of integers, representing the cell tags.
 
 )doc";
 
 static const char *__doc_Slice_get_cells =
-R"doc( Returns all cells in the 2D triangulation, with a cell given by three vertex indices, as a numpy array.
+R"doc( Returns all cells in the 2D triangulation, with a cell given by three vertex indices, as an array.
 
 Note : Vertex indices starts with index 1.
 
-:Returns: numpy array of cells in the 2D triangulation.
+:Returns: an array of cells in the 2D triangulation.
 
 )doc";
 
 
 static const char *__doc_Slice_get_facets =
-R"doc( Returns all facets in the 2D triangulation, with a facet given by two vertex indices, as numpy array, with the option of excluding unmarked facets.
+R"doc( Returns all facets in the 2D triangulation, with a facet given by two vertex indices, as an array, with the option of excluding unmarked facets.
 
 Note : Vertex indices starts with index 1.
 
 :param exclude_unmarked: if true exlcudes unmarked facets from output. 
 
-:Returns: numpy array of facets in the mesh.
+:Returns: an array of facets in the mesh.
 
 )doc";
 
 static const char *__doc_Slice_get_facet_tags =
-R"doc( Returns a numpy array of facet tags corresponding to the ouput of :func:`Slice.get_facets`. 
+R"doc( Returns an array of facet tags corresponding to the ouput of :func:`Slice.get_facets`. 
 
 :param exclude_unmarked: if true exlcudes unmarked facets from output. 
 
-:Returns: numpy array of facet tags in the mesh.
+:Returns: an array of facet tags in the mesh.
 
 
 )doc";
@@ -690,22 +738,30 @@ static const char *__doc_Slice_add_polygon_domain =
 R"doc( Marks all cells within the polygon with the polygon tag.
 
 :param polygon: a closed list of :class:`Point_2` objects.
-
 :param polygon_tag: a integer for the polygon.
 
 )doc";
 
-static const char *__doc_Slice_Slice = R"doc(Create an empty SVMTK Slice object.)doc";
+static const char *__doc_Slice_add_polygon_domain_2 = 
+R"doc( Marks all cells within the polygon with the polygon tag.
+
+:param polygon: a closed list of tuples (x,y,z).
+:param polygon_tag: a integer for the polygon.
+
+)doc";
+
+
+static const char *__doc_Slice_Slice = R"doc(Create an empty  :class:`Slice` object.)doc";
 
 static const char *__doc_Slice_Slice_2 =
-R"doc(Constructs a SVMTK Slice object with a specified plane. 
+R"doc(Constructs a :class:`Slice` object with a specified plane. 
 
 :param plane: Plane of the slice.
 
 )doc";
 
 static const char *__doc_Slice_Slice_3 =
-R"doc(Constructs a SVMTK Slice object with a specified plane. 
+R"doc(Constructs a :class:`Slice` object with a specified plane. 
 
 :param point: :class:`Point_3` object on plane of the slice.
 :param vector: :class:`Vector_3` plane normal.
@@ -713,7 +769,7 @@ R"doc(Constructs a SVMTK Slice object with a specified plane.
 )doc";
 
 static const char *__doc_Slice_Slice_4 =
-R"doc(Constructs a SVMTK Slice object with a specified plane_3. The plane is defined with the equation 
+R"doc(Constructs a :class:`Slice` object with a specified plane_3. The plane is defined with the equation 
 .. :math:`ax+by+cz+d = 0`
 
 :param a: parameter in the plane equation.
@@ -722,7 +778,15 @@ R"doc(Constructs a SVMTK Slice object with a specified plane_3. The plane is def
 :param d: parameter in the plane equation.
 
 )doc";
-    
+
+static const char *__doc_Slice_Slice_5 =
+R"doc(Constructs a :class:`Slice` object with a specified plane_3. The plane is defined with the equation 
+.. :math:`ax+by+cz+d = 0`
+
+:param plane: the plane equation as a tuple (a,b,c,d) . 
+
+)doc";
+
 static const char *__doc_Slice_remove_polygons = 
 R"doc(Removes small closed loops of points, i.e. polygons that are lower than an area threshold
 
@@ -731,25 +795,41 @@ R"doc(Removes small closed loops of points, i.e. polygons that are lower than an
 )doc";    
 
 static const char *__doc_Slice_add_constraint =
-R"doc(Adds polyline to constraints .
+R"doc(Adds polyline as constraint to the :class:`Slice` object.
 
-:param polyline: List of sequential :class:`Point_2` objects.
+:param polyline: list of sequential :class:`Point_2` objects.
 
 )doc";
 
+static const char *__doc_Slice_add_constraint_2 =
+R"doc(Adds polyline as constraint to the :class:`Slice` object.
+
+:param polyline: list of sequential points as tuples of dobule (x,y).
+
+)doc";
+
+
 static const char *__doc_Slice_add_constraints =
-R"doc(Adds constraints from another Slice object.
+R"doc(Adds constraints from another :class:`Slice` object.
 
 :param slice: :class:`Slice` object.
 
 )doc";
 
 static const char *__doc_Slice_add_constraints_2 =
-R"doc(Adds polylines to constraints.
+R"doc(Adds polylines as constraints to the :class:`Slice` object.
 
 :param polylines: Nested list of sequential :class:`Point_2` objects.
 
 )doc";
+
+static const char *__doc_Slice_add_constraints_3 =
+R"doc(Adds polylines as constraints to the :class:`Slice` object.
+
+:param polylines: Nested list of sequential points as tuples (x,y).
+
+)doc";
+
 
 static const char *__doc_Slice_add_surface_domains =
 R"doc(Add tags to the facets in the 2D mesh based on overlapping surfaces and :class:`SubdomainMaps`.
@@ -769,6 +849,13 @@ R"doc(Add tags to the facets in the 2D mesh based on overlapping surfaces and De
 )doc";
 
 static const char *__doc_Slice_clear_costraints = R"doc(Clears all the constraints added to the class object)doc";
+
+static const char *__doc_Slice_get_feature_vertices = 
+R"doc( Returns vertices of the generated mesh that corresponds to edge constraints. 
+TODO Check
+:Returns: array of indicies for vertices that corresponds to edge constraints.
+)doc";
+
 
 static const char *__doc_Slice_connected_components =
 R"doc(Returns the number of connected components.
@@ -794,8 +881,7 @@ R"doc(Create 2D mesh given a set of constraints, i.e. specifiec edges.
 
 
 static const char *__doc_Slice_export_as_surface =
-R"doc(Transforms the 2D mesh to 3D surface mesh stored in a SVMTK Surface
-object. 
+R"doc(Transforms the 2D mesh to 3D surface mesh stored in a :class:`Surface` object. 
 
 :Returns: :class:`Surface` object.
 
@@ -809,8 +895,6 @@ R"doc(Get the constraints added to the class object
 :Returns: The constraints added to the class object.
 
 )doc";
-
-
 
 static const char *__doc_Slice_get_plane =
 R"doc(Get the plane attribut.
@@ -920,8 +1004,8 @@ R"doc(Slices a volumetric mesh with the :class:`Slice` plane and adds the inters
 static const char *__doc_Slice_bifurcation_split =
 R"doc( Divides constraints with a bifurcation point into separate constraints 
 
-If a point is shared with multiple grahps, then split all edge to point into different constraints.
-
+If a point is shared between multiple grahps, each of the connecting edges are split into different sub graphs. 
+Each sub-graph will be a specific constraints, which will have an unique tag associated with it.
 
 )doc";
 
@@ -942,8 +1026,6 @@ Attributes:
 
 
 )doc";
-
-
 
 static const char *__doc_SubdomainMap_SubdomainMap =
 R"doc( Creates SVMKT SubdomainMap object.
@@ -1002,8 +1084,6 @@ R"doc(Returns all tags that is added to the class object.
 
 )doc";
 
-
-
 static const char *__doc_SubdomainMap_print =
 R"doc(Prints subdomain binarystring and patches map.)doc";
 
@@ -1017,31 +1097,50 @@ The number of surfaces is used to automatically fill binary combinations when ad
 )doc";
 
 static const char *__doc_Surface =
-R"doc(The SVMTK Surface class is used to create, store and manipulate triangulated surfaces in 3D. 
+R"doc(The :class:`Surface` is used to create, store and manipulate triangulated surfaces in 3D. 
 
 CGAL is implemented with different kernels, that have different properties, and this class is implemnented with the `Exact predicates inexact constructions kernel <https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Exact__predicates__inexact__constructions__kernel.html>`_.
 
-SVMTK Surface class is used to handle operations related to triangualted surfaces in 3D CGAL `Surface_mesh <https://doc.cgal.org/latest/Surface_mesh/index.html>`_. It should be noted that most operations can also be used with CGAL `Polyhedron_3 <https://doc.cgal.org/latest/Polyhedron/index.html>`_.
+The Surface class is used to handle operations related to triangualted surfaces in 3D CGAL `Surface_mesh <https://doc.cgal.org/latest/Surface_mesh/index.html>`_. It should be noted that most operations can also be used with CGAL `Polyhedron_3 <https://doc.cgal.org/latest/Polyhedron/index.html>`_.
 
 Notable CGAL declarations: 
 - `Surface_mesh_default_triangulation_3 <https://doc.cgal.org/latest/Surface_mesher/classCGAL_1_1Surface__mesh__default__triangulation__3.html>`_.
 - `Side_of_triangle_mesh <https://doc.cgal.org/latest/Polygon_mesh_processing/classCGAL_1_1Side__of__triangle__mesh.html>`_.
  
 Attributes:
-- **mesh** - `Surface_mesh <https://doc.cgal.org/latest/Surface_mesh/index.html>`_ object.
+- **mesh** - `Surface_mesh <https://doc.cgal.org/latest/Surface_mesh/index.html>`_ object. 
+- **_stratio** - used to set the lower displacement bound, which is used to avoid displacment iterations with no effect.
+- **_prratio** - proximity ratio used to determine close vertices. If the distance between two vertices exceeds the proximity ratio times edge length, then the vertices are considered close.  
+- **_smreduc** - smoothing reduction factor used to reduce the smoothing if the displacment is smaller than the lower displacment bound. 
 
 )doc";
 
-static const char *__doc_Surface_Surface = R"doc(Constructs an empty SVMTK Surface object.)doc";
+static const char *__doc_Surface_Surface = R"doc(Constructs an empty :class:`Surface` object.)doc";
 
 static const char *__doc_Surface_Surface_2 =
-R"doc(Constructs a SVMTK Surface object with surface from file. Current supported fileformats: off and stl.
+R"doc(Constructs a :class:`Surface` object with surface from file. Current supported fileformats: off and stl.
 
 :parameters filename: The filename of the surface to be loaded into the :class:`Surface` object.
 
 )doc";
 
-static const char *__doc_Surface_Surface_3 = R"doc(Constructs a copy of a SVMTK Surface object.)doc";
+static const char *__doc_Surface_Surface_3 = R"doc(Constructs a copy of a  :class:`Surface` object.)doc";
+
+static const char *__doc_Surface_Surface_4 = 
+R"doc(Construct a surface based on a list of points and number of neighbors.
+
+:param points: a list of :class:`Point_3` objects.
+:param num_neighbors: an integer of neighbors, used  to calculate the point normal.
+
+)doc";
+
+static const char *__doc_Surface_Surface_5 =
+R"doc(Construct a surface based on a list of points and number of neighbors.
+
+:param points: a list of tuples representing points, i.e. (x,y,z).
+:param num_neighbors: an integer of neighbors, used  to calculate the point normal.
+
+)doc";
 
 static const char *__doc_Surface_adjust_boundary =
 R"doc(Moves the surfaces vertices in the normal vertex direction multiplied with a specified value.
@@ -1057,6 +1156,41 @@ R"doc(Computes the area of the surface.
 
 )doc";
 
+static const char *__doc_Surface_segment =
+R"doc(Segments the surface based on sharp edge detection.
+
+:param threshold: the threshold angle in degree (0-90). Angles between connected edges above the threshold angle is considered sharp. 
+
+:Returns: a vector of integer tags with size equal to the number of faces.
+)doc";
+
+static const char *__doc_Surface_get_faces =
+R"doc(Returns the surface faces, where each face consists of three vertex indicies.
+
+:Returns: a vector of faces, where each face consists of three vertex indicies.  
+)doc";
+
+static const char *__doc_Surface_get_points =
+R"doc(Returns the surface points as an array, with each point as (x,y,z).
+
+:Returns: a vector of points, (x,y,z).
+
+)doc";
+
+static const char *__doc_Surface_get_points_cgal =
+R"doc(Returns the points of the surfaces mesh.
+
+:Returns: List of :class:`Point_3`.
+
+)doc";
+
+static const char *__doc_Surface_get_edges =
+R"doc(Returns the surface edges as an array, with each edge consists of two vertex indicies.
+
+:Returns: a vector of tuples, with each tuple representing an edge with two vertex indicies.
+
+)doc";
+
 static const char *__doc_Surface_average_edge_length =
 R"doc(Computes the average edge length in the stored mesh object.
 
@@ -1069,13 +1203,11 @@ R"doc(Computes the centeroid point of the surface.
 
 :Returns: :class:`Point_3` object of the surface centeroid.
 
-
 )doc";
 
 static const char *__doc_Surface_clear = R"doc(Clears mesh.)doc";
 
 static const char *__doc_Surface_copy = R"doc(Creates a deepcopy of the :class:`Surface` object.)doc";
-
 
 static const char *__doc_Surface_clip =
 R"doc(Clips the surface mesh for a given :class:`Plane_3` object.
@@ -1111,11 +1243,10 @@ R"doc(Clips the surface mesh for a given :class:`Plane_3` object.
 
 :Returns: True if successful.
 
-
 )doc";
 
 static const char *__doc_Surface_clip_4 =
-R"doc(Clips a surface mesh given another SVMTK Surface object.
+R"doc(Clips a surface mesh given another  :class:`Surface` object.
 
 :param other: :class:`Surface` object.
 :param preserve_manifold: True to preserve manifold.
@@ -1139,7 +1270,6 @@ Creates a circle in a specified plane, and uses this circle to clip the surface 
 :Returns: True if successful.
 
 )doc";
-
 
 static const char *__doc_Surface_get_perpendicular_cut=
 R"doc(Constructs a circular surface in a given plane, which is intersects the perpendicular to the :func:`mean_curvature_flow`.
@@ -1170,7 +1300,6 @@ See:
 
 )doc";
 
-
 static const char *__doc_Surface_collapse_edges =
 R"doc(Combines smaller edges together, so that all edges are larger than the input parameter
 
@@ -1179,7 +1308,6 @@ See also:
 
 
 :param target_edge_length: The edge length that is targeted in the mesh by combining smaller edges. 
-
 
 :Returns: The number of collapsed edges.
 
@@ -1192,29 +1320,10 @@ R"doc(Collapses smaller edges together if these edges can be represented as a lo
 
 )doc";
 
-
 static const char *__doc_Surface_remove_degenerate_faces =
 R"doc( Finds and removes degenerate faces in the surface and subsequent hole filling of the surface.
 
 )doc";
-
-static const char *__doc_Surface_make_circle_in_plane_2 =
-R"doc( Creates open surface circle in a plane 
-
-:param point: the center point of the circle. 
-:param vec: the normal of the plane. 
-:param radius: the radius of the circle. 
-:param edge_length: the target edge length for the surface construction.  
-
-:Returns: None 
-
-)doc";
-
-
-
-
-
-
 
 static const char *__doc_Surface_convex_hull =
 R"doc(Computes the convex hull of the surface points.
@@ -1278,6 +1387,16 @@ R"doc(Computes the distance between a point and the closest vertex in the triang
 
 )doc";
 
+
+static const char *__doc_Surface_distance_to_point_2 =
+R"doc(Computes the distance between a point and the closest vertex in the triangulated surface.
+
+:param point: tuple (x,y,z).
+
+:Returns: the distance from point and the closest vertex on the surface.
+
+)doc";
+
 static const char *__doc_Surface_embed =
 R"doc(Moves incrementally vertices in a negative normal direction so that they are inside specified surface.
 
@@ -1322,8 +1441,7 @@ R"doc(Moves incrementally vertices in a negative normal direction so that they a
 static const char *__doc_Surface_set_proximity_ratio =
 R"doc(Sets the proximity ratio. 
 
-Note: If the distance between two vertices exceeds the proximity ratio times edge length,
-      then the vertices are considered close. Value should be between 1 and 2. 
+Note: If the distance between two vertices exceeds the proximity ratio times edge length, then the vertices are considered close. Value should be between 1 and 2. 
 
 :param proximity_ratio: used to determine close vertice:  
 
@@ -1348,9 +1466,6 @@ Note: The displacment ratio times average egde length determines the lower displ
 
 )doc";
 
-
-
-
 static const char *__doc_Surface_fill_holes =
 R"doc(Finds and fills holes in surface mesh. 
 
@@ -1364,16 +1479,19 @@ static const char *__doc_Surface_get_closest_points =
 R"doc(Finds a specified number mesh points that are closest to a point not on the mesh.
 
 :param source: :class:`Point_3` object not on the surface mesh. 
-:param num: The number of points to return. 
+:param num: number of :class:`Point_3` to return. 
 
 :Returns: List of :class:`Point_3`.
 
 )doc";
 
-static const char *__doc_Surface_get_points =
-R"doc(Returns the points of the surfaces mesh.
+static const char *__doc_Surface_get_closest_points_2 =
+R"doc(Finds a specified number mesh points that are closest to a point not on the mesh.
 
-:Returns: List of :class:`Point_3`.
+:param source: a point tuple (x,y,z) not on the surface mesh. 
+:param num: number of points tuples to return. 
+
+:Returns: list od point tuples (x,y,z).
 
 )doc";
 
@@ -1401,6 +1519,16 @@ R"doc(Computes and returns the shortest surface path between two points.
 
 )doc";
 
+static const char *__doc_Surface_get_shortest_surface_path_3 =
+R"doc(Computes and returns the shortest surface path between two points on the surface.
+
+:param source: starting point represented as a tuple (x,y,z). 
+:param target: end point represented as a tuple (x,y,z). 
+
+:Returns: List of sequential points (x,y,z) describing the shortest surface path.
+
+)doc";
+
 static const char *__doc_Surface_repair_self_intersections =
 R"doc(Removes self intersection from surface. This function uses experimental CGAL algorithms to remove self-intersections, see `remove_self_intersections <https://github.com/CGAL/cgal/blob/master/Polygon_mesh_processing/include/CGAL/Polygon_mesh_processing/repair_self_intersections.h>`_.
 
@@ -1414,7 +1542,7 @@ R"doc(Removes self intersection from surface. This function uses experimental CG
 )doc";
     
 static const char *__doc_Surface_get_slice =
-R"doc(Slices a SVMTK :class:`Surface` object according to a given plane, and returns a SVMTK Slice object.
+R"doc(Slices a :class:`Surface` object according to a given plane, and returns a :class:`Slice` object.
 
 :param plane: :class:`Plane_3` object used to slice the :class:`Surface` object. 
 
@@ -1423,12 +1551,23 @@ R"doc(Slices a SVMTK :class:`Surface` object according to a given plane, and ret
 )doc";
 
 static const char *__doc_Surface_get_slice_2 =
-R"doc(Slices a surface mesh based on a plane, that is defined by the plane equation :math:`ax+by+cz+d = 0`. Better result if the plane normal is close to unity.
+R"doc(Slices a :class:`Surface` based on a :class:`Plane_3` defined by the plane equation :math:`ax+by+cz+d = 0`. 
+
+note : Better result if the plane normal is close to unity.
 
 :param a: plane equation parameter. 
 :param b: plane equation parameter.
 :param c: plane equation parameter.
 :param d: plane equation parameter.
+
+:Returns: :class:`Slice` object.
+
+)doc";
+
+static const char *__doc_Surface_get_slice_3 =
+R"doc(Slices a :class:`Surface` based on a plane defined by the plane equation :math:`ax+by+cz+d = 0`. Better result if the plane normal is close to unity.
+
+:param plane: a tuple of the plane equation parameters (a,b,c,d). 
 
 :Returns: :class:`Slice` object.
 
@@ -1440,7 +1579,6 @@ R"doc(Creates a surface mesh based on an implicit function
 See also:
 `Surface_mesher <https://doc.cgal.org/latest/Surface_mesher/index.html>`_.
 
-
 :param implitict_function: Python function defined as f(x,y,z)=0 and the interior defined as f(x,y,z) < 0.
 :param bounding_sphere_radius: Radius of a sphere that encloses the mesh construction.
 :param angular_bound: Bounds for the minimum facet angle in degrees.
@@ -1450,11 +1588,18 @@ See also:
 )doc";
 
 static const char *__doc_Surface_is_point_inside =
-R"doc(Checks if a point is inside surface mesh.
-
-Query if a point is inside the surface mesh.
+R"doc(Checks if a :class:`Point_3` is inside surface mesh.
 
 :param point: :class:`Point_3` object.
+
+:Returns: True if point is inside surface otherwise false.
+
+)doc";
+
+static const char *__doc_Surface_is_point_inside_2 =
+R"doc(Checks if a point tuple is inside surface mesh.
+
+:param point: a point tuple (x,y,z)
 
 :Returns: True if point is inside surface otherwise false.
 
@@ -1467,7 +1612,19 @@ Uses CGAL `split_long_edges <https://doc.cgal.org/latest/Polygon_mesh_processing
 
 :param target_edge_length: The edge length that is targeted in the remeshed patch. If 0 is passed then only the edge-flip, tangential relaxation, and projection steps will be done.
 :param nb_iter: the number of iterations for the sequence of atomic operations performed. 
-:param protect_border: If true, constraint edges cannot be modified at all during the remeshing process.
+:param protect_border: If true, sharp edges are detected and preserved during the remeshing process.
+    
+)doc";
+
+static const char *__doc_Surface_isotropic_remeshing_2 =
+R"doc(Isotropic remeshing of surface mesh. Remeshing of the surface mesh so that all edges have the same length.
+
+Uses CGAL `split_long_edges <https://doc.cgal.org/latest/Polygon_mesh_processing/group__PMP__meshing__grp.html>`_. and `isotropic_remeshing <https://doc.cgal.org/latest/Polygon_mesh_processing/group__PMP__meshing__grp.html>`_. Split_long_edges avoids the pitfall described `here <https://doc.cgal.org/5.0.3/Polygon_mesh_processing/index.html>`_.
+
+:param target_edge_length: The edge length that is targeted in the remeshed patch. If 0 is passed then only the edge-flip, tangential relaxation, and projection steps will be done.
+:param nb_iter: the number of iterations for the sequence of atomic operations performed. 
+:param detect_borders: the angle threshold between connecting facets defining a sharp edge
+:param protect_border: If true, sharp edges are detected and preserved during the remeshing process.
     
 )doc";
 
@@ -1493,7 +1650,6 @@ R"doc(Creates :class:`Surface` object for each connected component.
 static const char *__doc_Surface_make_circle_in_plane =
 R"doc(Constructs a circle in the a given surface plane.
 
-
 :param px: x-coordinate of circle center in plane.  
 :param py: y-coordinate of circle center in plane. 
 :param pz: z-coordinate of circle center in plane.  
@@ -1503,11 +1659,37 @@ R"doc(Constructs a circle in the a given surface plane.
 :param radius: radius of circle.
 :param edge_length: The upper edge length of the constructed triangulated surface. 
 
+:Returns: None 
+
 )doc";
+
+static const char *__doc_Surface_make_circle_in_plane_2 =
+R"doc( Creates open surface circle in a plane 
+
+:param point: the center point of the circle. 
+:param vec: the normal of the plane. 
+:param radius: the radius of the circle. 
+:param edge_length: the target edge length for the surface construction.  
+
+:Returns: None 
+
+)doc";
+
+static const char *__doc_Surface_make_circle_in_plane_3 =
+R"doc( Creates open surface circle in a plane 
+
+:param point: the center as tuple (x,y,z) of the circle. 
+:param vec: the normal as tuple (x,y,z) of the plane. 
+:param radius:  radius of the circle. 
+:param edge_length:  target edge length for the surface construction.  
+
+:Returns: None 
+
+)doc";
+
 
 static const char *__doc_Surface_make_cone =
 R"doc(Creates a surface mesh structure with vertices and facets connecting vertices for a cone. The function also handles the special cases of sharp cone and cylinder.
-
 
 :param x0: x-coordinate of the first cone center.
 :param y0: y-coordinate of the first cone center.
@@ -1519,6 +1701,8 @@ R"doc(Creates a surface mesh structure with vertices and facets connecting verti
 :param r1: radius corresponding to the second cone center.
 :param edge_length: The edge length that is targeted in the mesh. 
 
+:Returns: None 
+
 )doc";
 
 static const char *__doc_Surface_make_cone_2 =
@@ -1529,6 +1713,8 @@ R"doc(Constructs a cone surface.
 :param r0: the bottom radius of the cone.
 :param r1: the top radius of the cone.
 :param edge_length: The edge length that is targeted in the mesh. 
+
+:Returns: None 
 
 )doc";
 
@@ -1543,22 +1729,36 @@ R"doc(Creates a surface mesh structure with vertices and facets connecting verti
 :param z1: Sets the z-coordinate of the second cube corner, opposite of the first corner.  
 :param edge_length: The edge length that is targeted in the mesh. 
 
+:Returns: None 
+
 )doc";
 
 static const char *__doc_Surface_make_cube_2 =
 R"doc(Constructs a cube surface.
 
-:Parameters: |
 :param p0: :class:`Point_3` object that sets the first cube corner
 :param p1: :class:`Point_3` object that sets the second cube corner, opposite of the first corner.
 :param edge_length: The edge length that is targeted in the mesh. 
 
+:Returns: None 
+
 )doc";
+
+static const char *__doc_Surface_make_cube_3 =
+R"doc(Constructs a cube surface.
+
+:param p0: a point (x0,y0,z0) that sets the first cube corner.
+:param p1: a point (x1,y1,z1) that sets the second cube corner, opposite of the first corner.
+:param edge_length: The edge length that is targeted in the mesh. 
+
+:Returns: None 
+
+)doc";
+
 
 static const char *__doc_Surface_make_cylinder =
 R"doc(Creates a surface mesh structure with vertices and facets connecting vertices for a cylinder.
 
-:Parameters: |
 :param x0: Sets the x-coordinate of the bottom cylinder center.
 :param y0: Sets the y-coordinate of the bottom cylinder center.
 :param z0: Sets the z-coordinate of the bottom cylinder center.
@@ -1567,6 +1767,8 @@ R"doc(Creates a surface mesh structure with vertices and facets connecting verti
 :param z1: Sets the z-coordinate of the top cylinder center.
 :param r0: Sets the radius of the cylinder.
 :param edge_length: The edge length that is targeted in the mesh. 
+
+:Returns: None 
 
 )doc";
 
@@ -1578,6 +1780,7 @@ R"doc(Creates a surface mesh structure with vertices and facets connecting verti
 :param r0: Sets the radius of the cylinder.
 :param edge_length: the upper edge length of the constructed triangulated surface.
 
+:Returns: None 
 
 )doc";
 
@@ -1590,6 +1793,8 @@ R"doc(Creates a sphere surface mesh. Uses an implicit function to construct a st
 :param r0: Sets the radius of the sphere.
 :param mesh_resolution: ratio between the sphere radius divided by the maximum edge length of the resulting surface mesh.
 
+:Returns: None 
+
 )doc";
 
 static const char *__doc_Surface_make_sphere_2 =
@@ -1598,6 +1803,8 @@ R"doc(Creates a sphere surface mesh.
 :param point: :class:`Point_3` object of the sphere center. 
 :param radius: Sets the radius of the sphere.
 :param edge_length: The edge length that is targeted in the mesh.
+
+:Returns: None 
 
 )doc";
 
@@ -1611,10 +1818,24 @@ See also:
     
 )doc";
 
+static const char *__doc_Surface_mean_curvature_flow_2 =
+R"doc(Computes the centerline of the surface.
+
+See also:
+`extract_mean_curvature_flow_skeleton <https://doc.cgal.org/latest/Surface_mesh_skeletonization/index.html>`_.
+
+:param ordering: a string that determines an axis to sort according to, and sorted the output from lowest to highest in that axis.
+
+:Returns: List of sequential :class:`Point_3` objects.
+    
+)doc";
+
+
+
 static const char *__doc_Surface_num_edges =
 R"doc(Returns the number of edges in the surface.
 
-:Return0s: The number of edges in the surface.
+:Returns: The number of edges in the surface.
 
 )doc";
 
@@ -1649,6 +1870,7 @@ Reconstruct a surface based on a CGAL surface mesh object with points using CGAL
 :param radius_bound: Bound for the minimum for the radius of the surface Delaunay balls and the center-center distances respectively. 
 :param distance_bound: Bound for the minimum center-center distances respectively.
 
+:Returns: None 
 
 )doc";
 
@@ -1663,6 +1885,7 @@ Reconstruct a surface based on a CGAL surface mesh object with points using CGAL
 :param radius_bound: Bound for the minimum for the radius of the surface Delaunay balls and the center-center distances respectively. 
 :param distance_bound: Bound for the minimum center-center distances respectively.
 
+:Returns: None 
 
 )doc";
 
@@ -1672,24 +1895,24 @@ R"doc(Removes connected components whose area or volume is under a certain thres
 
 :Precondition: The surface mesh must bound a volume.
 
-
-:param volume_threshold: Ratio value of the volume such that only connected components whose volume is larger are kept (only applies to closed connected components).
-
-
 Raises: *PreconditionError* if surface does not enclose volume.
-
 
 See also:
 `remove_connected_components_of_negligible_size <https://doc.cgal.org/latest/Polygon_mesh_processing/group__PMP__repairing__grp.html#gac544fcaba1d59d330a3a1536caff392a>`_.
 
+
+:param volume_threshold: Ratio value of the volume such that only connected components whose volume is larger are kept (only applies to closed connected components).
+
+:Returns: None 
+
 )doc";
 
-
-
 static const char *__doc_Surface_save =
-R"doc(Saves the surface mesh to file. Valid file formats: off and stl.
+R"doc(Saves the surface mesh to file. Valid file formats: off,stl and numpy npz.
 
 :param outpath: A string path to save file. 
+
+:Returns: None 
 
 )doc";
 
@@ -1698,7 +1921,8 @@ R"doc(Moves incrementally vertices that are close to another surface in opposite
 
 :Precondition: The other surface must either be enclosed or embedded in the surface.
 
-:Parameters:
+:Raises: *InvalidArgumentError* if surfaces intersect.
+
 :param other: :class:`Surface` object.
 :param adjustment:  Multiplier of the smallest connected edge of a vertex, which equals the displacement of the vertices for each iteration. 
 :param smoothing: Laplacian smoothing factor for each increment, see :func:`laplacian_smoothing`.
@@ -1706,7 +1930,6 @@ R"doc(Moves incrementally vertices that are close to another surface in opposite
 
 :Returns: True if completed and number of remaining vertices to move.
 
-:Raises: *InvalidArgumentError* if surfaces intersect.
 
 
 )doc";
@@ -1740,6 +1963,8 @@ This is done by taking the sum of the vector edges for each vertex, and multipli
 :param c: multipler of the displacement vector that gives the new vertex coordinates.
 :param nb_iter: The number of iterations of Laplacian smoothing
 
+:Returns: None 
+
 )doc";
 
 static const char *__doc_Surface_smooth_shape =
@@ -1751,6 +1976,8 @@ See also:
 :param time: step that corresponds to the speed by which the surface is smoothed. A larger time step results in faster convergence but details may be distorted to have a larger extent compared to more iterations with a smaller step. Typical values scale in the interval (1e-6, 1].
 :param nb_iter: the number of iteations. 
 
+:Returns: None 
+
 )doc";
 
 static const char *__doc_Surface_smooth_taubin =
@@ -1759,6 +1986,8 @@ R"doc(Taubin smothing of surface mesh.
 Taubin smoothing of the surface vertices. This corresponds to a Laplacian smoothing with value \lambda, followed by a Laplacian smoothing with value \mu Given the requirement: :math:`\lambda < -\mu`. The Laplacian smoothing parameters are set, but the user may construct with their own parameters with smooth_laplacian function.
 
 :param nb_iter: The number of iterations of Taubin smoothing. 
+
+:Returns: None 
 
 )doc";
 
@@ -1780,6 +2009,8 @@ See also:
 `split_long_edges <https://doc.cgal.org/latest/Polygon_mesh_processing/group__PMP__meshing__grp.html>`_.
 
 :param target_edge_length: The target edge length that the longer edges splits.
+
+:Returns: None 
 
 )doc";
 
@@ -1855,6 +2086,8 @@ R"doc(Creates a :class`Vector_3` object.
 :param y: Sets y direction of the object.
 :param z: Sets z direction of the object. 
 
+:Returns: None 
+
 )doc";
 
 static const char *__doc_Vector3_Vector3_2 =
@@ -1862,6 +2095,8 @@ R"doc(Creates a :class`Vector_3` object as difference between two points.
 
 :param source: :class:`Point_3` object. 
 :param target: :class:`Point_3` object.
+
+:Returns: None 
 
 )doc";
 
@@ -1877,6 +2112,7 @@ R"doc(Creates a :class`Vector_2` object.
 :param x: Sets x direction of the object.
 :param y: Sets y direction of the object.
 
+:Returns: None 
 
 )doc";
 
@@ -1886,6 +2122,8 @@ R"doc(Creates a :class`Vector_2` object as difference between two points.
 :param source: :class:`Point_2` object. 
 :param target: :class:`Point_2` object.
 
+:Returns: None 
+
 )doc";
 
 
@@ -1894,7 +2132,8 @@ R"doc(Creates the convex hull of the surface points and return :class:`Surface`.
 
 See `CGAL convex hull <https://doc.cgal.org/latest/Convex_hull_3/index.html>`_.
 
-:Return: :class:`Surface_3`
+:Returns: :class:`Surface_3`
+
 )doc";
 
 static const char *__doc_smooth_polylines =
@@ -1905,7 +2144,7 @@ Auxillary function to smooth a list of :class:`Point_2`.
 :param polyline: a list of :class:`Point_2`.
 :param beta: the laplacian smoothin factor. 
 
-:Return: smoothed list of :class:`Point_2`.
+:Returns: smoothed list of :class:`Point_2`.
 )doc";
 
 static const char *__doc_smooth_polylines_2 =
@@ -1916,7 +2155,7 @@ Auxillary function to smooth a list of :class:`Point_3`.
 :param polyline: a list of :class:`Point_3`.
 :param beta: the laplacian smoothin factor. 
 
-:Return: smoothed list of :class:`Point_3`.
+:Returns: smoothed list of :class:`Point_3`.
 
 )doc";
 
@@ -1986,7 +2225,7 @@ Checks if a :class:`Point_2` is inside a closed list of :class:`Point_2`
 :param polygon: a closed loop of :class:`Point_2`
 :param query: :class:`Point_2` to be checked 
 
-:Return: true if point is inside polygon otherwise false.
+:Returns: true if point is inside polygon otherwise false.
 
 )doc";
 

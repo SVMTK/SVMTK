@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "SVMTK"
 version = "2.0"
-license = {text = "GNU GENERAL PUBLIC LICENSE"}
+license = "GPL-3.0+"
 description = "A collection of tools for volume and surface meshing"
 keywords = ["Surface", "Volume", "Meshing", "Toolkit"]
 urls = {Homepage = "https://github.com/SVMTK/SVMTK"}
@@ -37,5 +37,5 @@ exclude = ["tests", "tests.*", "examples"]
 test = "pytest"
 
 [tool.pytest.ini_options]
-testpaths = ["tests","include"]
+testpaths = ["tests","src"]
 addopts = "-v "

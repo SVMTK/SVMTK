@@ -185,7 +185,7 @@ class Surface_Test(unittest.TestCase):
     def test_extension(self):
         surface=SVMTK.Surface()   
         surface.make_cube(-1.,-1.,-1.,1.,1.,1.,0.5) 
-        cylinder = surface.extension(SVMTK.Point_3(0,0,2),0.5,0.5,0.25,True)
+        cylinder = surface.extension(SVMTK.Point_3(0,0,2),0.5,0.5,0.5,True)
         self.assertTrue(cylinder.num_edges()>0) 
         del surface
 
@@ -238,11 +238,16 @@ class Surface_Test(unittest.TestCase):
         del surface1
         del surface2
         
-    def test_reconstruction(self):
+    def test_partial_remesh(self):
         surface =SVMTK.Surface()  
         surface.make_cube(0.,0.,0.,10.,10.,10.,1.) 
-        surface.reconstruct(20,1.0,1.0)
-        surface.collapse_edges() 
+        faces = surface.segment(65) 
+        self.assertEqual( min(faces), 1 ) 
+        self.assertEqual( max(faces), 6 ) 
+        self.assertEqual(faces.shape[0], 2400 ) 
+        faces[faces<6] = 0
+        surface.isotropic_remeshing( 0.1, 3, True )
+
         self.assertTrue(surface.num_vertices()>0 )
         self.assertTrue(   surface.num_faces()>0 )
         self.assertTrue(   surface.num_edges()>0 )

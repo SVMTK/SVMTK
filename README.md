@@ -128,3 +128,10 @@ python -c "import SVMTK"
 ## About
 
 SVMTK is written by Lars Magnus Valnes and Jakob Schreiner
+
+## Acknowledgements
+PhD Benjamin Kehlet, developer of mshr module in legacy dolfin, which was the starting point for this project. 
+PhD Hauke Bartsch, USCD, for fruitful discussions and guidance for making patient-specific geometries.  
+ 
+
+ 
