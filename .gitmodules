@@ -5,3 +5,6 @@
 [submodule "external/cgal"]
 	path = external/cgal
 	url = https://github.com/CGAL/cgal.git
+[submodule "external/nanobind"]
+	path = external/nanobind
+	url = https://github.com/wjakob/nanobind.git

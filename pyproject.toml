@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "SVMTK"
-version = "2.0"
+version = "2.1"
 license = "GPL-3.0+"
 description = "A collection of tools for volume and surface meshing"
 keywords = ["Surface", "Volume", "Meshing", "Toolkit"]
@@ -29,7 +29,7 @@ package-dir = {"" = "python"}
 zip-safe = false
 
 [tool.setuptools.packages.find]
-include = ["SVMTK","python"] # SVMTK.*
+include = ["SVMTK","."] # SVMTK.*
 namespaces = false
 exclude = ["tests", "tests.*", "examples"]
 

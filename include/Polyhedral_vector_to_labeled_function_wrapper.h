@@ -5,12 +5,13 @@
 /* --- Includes -- */
 #include "SubdomainMap.h" 
 
+#include <CGAL/Bbox_3.h>
 /*
  * CGAL Polyhedron to CGAL labeled mesh.
  * Combines the option of using CGAL polyhedrons to create mesh 
  * with specific tags for overlapping surfaces.
  * 
- * Inspiration see [] 
+ * Inspiration CGAL example.TODO 
  */
 namespace CGAL {
         template<class Function_, class BGT>
@@ -74,8 +75,6 @@ namespace CGAL {
                     return sum_bbox;
                 }
      
-
-
             private:
                 Function_vector function_vector_;
                 std::shared_ptr<AbstractMap> subdmap;

@@ -22,18 +22,13 @@
 #include "SubdomainMap.h" 
 
 /* -- STL -- */
-#include <algorithm> 
-#include <iterator>
 
 /* -- CGAL 2D and 3D Linear Geometry Kernel -- */
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 /* -- CGAL 2D Conforming Triangulations and Meshes -- */
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
-
 #include <CGAL/Constrained_triangulation_plus_2.h>
-
-#include <CGAL/Triangulation_vertex_base_with_info_2.h>
 #include <CGAL/Triangulation_face_base_with_info_2.h>
 
 /* -- CGAL 2D Triangulation -- */
@@ -44,7 +39,6 @@
 
 /* -- CGAL Polyline_simplification_2 -- */
 #include <CGAL/Polyline_simplification_2/Squared_distance_cost.h>
-
 #include <CGAL/Polyline_simplification_2/simplify.h> 
 #include <CGAL/Polyline_simplification_2/Stop_below_count_ratio_threshold.h>
 #include <CGAL/Polyline_simplification_2/Stop_above_cost_threshold.h>
@@ -59,34 +53,18 @@
 #include <CGAL/IO/Triangulation_off_ostream_2.h>
 
 #include <CGAL/Polygon_2.h>
-#include <CGAL/Polygon_2_algorithms.h>
 
 #include <CGAL/Bbox_2.h>
-#include <CGAL/convex_hull_2.h>
 
-
-/**
- * @brief Computes the length of an polyline 
- * i.e. vector of points
- * @tparam InputIterator iterator for a vector of points.
- * @param begin iterator for a vector of points 
- * @param end iterator for a vector of points   
- */
-template< typename InputIterator> 
-double length_polyline( InputIterator begin , InputIterator end)
-{
-   double length = 0.0;
-   for(; begin != end; ++begin)
-      length += CGAL::to_double( CGAL::sqrt(CGAL::squared_distance(*begin, *(begin+1))));        
-   return length; 
-} 
+class Surface;
+class Domain;
 
 /**
  * @brief Smooths a polygon, a closed loop of points, by minimizing the angles of the polygon.
  * @tparam Point_d, Vector_d 
  * @param polygon, a vector of points where the frist point is equal to the last. 
  * @param beta a smoothing factor.  
- * @return polyline which is smoothed
+ * @return polyline which is smoothed FIXME remvoe templste
  */
 template< typename Point_d, typename Vector_d> 
 std::vector<Point_d> smooth_polygon( std::vector<Point_d>&  polygon, double beta)
@@ -111,6 +89,7 @@ std::vector<Point_d> smooth_polygon( std::vector<Point_d>&  polygon, double beta
  * @param polyline  a vector of points 
  * @param beta a smoothing factor.  
  * @return polyline which is smoothed
+ * FIXME remove templates
  */
 template< typename Point_d, typename Vector_d> 
 std::vector<Point_d> smooth_polyline( std::vector<Point_d>& polyline, double beta)
@@ -139,6 +118,7 @@ std::vector<Point_d> smooth_polyline( std::vector<Point_d>& polyline, double bet
  * @param polygon a closed vector of points,
  * @param query 2D point 
  * @return true if point inside polygon, else it returns false. 
+ * TODO avoid template
  */
 template< typename Point_2> 
 bool inside_polygon( std::vector<Point_2> polygon, Point_2 query ) 
@@ -150,37 +130,19 @@ bool inside_polygon( std::vector<Point_2> polygon, Point_2 query )
 }
 
 /**
- * @brief Computes the area of a point vector.
- * @tparam InputIterator iterator for a vector of points.
- * @param begin iterator for a vector of points 
- * @param end iterator for a vector of points   
- */
-template< typename InputIterator> 
-double area_of_facet_vector( InputIterator begin , InputIterator end)
-{
-   double area = 0.0;
-   for(; begin != end; ++begin)
-      area += CGAL::to_double( CGAL::area(begin->vertex(0)->point(),
-                              begin->vertex(1)->point(),
-                              begin->vertex(2)->point()));        
-  
-   return area; 
-}
-
-/**
  * \struct
  * Used to store points and compute 
  * the minimum bounding radius required to 
  * enclose all of the added points 
  */
-template< typename Kernel>
 struct Minimum_sphere_2
 {
-   typedef typename CGAL::Min_sphere_of_spheres_d_traits_2< Kernel,typename Kernel::FT> Traits;
-   typedef typename CGAL::Min_sphere_of_spheres_d<Traits> Min_sphere;
-   typedef typename Traits::Sphere                    Sphere;
-   typedef typename std::vector<typename Kernel::Point_2> Polyline_2;
-   typedef typename std::vector<Polyline_2> Polylines_2;  
+   typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
+   typedef CGAL::Min_sphere_of_spheres_d_traits_2< Kernel,Kernel::FT> Traits;
+   typedef CGAL::Min_sphere_of_spheres_d<Traits> Min_sphere;
+   typedef Traits::Sphere                    Sphere;
+   typedef std::vector<Kernel::Point_2> Polyline_2;
+   typedef std::vector<Polyline_2> Polylines_2;  
   
   /**
    * @brief Adds vector of points to the struct.  
@@ -270,8 +232,6 @@ class Slice
       typedef CGAL::Polyline_simplification_2::Squared_distance_cost Cost;
       typedef CGAL::Polyline_simplification_2::Scaled_squared_distance_cost Scaled_Cost;
       
-
-
       typedef CDT::Face_handle     Face_handle;
       typedef CDT::Vertex_handle   Vertex_handle;
       typedef CDT::Vertex_iterator Vertex_iterator;
@@ -284,13 +244,44 @@ class Slice
       
       typedef std::array<int,3> Face;
 
+   /**
+   * @brief Computes the length of an polyline 
+   * @param begin iterator for a vector of points 
+   * @param end iterator for a vector of points   
+   */
+   double length_polyline( std::vector<Point_3>::iterator begin , std::vector<Point_3>::iterator end)
+   {
+    double length = 0.0;
+    for(; begin != end; ++begin)
+       length += CGAL::to_double( CGAL::sqrt(CGAL::squared_distance(*begin, *(begin+1))));        
+    return length; 
+   } 
+
+   /**
+   * @brief Computes the area of a point vector.
+   * @tparam InputIterator iterator for a vector of points.
+   * @param begin iterator for a vector of points 
+   * @param end iterator for a vector of points   
+   */
+   //template< typename InputIterator> 
+   double area_of_facet_vector( Face_iterator begin , Face_iterator end)
+   {
+      double area = 0.0;
+      for(; begin != end; ++begin)
+         area += CGAL::to_double( CGAL::area(begin->vertex(0)->point(),
+                              begin->vertex(1)->point(),
+                              begin->vertex(2)->point()));        
+  
+      return area; 
+   }
+
    /** 
    *  stuct 
    *  @brief Used to sort polylines based on the number of points.
    */
    struct sort_vectors_by_size {
       template<typename T>
-      bool operator()(const std::vector<T> & a, const std::vector<T> & b)
+      bool operator()(const T& a, const T& b)
          {return( a.size()>b.size() );}                   
    };
       
@@ -298,21 +289,21 @@ class Slice
    *  stuct 
    *  @brief Used to sort polylines based on the area.
    */
-   struct sort_vectors_by_area {
-      template<typename T>
-      bool operator()(const std::vector<T> & a, const std::vector<T> & b)
-         { return ( area_of_facet_vector(a.begin(), a.end())>area_of_facet_vector(b.begin(), b.end()) );}                   
-   };    
+   // struct sort_vectors_by_area {
+   //    template<typename T>
+   //    bool operator()(const  T& a, const T& b)
+   //       { return ( area_of_facet_vector(a.begin(), a.end())>area_of_facet_vector(b.begin(), b.end()) );}                   
+   // };    
 
    /** 
    *  stuct 
    *  @brief Used to sort polylines based on the length of the point vector.
    */      
-   struct sort_vectors_by_length {
-      template<typename T>
-      bool operator()(const std::vector<T> & a, const std::vector<T> & b)
-         { return ( length_polyline(a.begin(), a.end())>length_polyline(b.begin(), b.end()) );}                   
-   };    
+   // struct sort_vectors_by_length {
+   //    template<typename T>
+   //    bool operator()(const T& a, const T& b)
+   //       { return ( length_polyline(a.begin(), a.end())>length_polyline(b.begin(), b.end()) );}                   
+   // };    
    
    // DocString: Slice     
    /** 
@@ -1222,12 +1213,12 @@ class Slice
    * @tparam Surface SVMTK Surface object.
    * @param surfaces a vector of SVMTK Surface objects.
    */
-   template<typename Surface> 
+   //template<typename Surface> 
    void slice_surfaces(std::vector<Surface> surfaces) 
    {
       for(auto surf : surfaces) 
       {
-         std::shared_ptr<Slice> temp = surf.template get_slice<Slice>(this->plane);              
+         std::shared_ptr<Slice> temp = surf.get_slice(this->plane);              
          this->add_constraints(*temp.get()); 
       }
    }  
@@ -1235,14 +1226,14 @@ class Slice
    /**
    * TODO 
    */
-   template<typename Domain, typename Surface> 
+   //template<typename Domain, typename Surface> 
    void slice_mesh(std::shared_ptr<Domain> domain) 
    {
-      auto surfaces = domain->template get_boundaries<Surface>(); 
+      auto surfaces = domain->get_boundaries(); 
        
       for(auto surf : surfaces) 
       {
-         std::shared_ptr<Slice> temp = surf->template get_slice<Slice>(this->plane);              
+         std::shared_ptr<Slice> temp = surf->get_slice(this->plane);              
          this->add_constraints(*temp.get()); 
       }
    }    
@@ -1272,7 +1263,7 @@ class Slice
    * @returns a SVMTK Surface object. 
    * @throws EmptyMeshError if cdt variable is empty.
    */
-   template<typename Surface> 
+   //template<typename Surface> 
    std::shared_ptr<Surface> export_as_surface() 
    {
       assert_non_empty_mesh(); 
@@ -1305,7 +1296,7 @@ class Slice
    * @returns a SVMTK Surface object. 
    * @throws EmptyMeshError if cdt variable is empty.
    */      
-   template<typename Surface> 
+   //template<typename Surface> 
    std::shared_ptr<Surface> export_as_surface( std::vector<double> z ) 
    {
       assert_non_empty_mesh(); 
@@ -1462,7 +1453,7 @@ class Slice
       * @param surfaces a vector of SVMTK surface objects 
       * @param map derived from SVMTK AbstractMap objects, @see SubdomainMap.h 
       */
-      template<typename Surface> 
+      //template<typename Surface> 
       void add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map) 
       {
          assert_non_empty_mesh();
@@ -1647,7 +1638,7 @@ class Slice
       * @param surfaces a vector of SVMTK surface objects 
       * @overload 
       */
-      template<typename Surface> 
+      //template<typename Surface> 
       void add_surface_domains(std::vector<Surface> surfaces)
       {
          DefaultMap map =DefaultMap();
@@ -1815,7 +1806,7 @@ class Slice
     private:
       boost::unordered_map<Face_handle,double>  triangle_data;
       boost::unordered_map<Vertex_handle,double>  point_data;
-      Minimum_sphere_2<Kernel> min_sphere;
+      Minimum_sphere_2 min_sphere;
       Polylines_2 constraints;
       CDT cdt;
       std::vector<CID> cids; //EXPERIMENTAL 

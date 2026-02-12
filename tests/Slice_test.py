@@ -28,6 +28,9 @@ class Slice_Test(unittest.TestCase):
         slice3 = slice2
         slice3.add_constraints(slice1)
         self.assertEqual( slice3.num_constraints(),2)
+        del slice1
+        del slice2
+        del slice3
 
     def test_slice_meshing(self):
         surface = SVMTK.Surface() 
@@ -36,6 +39,8 @@ class Slice_Test(unittest.TestCase):
         self.assertTrue( slice_.num_constraints() > 0)
         slice_.create_mesh(5.) 
         self.assertTrue( slice_.num_cells() > 0) 
+        del surface 
+        del slice_
     
 
     def test_slice_subdomains(self):
@@ -61,6 +66,9 @@ class Slice_Test(unittest.TestCase):
           self.assertEqual(slice_.num_subdomains(),0)
         except SVMTK.EmptyMeshError:
           self.assertTrue(True) 
+        del slice_
+        del surface1
+        del surface2
 
     def test_connected_components(self): 
         surface1 = SVMTK.Surface() 
@@ -74,6 +82,9 @@ class Slice_Test(unittest.TestCase):
         self.assertEqual(slice_.connected_components(), 2) 
         slice_.keep_largest_connected_component() 
         self.assertEqual(slice_.connected_components(), 1) 
+        del surface1
+        del surface2
+        del slice_
 
     def test_simplify(self):
         slice1 = SVMTK.Slice()
@@ -81,16 +92,15 @@ class Slice_Test(unittest.TestCase):
         slice1.simplify(1.0) 
         constraints = slice1.get_constraints()
         self.assertEqual(len(constraints[0]), 3) 
-
+        del slice1
 
     def test_constraint_tags(self): 
         slc = SVMTK.Slice() 
-        slc = SVMTK.Slice()
         slc.add_constraint([SVMTK.Point_2(0,0),SVMTK.Point_2(0,1),SVMTK.Point_2(1,1), SVMTK.Point_2(1,0),SVMTK.Point_2(0,0) ] ) 
         slc.create_mesh(1.0) 
         self.assertEqual(slc.get_facet_tags(False).shape[0],slc.num_facets() )
         self.assertTrue(slc.get_facet_tags(True).shape[0] > 0)
-    
+        del slc
 
     def test_slice_mesh(self):
         domain = SVMTK.Domain(f"{tests_dir}/Data/cube.mesh") 
@@ -98,11 +108,12 @@ class Slice_Test(unittest.TestCase):
         slc.slice_mesh(domain) 
         slc.create_mesh(5.0) 
         self.assertEqual( slc.get_cells().shape ,(slc.num_cells(), 3) )
+        del domain 
+        del slc
 
 if __name__ == '__main__':
     unittest.main()
     import os
-
     os.remove(f"{tests_dir}/Data/slice.vtu")
     os.remove(f"{tests_dir}/Data/slice.stl")
     os.remove(f"{tests_dir}/Data/slice.off")

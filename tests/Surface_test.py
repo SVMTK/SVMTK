@@ -32,7 +32,7 @@ class Surface_Test(unittest.TestCase):
 
     def test_surfaces_shapes(self):
         surface =SVMTK.Surface()  
-        surface.make_cube(0.,0.,0.,1.,1.,1.,1.) 
+        surface.make_cube((0.,0.,0.),(1.,1.,1.),1.) 
         self.assertTrue(surface.num_vertices()>0 )
         self.assertTrue(   surface.num_faces()>0 )
         self.assertTrue(   surface.num_edges()>0 )

@@ -13,7 +13,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 # Version number
 MAJOR = 2
-MINOR = 0
+MINOR = 1
 
 
 class CMakeExtension(Extension):

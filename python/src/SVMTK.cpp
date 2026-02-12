@@ -1,12 +1,8 @@
 #include <pybind11/pybind11.h>
-#include <pybind11/stl_bind.h>
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
-#include <pybind11/complex.h>
-#include <pybind11/chrono.h>
-#include <pybind11/embed.h>
 
 #include "docstrings.h"
 #include "Surface.h"
@@ -34,6 +30,7 @@ typedef Kernel::Vector_3 Vector_3;
 typedef Kernel::Vector_2 Vector_2;
 
 /* -- CGAL wrapping */
+
 Vector_3 Wrapper_vector_3(double x, double y, double z)
 {
      return Vector_3(x, y, z);
@@ -111,9 +108,8 @@ std::vector<std::array<double,2>> wrapper_point_vector( std::vector<Point_2> cga
 *         Surface  : points, faces, face_markers 
 *         Domain   : points, cells, faces ,edges. cell_markers, face_markers, edge_markers
 *         Slice    : points, cells, faces, cell_markers, face_markers,
-* TODO: 
+* TODO: remove templates 
 */
-
 template< typename Point, typename Face=std::array<std::size_t,3> >
 void numpy_savez_wrapper(std::string& filename, std::vector<Point> points, std::vector<Face> faces, std::vector<int> face_markers) 
 {
@@ -180,7 +176,7 @@ std::shared_ptr<Surface> Wrapper_convex_hull(py::array_t<double> point3_array)
         point_vector[point_vector_counter++] = Point_3(x, y, z);
      }
 
-     auto surface = convex_hull<Surface, Point_3>(point_vector);
+     auto surface = convex_hull(point_vector);
      return surface;
 }
 
@@ -443,8 +439,8 @@ PYBIND11_MODULE(SVMTK, m)
           .def("num_facets",       &Slice::num_facets,      DOC(Slice, num_facets))
           .def("num_vertices",     &Slice::num_vertices,    DOC(Slice, num_vertices))
 
-          .def("slice_mesh", &Slice::slice_mesh<Domain,Surface> , DOC(Slice, slice_mesh))
-          .def("slice_surfaces", &Slice::slice_surfaces<Surface>, DOC(Slice, slice_surfaces))
+          .def("slice_mesh", &Slice::slice_mesh , DOC(Slice, slice_mesh))
+          .def("slice_surfaces", &Slice::slice_surfaces, DOC(Slice, slice_surfaces))
        
           .def("smooth_constraints",    &Slice::smooth_constraints ,  DOC(Slice, smooth_constraints))
           .def("bifurcation_split",     &Slice::bifurcation_split,    DOC(Slice,bifurcation_split) ) 
@@ -456,13 +452,13 @@ PYBIND11_MODULE(SVMTK, m)
           .def("remove_subdomain", py::overload_cast<int>(&Slice::remove_subdomain),             DOC(Slice, remove_subdomain))
           .def("remove_subdomain", py::overload_cast<std::vector<int>>(&Slice::remove_subdomain),DOC(Slice, remove_subdomain, 2))
 
-          .def("export_as_surface", py::overload_cast<>(&Slice::export_as_surface<Surface>),                    DOC(Slice, export_as_surface))
-          .def("export_as_surface", py::overload_cast<std::vector<double>>(&Slice::export_as_surface<Surface>), DOC(Slice, export_as_surface))  
+          .def("export_as_surface", py::overload_cast<>(&Slice::export_as_surface),                    DOC(Slice, export_as_surface))
+          .def("export_as_surface", py::overload_cast<std::vector<double>>(&Slice::export_as_surface), DOC(Slice, export_as_surface))  
 
           .def("reconstruct_constraints",&Slice::reconstruct_constraints, py::arg("target_edge_length"), py::arg("merge")=true, DOC(Slice,reconstruct_constraints))
 
-          .def("add_surface_domains", py::overload_cast<std::vector<Surface>, AbstractMap &>(&Slice::add_surface_domains<Surface>),    DOC(Slice, add_surface_domains))
-          .def("add_surface_domains", py::overload_cast<std::vector<Surface>>(&Slice::add_surface_domains<Surface>),                   DOC(Slice, add_surface_domains, 2))
+          .def("add_surface_domains", py::overload_cast<std::vector<Surface>, AbstractMap &>(&Slice::add_surface_domains),    DOC(Slice, add_surface_domains))
+          .def("add_surface_domains", py::overload_cast<std::vector<Surface>>(&Slice::add_surface_domains),                   DOC(Slice, add_surface_domains, 2))
         
           .def("add_constraint", py::overload_cast<std::vector<Point_2>>(&Slice::add_constraint), DOC(Slice, add_constraint))
           .def("add_constraint", [](Slice &self, std::vector<std::array<double,2>> pyarray) {
@@ -609,10 +605,10 @@ PYBIND11_MODULE(SVMTK, m)
                py::arg("invert") = false, 
                py::arg("preserve_manifold") = true, DOC(Surface, clip, 5))
 
-          .def("get_slice", py::overload_cast<double, double, double, double>(&Surface::get_slice<Slice>), py::return_value_policy::move ,DOC(Surface, get_slice))
-          .def("get_slice", py::overload_cast<Plane_3>(&Surface::get_slice<Slice>),py::return_value_policy::move,  DOC(Surface, get_slice, 2))
+          .def("get_slice", py::overload_cast<double, double, double, double>(&Surface::get_slice), py::return_value_policy::move ,DOC(Surface, get_slice))
+          .def("get_slice", py::overload_cast<Plane_3>(&Surface::get_slice),py::return_value_policy::move,  DOC(Surface, get_slice, 2))
           .def("get_slice", [] ( Surface& self, std::tuple<double,double,double,double> plane){
-               self.get_slice<Slice>( Wrapper_plane_3(plane));
+               self.get_slice( Wrapper_plane_3(plane));
           }, DOC(Surface,get_slice,3))
         
           .def("intersection",&Surface::surface_intersection,    DOC(Surface, surface_intersection))
@@ -926,13 +922,13 @@ PYBIND11_MODULE(SVMTK, m)
           .def("radius_ratios",   &Domain::radius_ratios,   DOC(Domain, radius_ratios))
           .def("dihedral_angles", &Domain::dihedral_angles, DOC(Domain, dihedral_angles))
 
-          .def("get_boundary", &Domain::get_boundary<Surface>, 
+          .def("get_boundary", &Domain::get_boundary, 
                py::arg("tag") = 0, DOC(Domain, get_boundary))
              
-          .def("get_boundaries", &Domain::get_boundaries<Surface>, DOC(Domain, get_boundaries))
+          .def("get_boundaries", &Domain::get_boundaries, DOC(Domain, get_boundaries))
 
           .def("get_borders",    &Domain::get_borders,            DOC(Domain, get_borders)) 
-          .def("get_interface",  &Domain::get_interface<Surface>, DOC(Domain, get_interface))
+          .def("get_interface",  &Domain::get_interface, DOC(Domain, get_interface))
           .def("get_curve_tags", &Domain::get_curve_tags,         DOC(Domain, get_curve_tags))
           .def("get_patches",    &Domain::get_patches,            DOC(Domain, get_patches))
           .def("get_subdomains", &Domain::get_subdomains,         DOC(Domain, get_subdomains))
@@ -966,11 +962,11 @@ PYBIND11_MODULE(SVMTK, m)
                py::arg("freeze_bound") = 0.001,
                py::arg("do_freeze") = false, DOC(Domain, odt))
 
-          .def("add_sharp_border_edges", py::overload_cast<Surface &, double>(&Domain::add_sharp_border_edges<Surface>), 
+          .def("add_sharp_border_edges", py::overload_cast<Surface &, double>(&Domain::add_sharp_border_edges), 
                py::arg("surface"),
                py::arg("threshold") = 60, DOC(Domain, add_sharp_border_edges))
          
-          .def("add_sharp_border_edges", py::overload_cast<Surface &, Plane_3, double>(&Domain::add_sharp_border_edges<Surface, Plane_3>), 
+          .def("add_sharp_border_edges", py::overload_cast<Surface &, Plane_3, double>(&Domain::add_sharp_border_edges), 
                py::arg("surface"),
                py::arg("plane"),
                py::arg("threshold") = 60, DOC(Domain, add_sharp_border_edges, 2))
@@ -980,7 +976,7 @@ PYBIND11_MODULE(SVMTK, m)
           } , py::arg("surface"), py::arg("plane"), py::arg("threshold") = 60, DOC(Domain, add_sharp_border_edges, 4))
 
         
-         .def("add_sharp_border_edges", py::overload_cast<Surface &, Surface&, double>(&Domain::add_sharp_border_edges<Surface>), 
+         .def("add_sharp_border_edges", py::overload_cast<Surface &, Surface&, double>(&Domain::add_sharp_border_edges), 
                py::arg("surface"),
                py::arg("clip"),
                py::arg("threshold") = 60, DOC(Domain, add_sharp_border_edges, 3))           
@@ -1005,18 +1001,18 @@ PYBIND11_MODULE(SVMTK, m)
         
          //.def("write_facet_data", &Domain::write_facet_data, DOC(Domain, write_facet_data)) 
         
-         .def("get_collision_distances", &Domain::get_collision_distances<Surface>,  DOC(Domain, get_collision_distances))
-         .def("get_collision_spheres"  , &Domain::get_collision_spheres<Surface>,    DOC(Domain, get_collision_spheres))
+         .def("get_collision_distances", &Domain::get_collision_distances,  DOC(Domain, get_collision_distances))
+         .def("get_collision_spheres"  , &Domain::get_collision_spheres,    DOC(Domain, get_collision_spheres))
               
-          .def("boundary_segmentations", py::overload_cast<std::pair<int, int>, double>(&Domain::boundary_segmentations<Surface>),
+          .def("boundary_segmentations", py::overload_cast<std::pair<int, int>, double>(&Domain::boundary_segmentations),
                py::arg("interface"),
                py::arg("angle_in_degree") = 85, DOC(Domain, boundary_segmentations))
 
-          .def("boundary_segmentations", py::overload_cast<int, double>(&Domain::boundary_segmentations<Surface>),
+          .def("boundary_segmentations", py::overload_cast<int, double>(&Domain::boundary_segmentations),
                py::arg("subdomain_tag"),
                py::arg("angle_in_degree") = 85, DOC(Domain, boundary_segmentations, 2))
 
-          .def("boundary_segmentations", py::overload_cast<double>(&Domain::boundary_segmentations<Surface>),
+          .def("boundary_segmentations", py::overload_cast<double>(&Domain::boundary_segmentations),
                py::arg("angle_in_degree") = 85, DOC(Domain, boundary_segmentations, 3))
 
           .def("add_feature", &Domain::add_feature, DOC(Domain, add_feature))
@@ -1058,35 +1054,35 @@ PYBIND11_MODULE(SVMTK, m)
           // TODO GENERAL CHECK first_index
 
 
-     m.def("convex_hull", &Wrapper_convex_hull, DOC(convex_hull));
+     m.def("convex_hull", &Wrapper_convex_hull, DOC(convex_hull)); // TODO
 
      m.def("smooth_polyline", &smooth_polyline<Point_2,Vector_2>,     DOC(smooth_polylines));
      m.def("smooth_polyline", &smooth_polyline<Point_3,Vector_3>,     DOC(smooth_polylines,2)); 
      m.def("inside_polygon",  &inside_polygon<Point_2>,               DOC(inside_polygon));  
 
 
-     m.def("enclose", py::overload_cast<Surface &, Surface &, double, double, int>(&enclose<Surface>),
+     m.def("enclose", py::overload_cast<Surface &, Surface &, double, double, int>(&enclose),
           py::arg("surf1"),
           py::arg("surf2"),
           py::arg("adjustment") = .4,
           py::arg("smoothing") = 0.4,
           py::arg("max_iter") = 50, DOC(enclose)); 
 
-     m.def("embed", py::overload_cast<Surface &, Surface &, double, double, int>(&embed<Surface>),
+     m.def("embed", py::overload_cast<Surface &, Surface &, double, double, int>(&embed),
           py::arg("surf1"),
           py::arg("surf2"),
           py::arg("adjustment") = -.4,
           py::arg("smoothing") = 0.4,
           py::arg("max_iter") = 50, DOC(embed)); 
 
-     m.def("expose", py::overload_cast<Surface &, Surface &, double, double, int>(&expose<Surface>),
+     m.def("expose", py::overload_cast<Surface &, Surface &, double, double, int>(&expose),
           py::arg("surf1"),
           py::arg("surf2"),
           py::arg("adjustment") = -.4,
           py::arg("smoothing") = 0.4,
           py::arg("max_iter") = 50, DOC(expose)); 
     
-     m.def("separate_overlapping_surfaces", py::overload_cast<Surface &, Surface &, Surface &, double, double, int>(&separate_surface_overlapp<Surface>),
+     m.def("separate_overlapping_surfaces", py::overload_cast<Surface &, Surface &, Surface &, double, double, int>(&separate_surface_overlapp),
           py::arg("surf1"),
           py::arg("surf2"),
           py::arg("other"),
@@ -1094,7 +1090,7 @@ PYBIND11_MODULE(SVMTK, m)
           py::arg("smoothing") = 0.4,
           py::arg("max_iter") = 50, DOC(separate_surface_overlapp));
 
-     m.def("separate_overlapping_surfaces", py::overload_cast<Surface &, Surface &, double, double, int>(&separate_surface_overlapp<Surface>),
+     m.def("separate_overlapping_surfaces", py::overload_cast<Surface &, Surface &, double, double, int>(&separate_surface_overlapp),
           py::arg("surf1"),
           py::arg("surf2"),
           py::arg("edge_movement") = -.4,
@@ -1102,7 +1098,7 @@ PYBIND11_MODULE(SVMTK, m)
           py::arg("max_iter") = 50, DOC(separate_surface_overlapp, 2));
 
 
-     m.def("separate_close_surfaces", py::overload_cast<Surface &, Surface &, Surface &, double, double, int>(&separate_close_surfaces<Surface>),
+     m.def("separate_close_surfaces", py::overload_cast<Surface &, Surface &, Surface &, double, double, int>(&separate_close_surfaces),
           py::arg("surf1"),
           py::arg("surf2"),
           py::arg("other"),
@@ -1110,14 +1106,14 @@ PYBIND11_MODULE(SVMTK, m)
           py::arg("smoothing") = 0.4,
           py::arg("max_iter") = 50, DOC(separate_close_surfaces));
 
-     m.def("separate_close_surfaces", py::overload_cast<Surface&, Surface&, double, double, int>(&separate_close_surfaces<Surface>),
+     m.def("separate_close_surfaces", py::overload_cast<Surface&, Surface&, double, double, int>(&separate_close_surfaces),
           py::arg("surf1"),
           py::arg("surf2"),
           py::arg("edge_movement") = -.4,
           py::arg("smoothing") = 0.4,
           py::arg("max_iter") = 50, DOC(separate_close_surfaces, 2));
 
-     m.def("union_partially_overlapping_surfaces", &union_partially_overlapping_surfaces<Surface>,
+     m.def("union_partially_overlapping_surfaces", &union_partially_overlapping_surfaces,
           py::arg("surf1"),
           py::arg("surf2"),
           py::arg("angle_in_degress") = 36.87,

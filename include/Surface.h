@@ -23,22 +23,22 @@
 # define BOOST_PARAMETER_MAX_ARITY 12
 #endif
 
-#define _default_prratio 1.73
+//#define _default_prratio 1.73
 //#define _prratio 2.0 //1.414
 
 /* --Includes -- */
 #include "Errors.h"  
 
 /* -- boost-- */
-#include <boost/foreach.hpp>
+//#include <boost/foreach.hpp>
 #include <boost/multi_array.hpp>
-#include <CGAL/Surface_mesh.h>
 
 /* -- CGAL 3D Convex Hulls  -- */
 #include <CGAL/convex_hull_3.h>
 
 /* -- CGAL Principal Component Analysis -- */
 #include <CGAL/centroid.h>
+#include <CGAL/Surface_mesh.h>
 
 /* -- CGAL dD Spatial Searching  -- */
 #include <CGAL/Search_traits_3.h>
@@ -60,23 +60,21 @@
 #include <CGAL/Polygon_mesh_processing/repair_polygon_soup.h>
 #include <CGAL/Polygon_mesh_processing/orientation.h>
 #include <CGAL/Polygon_mesh_processing/remesh.h>
-#include <CGAL/Polygon_mesh_processing/border.h>
+//#include <CGAL/Polygon_mesh_processing/border.h>
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
 #include <CGAL/Polygon_mesh_processing/clip.h>
 #include <CGAL/Polygon_mesh_processing/connected_components.h> 
-#include <CGAL/Polygon_mesh_processing/measure.h>
+//#include <CGAL/Polygon_mesh_processing/measure.h>
 #include <CGAL/Polygon_mesh_processing/detect_features.h>
 #include <CGAL/Polygon_mesh_processing/smooth_shape.h>
 #include <CGAL/Polygon_mesh_processing/bbox.h>
 #include <CGAL/Polygon_mesh_slicer.h>
-#include <CGAL/Polygon_mesh_processing/manifoldness.h>
+//#include <CGAL/Polygon_mesh_processing/manifoldness.h>
 #include <CGAL/Surface_mesh_shortest_path/Surface_mesh_shortest_path_traits.h>
 #include <CGAL/Surface_mesh_shortest_path.h>
-//#include <CGAL/Surface_mesh_default_triangulation_3.h>
+
 /* -- CGAL Surface mesh simplification -- */
 #include <CGAL/Surface_mesh_simplification/edge_collapse.h>
-
-#include <CGAL/boost/graph/Euler_operations.h>
 
 //#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_and_length.h>
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Edge_length_cost.h>
@@ -94,20 +92,24 @@
 #include <CGAL/Polygon_mesh_processing/self_intersections.h>
 #include <CGAL/Polygon_mesh_processing/repair_degeneracies.h>
 
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/LindstromTurk_cost.h>
-#include <CGAL/boost/graph/Euler_operations.h>
-#include <CGAL/Kernel/global_functions.h>
+//#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/LindstromTurk_cost.h>
+//#include <CGAL/boost/graph/Euler_operations.h>
+//#include <CGAL/Kernel/global_functions.h>
 
 #include <CGAL/poisson_surface_reconstruction.h>
-#include <CGAL/jet_estimate_normals.h>
+//#include <CGAL/Poisson_reconstruction_function.h> 
 #include <CGAL/property_map.h>
 #include <CGAL/Polyhedron_3.h>
 
 #include <CGAL/compute_average_spacing.h>
-#include <CGAL/pca_estimate_normals.h>
+//#include <CGAL/pca_estimate_normals.h>
 #include <CGAL/mst_orient_normals.h>
 #include <CGAL/jet_estimate_normals.h>
 #include <CGAL/jet_smooth_point_set.h>
+
+class Domain;
+class Slice;
+
 /**
 * \class 
 * Cost function used to collapse edges with 
@@ -122,7 +124,7 @@ class Cost_stop_predicate
    Cost_stop_predicate(double threshold) : thres(threshold) {}
 
    template< typename F, typename Profile>
-   bool operator()( F const & aCurrentCost, Profile const & profile, std::size_t aic,std::size_t acc) const
+   bool operator()( F const & aCurrentCost, Profile const & profile, std::size_t aic, std::size_t acc) const
    {
       return static_cast<double>(aCurrentCost) > thres;
    }
@@ -131,17 +133,6 @@ class Cost_stop_predicate
 };
 
 
-struct PairHash {
-   template <class T1, class T2>
-   std::size_t operator()(const std::pair<T1, T2>& p) const {
-      std::size_t seed = 0;
-      auto h1 = std::hash<T1>{}(p.first);
-      auto h2 = std::hash<T2>{}(p.second);
-      boost::hash_combine(seed,h1);
-      boost::hash_combine(seed,h2);
-      return seed;
-   }
-};
 
 template<typename Point_3>
 Point_3 vector_centroid( std::vector< Point_3> points ) 
@@ -149,73 +140,6 @@ Point_3 vector_centroid( std::vector< Point_3> points )
    return CGAL::centroid( points.begin(), points.end());
 }
     
-/**
-* @note polyline implies some structure 
-*/    
-template<typename Point_3> 
-void ordering_polyline_3(std::vector< Point_3> &points, std::string ordering) 
-{
-   if ( ordering == "x-axis" ) 
-   {
-      if ( points.front().x() > points.back().x() )
-         std::reverse( points.begin() , points.end() ) ;
-   }
-   else if ( ordering == "y-axis" ) 
-   {
-      if ( points.front().y() > points.back().y() )
-         std::reverse( points.begin() , points.end() ) ;
-   }
-   else if ( ordering == "z-axis" ) 
-   {
-      if ( points.front().z() > points.back().z() )
-         std::reverse( points.begin() , points.end() ) ;
-   }
-   else 
-      return;      
-}
-
-/**
-* @brief Orders the polyline based on the coordinate 
-* @return 
-*/
-template<typename Point_3> 
-std::vector<std::vector<Point_3>> ordering_polylines_3( std::vector<std::vector<Point_3>> &polylines, std::string ordering) 
-{
-   // Make more efficient
-   std::vector<std::pair<double,int>> min_values; 
-   int iter = 0;   
-   for( auto polyline : polylines ) 
-   {
-      ordering_polyline_3( polyline,ordering);
-      if ( ordering == "x-axis" ) 
-         min_values.push_back( std::make_pair<double,int>( CGAL::to_double( polyline.front().x()), iter++) );
-      else if ( ordering == "y-axis" ) 
-         min_values.push_back( std::make_pair<double,int>( CGAL::to_double( polyline.front().y()), iter++) );
-      else if ( ordering == "z-axis" ) 
-         min_values.push_back( std::make_pair<double,int>( CGAL::to_double( polyline.front().z()), iter++) );
-      else 
-         continue;
-   }
-      
-   if (min_values.empty())
-      return polylines;
-          
-   struct sort_by_first_element {
-      bool operator()(const std::pair<double,int> & a, const std::pair<double,int> & b)
-         { return( a.first < b.first );}           
-   };
-   
-   std::sort(min_values.begin(), min_values.end(), sort_by_first_element() ); 
-   std::vector<std::vector<Point_3>> output;      
-    
-   for ( auto srt : min_values ) 
-   {
-      ordering_polyline_3(polylines[srt.second],ordering);
-      output.push_back(polylines[srt.second]);
-   } 
-   return output;               
-}
-
 template< typename InputIterator> 
 double length_polyline_3( InputIterator begin , InputIterator end)
 {
@@ -241,48 +165,53 @@ double distance_to_polyline( std::vector<Point_3> points  , Point_3 query)
 
 
 
-// Euclidean
-template<typename Point_3> 
-std::vector<std::vector<Point_3>> get_longest_polyline( std::vector<std::vector<Point_3>> &polylines )
-{
-   std::vector<Point_3> output;      
-   double max_length = 0;
-   double length;
-   for( auto polyline : polylines ) 
-   {
-      length = length_polyline_3(polyline.begin(),polyline.end());
-      if ( max_length < length ) 
-      {
-         max_length = length;
-         output = polyline;
-      }
-   }
-   return output ;
-} 
+/**
+*  make as struct -> avoid template issue and overload. 
+* @tparam TODO rename to point_d FIXME 
+*/
+// template<typename Point_d> 
+// std::vector<std::vector<Point_d>> get_longest_polyline( std::vector<std::vector<Point_d>> &polylines )
+// {
+//    std::vector<Point_d> output;      
+//    double max_length = 0;
+//    double length;
+//    for( auto polyline : polylines ) 
+//    {
+//       length = length_polyline_3(polyline.begin(),polyline.end());
+//       if ( max_length < length ) 
+//       {
+//          max_length = length;
+//          output = polyline;
+//       }
+//    }
+//    return output ;
+// } 
 
-template<typename Point_3> 
-std::vector<std::vector<Point_3>> get_polyline_near_point( std::vector<std::vector<Point_3>> &polylines, Point_3 point )
-{
-   std::vector<Point_3> output;      
-   double max_length = 0;
-   double length;
-   for( auto polyline : polylines ) 
-   {
-      length = distance_to_polyline(polyline.begin(),polyline.end(), point );
-      if ( max_length < length ) 
-      {
-         max_length = length;
-         output = polyline;
-      }
-   }
-  return output ;
-} 
+// template<typename Point_d> 
+// std::vector<std::vector<Point_d>> get_polyline_near_point( std::vector<std::vector<Point_d>> &polylines, Point_d point )
+// {
+//    std::vector<Point_d> output;      
+//    double max_length = 0;
+//    double length;
+//    for( auto polyline : polylines ) 
+//    {
+//       length = distance_to_polyline(polyline.begin(),polyline.end(), point );
+//       if ( max_length < length ) 
+//       {
+//          max_length = length;
+//          output = polyline;
+//       }
+//    }
+//   return output ;
+// } 
 
 
-template<typename Kernel> 
 struct TriangleHash {
-   template <typename T=typename Kernel::Point_3>
-   std::size_t get_point_hash(const T& point) const { 
+   typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;  
+   typedef Kernel::Triangle_3 Triangle_3;
+   typedef Kernel::Point_3 Point_3;
+
+   std::size_t get_point_hash(const Point_3& point) const { 
       std::size_t  seed = 0;
       auto x = std::hash<double>{}(CGAL::to_double(point.x()));
       auto y = std::hash<double>{}(CGAL::to_double(point.y()));
@@ -293,8 +222,7 @@ struct TriangleHash {
       return seed;
 
    }
-   template <typename T=typename Kernel::Triangle_3>
-   std::size_t operator()(const T& triangle) const {
+   std::size_t operator()(const Triangle_3& triangle) const {
       std::size_t  seed = 0;
       auto v1 = get_point_hash(triangle[0]);
       auto v2 = get_point_hash(triangle[1]);
@@ -306,6 +234,16 @@ struct TriangleHash {
      }
 };
 
+struct PairHash {
+   std::size_t operator()(const std::pair<int,int>& p) const {
+      std::size_t seed = 0;
+      auto h1 = std::hash<int>{}(p.first);
+      auto h2 = std::hash<int>{}(p.second);
+      boost::hash_combine(seed,h1);
+      boost::hash_combine(seed,h2);
+      return seed;
+   }
+};
 
 
 // DocString: Surface
@@ -328,6 +266,10 @@ struct TriangleHash {
 * Polyhedral Surface.
 * @see(CGAL::Polyhedron_3<Kernel>)[https://doc.cgal.org/latest/Polyhedron/index.html]
 *
+*  Mesh mesh;
+*      double  _stratio; 
+*      double  _prratio; 
+*      double  _smreduc;    
 */ 
 class Surface
 {
@@ -408,13 +350,13 @@ class Surface
   /**
    * @brief Constructs an empty SVMTK Surface object.
    */
-   Surface() : _stratio(5.0e-3) ,  _prratio(_default_prratio), _smreduc(0.8) {} 
+   Surface() : _stratio(5.0e-3) ,  _prratio(1.73), _smreduc(0.8) {} 
 
   /**
    * @brief Takes a CGAL polyhedron surface and copies the structure over to CGAL surface mesh.
    * @param polyhedron  defined CGAL::Polyhedron_3<Kernel> Polyhedron; 
    */
-   Surface(Polyhedron_3 &polyhedron) :   _stratio(5.0e-3) ,  _prratio(_default_prratio), _smreduc(0.8)
+   Surface(Polyhedron_3 &polyhedron) :   _stratio(5.0e-3) ,  _prratio(1.73), _smreduc(0.8)
    {
       CGAL::copy_face_graph(polyhedron, mesh);
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);          
@@ -426,7 +368,7 @@ class Surface
    *        Current fileformats: off, stl  
    * @param filename the string path to surface to load.
    */
-   Surface(const std::string filename) :    _stratio(5.0e-3) ,  _prratio(_default_prratio), _smreduc(0.8)
+   Surface(const std::string filename) :    _stratio(5.0e-3) ,  _prratio(1.73), _smreduc(0.8)
    {
       load_surface(filename);
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);   
@@ -436,7 +378,7 @@ class Surface
   /**
    * @brief Constructs a copy of a SVMTK Surface object.
    */
-   Surface(const std::shared_ptr<Surface> surf) :   _stratio(5.0e-3) ,  _prratio(_default_prratio), _smreduc(0.8)
+   Surface(const std::shared_ptr<Surface> surf) :   _stratio(5.0e-3) ,  _prratio(1.73), _smreduc(0.8)
    {
       this->mesh=surf.get()->get_mesh(); 
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);  
@@ -446,7 +388,7 @@ class Surface
   /**
    * @brief Constructs a copy of a SVMTK Surface object.
    */
-   Surface(Mesh mesh) :    _stratio(5.0e-3) ,  _prratio(_default_prratio), _smreduc(0.8)
+   Surface(Mesh mesh) :    _stratio(5.0e-3) ,  _prratio(1.73), _smreduc(0.8)
    {
       this->mesh=mesh; 
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);    
@@ -458,7 +400,7 @@ class Surface
    * @param points coordinates of vertices  
    * @param faces connections of  vertices
    */
-   Surface(std::vector<Point_3>& points, std::vector<Face>& faces) : _stratio(5.0e-3) ,  _prratio(_default_prratio), _smreduc(0.8)
+   Surface(std::vector<Point_3>& points, std::vector<Face>& faces) : _stratio(5.0e-3) ,  _prratio(1.73), _smreduc(0.8)
    {
       CGAL::Polygon_mesh_processing::orient_polygon_soup(points, faces);
       CGAL::Polygon_mesh_processing::repair_polygon_soup(points, faces);
@@ -468,7 +410,7 @@ class Surface
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);       
    }
   
-   Surface(std::vector<Point_3>& points, std::vector<std::array<int,3>>& faces) :    _stratio(5.0e-3) ,  _prratio(_default_prratio), _smreduc(0.8)
+   Surface(std::vector<Point_3>& points, std::vector<std::array<int,3>>& faces) :    _stratio(5.0e-3) ,  _prratio(1.73), _smreduc(0.8)
    {
       CGAL::Polygon_mesh_processing::orient_polygon_soup(points, faces);
       CGAL::Polygon_mesh_processing::repair_polygon_soup(points, faces);
@@ -478,7 +420,7 @@ class Surface
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);       
    }
         
-   Surface(std::vector<Point_3> points, int num_neighbors=6) :    _stratio(5.0e-3) ,  _prratio(_default_prratio), _smreduc(0.8)
+   Surface(std::vector<Point_3> points, int num_neighbors=6) :    _stratio(5.0e-3) ,  _prratio(1.73), _smreduc(0.8)
    {
       typedef std::pair<Point_3, Vector_3> PVP;
       
@@ -517,6 +459,69 @@ class Surface
    */  
    Surface &operator=(Surface &other) { this->mesh = other.mesh; return *this; }
 
+   /**
+   * @note polyline implies some structure : TODO Moeve
+   */    
+   //template<typename Point_3> 
+   void ordering_polyline_3(std::vector< Point_3> &points, std::string ordering) 
+   {
+      if ( ordering == "x-axis" ) 
+      {
+         if ( points.front().x() > points.back().x() )
+            std::reverse( points.begin() , points.end() ) ;
+      }
+      else if ( ordering == "y-axis" ) 
+      {
+         if ( points.front().y() > points.back().y() )
+            std::reverse( points.begin() , points.end() ) ;
+      }
+      else if ( ordering == "z-axis" ) 
+      {
+         if ( points.front().z() > points.back().z() )
+            std::reverse( points.begin() , points.end() ) ;
+      }
+      else 
+         return;      
+   }
+
+
+   /**
+   * @brief Orders the polyline based on the coordinate 
+   * @return FIXME What ?? 
+   */
+   //std::vector<std::vector<Point_3>> 
+   void ordering_polylines_3( std::vector<std::vector<Point_3>> &polylines, std::string ordering) 
+   {
+   // Make more efficient
+
+      for( auto polyline : polylines ) 
+      {
+         ordering_polyline_3( polyline,ordering);
+         // if ( ordering == "x-axis" ) 
+         //    min_values.push_back( std::make_pair<double,int>( CGAL::to_double( polyline.front().x()), iter++) );
+         // else if ( ordering == "y-axis" ) 
+         //    min_values.push_back( std::make_pair<double,int>( CGAL::to_double( polyline.front().y()), iter++) );
+         // else if ( ordering == "z-axis" ) 
+         //    min_values.push_back( std::make_pair<double,int>( CGAL::to_double( polyline.front().z()), iter++) );
+         // else 
+         //    continue;
+      }
+      
+
+      //    std::sort(vec.begin(), vec.end(), [](const std::vector<int>& a, const std::vector<int>& b) {
+      //       return a[0] < b[0];
+      //   });      
+      // struct sort_by_first_element {
+         
+      //    bool operator()(const std::vector<Point_3>& a , const std::vector<Point_3>& b)
+      //       { return( a < b[0] );}           
+      // };
+   
+      // std::sort(.begin(), min_values.end(), sort_by_first_element() ); 
+ 
+      
+      // return output;               
+   }
    /**
    * @brief Loads triangulated surfaces with exentsion off or stl.
    *
@@ -605,10 +610,11 @@ class Surface
    * @param double multiplier for the displacement.
    * @param double smoothing factor for the displacement.      
    * @returns returns the centeroid point of the surface
-   * FIXME 
+   * FIXME rename A
    */    
-   template<int A=0> 
-   vertex_vector_map get_close_vertex_displacement(Surface other,vertex_vector &mvertices, const double adjustment, const double smoothing)
+   //template<int A=0> 
+   vertex_vector_map get_close_vertex_displacement(Surface other,vertex_vector &mvertices, 
+      const double adjustment, const double smoothing, int A=0)
    {
       Vertex_point_pmap vppmap = get(CGAL::vertex_point,other.get_mesh());  
 
@@ -1008,10 +1014,12 @@ class Surface
    void implicit_surface(Implicit_function implicit_function, double mesh_resolution, double bounding_radius, double error_bound)
    {     
    
-      auto bounding = Kernel::Sphere_3(CGAL::ORIGIN, FT(bounding_radius*bounding_radius));   
-      std::shared_ptr<Domain>   domain( new Domain(implicit_function, bounding,  error_bound));
+      auto bounding = Sphere_3(CGAL::ORIGIN, FT(bounding_radius*bounding_radius));   
+      std::shared_ptr<Domain>  domain = std::make_shared<Domain>(implicit_function, bounding,  error_bound);
+      
       domain->create_surface_mesh(mesh_resolution, bounding_radius);
-      auto surface = domain->template get_boundary<Surface>(1);
+      
+      auto surface = domain->get_boundary(1);
       this->mesh = surface->get_mesh();
 
    }
@@ -1077,7 +1085,7 @@ class Surface
    *        - need mapping to interface tag
    *     
    */
-   boost::unordered_map<Triangle_3, std::pair<int,int>, TriangleHash<Kernel> >  surface_segmentation(int nb_of_patch_plus_one=1, double angle_in_degree=85)
+   boost::unordered_map<Triangle_3, std::pair<int,int>, TriangleHash>  surface_segmentation(int nb_of_patch_plus_one=1, double angle_in_degree=85)
    {
       EIFMap eif = get(CGAL::edge_is_feature, mesh);
     
@@ -1095,7 +1103,7 @@ class Surface
      
       //std::map<std::pair<int,int>, std::vector<Triangle_3>> interface_triangle_map;
       // hash tirangle .
-      boost::unordered_map< Triangle_3,  std::pair<int,int> , TriangleHash<Kernel> >  interface_triangle_map;
+      boost::unordered_map< Triangle_3,  std::pair<int,int> , TriangleHash>  interface_triangle_map;
       
       Vertex_point_pmap vpm = get(CGAL::vertex_point,mesh);
 
@@ -1123,9 +1131,6 @@ class Surface
          }*/
          
       }
-
-
-
       // sort on second element 
       return interface_triangle_map;
    }
@@ -1200,6 +1205,7 @@ class Surface
    *
    * @param other SVMTK Surface object. 
    * @returns  first true if property match first template, second true if property match second template.
+   * FIXME input instead of template 
    */ 
    template< CGAL::Bounded_side A , CGAL::Bounded_side B>
    std::pair<bool,bool> check_vertices(Surface &other)
@@ -1320,10 +1326,10 @@ class Surface
    * @param other SVMTK Surface object. 
    * @param vertices vector of this-> surface mesh vertices.  
    * @returns a vector of vertices. 
-   * @overload 
+   * @overload  FIXME 
    */
-   template< CGAL::Bounded_side A , CGAL::Bounded_side B>
-   vertex_vector get_vertices_with_property(Surface &other,vertex_vector &vertices)
+   //template< CGAL::Bounded_side A , CGAL::Bounded_side B>
+   vertex_vector get_vertices_with_property(Surface &other,vertex_vector &vertices, CGAL::Bounded_side A, CGAL::Bounded_side B)
    {
       assert_non_empty_mesh();
       Inside is_inside_query(other.get_mesh()); 
@@ -1347,11 +1353,11 @@ class Surface
    * @returns a vector of vertices. 
    * @overload 
    */
-   template<CGAL::Bounded_side A, CGAL::Bounded_side B>
-   vertex_vector get_vertices_with_property(Surface &other)
+   //template<CGAL::Bounded_side A, CGAL::Bounded_side B>
+   vertex_vector get_vertices_with_property(Surface &other, CGAL::Bounded_side A, CGAL::Bounded_side B)
    {
       vertex_vector vertices = this->get_vertices();
-      return get_vertices_with_property<A,B>(other,vertices);
+      return get_vertices_with_property(other,vertices,A,B);
    }   
 
   /**  
@@ -1363,7 +1369,7 @@ class Surface
    vertex_vector get_vertices_outside(Surface &other) 
    {
       vertex_vector vertices = this->get_vertices();
-      return this->get_vertices_with_property<CGAL::ON_UNBOUNDED_SIDE,CGAL::ON_UNBOUNDED_SIDE>(other, vertices);
+      return this->get_vertices_with_property(other, vertices, CGAL::ON_UNBOUNDED_SIDE, CGAL::ON_UNBOUNDED_SIDE);
    }
 
   /** 
@@ -1373,10 +1379,10 @@ class Surface
    * @returns a vector of vertices. 
    * @overload 
    */
-   template<typename Vertex_iterator>
-   Vertex_iterator get_vertices_outside(Surface &other,Vertex_iterator &vertices) 
+   //template<typename Vertex_iterator>
+   vertex_vector get_vertices_outside(Surface &other, vertex_vector &vertices) 
    {
-      return this->get_vertices_with_property<CGAL::ON_UNBOUNDED_SIDE,CGAL::ON_UNBOUNDED_SIDE>(other, vertices);
+      return this->get_vertices_with_property(other, vertices, CGAL::ON_UNBOUNDED_SIDE,CGAL::ON_UNBOUNDED_SIDE);
    }
    
   /** 
@@ -1388,7 +1394,7 @@ class Surface
    vertex_vector get_vertices_inside(Surface &other) 
    {
       vertex_vector vertices = this->get_vertices();
-      return this->get_vertices_with_property<CGAL::ON_BOUNDED_SIDE,CGAL::ON_BOUNDARY>(other,vertices);
+      return this->get_vertices_with_property(other,vertices,CGAL::ON_BOUNDED_SIDE,CGAL::ON_BOUNDARY);
    }
 
   /** 
@@ -1398,10 +1404,10 @@ class Surface
    * @returns a vector of vertices.
    * @overload     
    */
-   template<typename Vertex_iterator> 
-   Vertex_iterator get_vertices_inside(Surface &other,Vertex_iterator &vertices)  
+   //template<typename Vertex_iterator> 
+   vertex_vector get_vertices_inside(Surface &other,vertex_vector &vertices)  
    {
-      return this->get_vertices_with_property<CGAL::ON_BOUNDED_SIDE,CGAL::ON_BOUNDARY>(other, vertices);
+      return this->get_vertices_with_property(other, vertices,CGAL::ON_BOUNDED_SIDE,CGAL::ON_BOUNDARY);
    }
 
   /** 
@@ -1410,10 +1416,10 @@ class Surface
    * @param vertices vector of surface mesh vertices.   
    * @returns a vector of vertices. 
    */
-   template<typename Vertex_iterator>  
-   Vertex_iterator get_vertices_on_boundary(Surface &other,Vertex_iterator &vertices) 
+   //template<typename Vertex_iterator>  
+   vertex_vector get_vertices_on_boundary(Surface &other, vertex_vector &vertices) 
    {
-      return this->get_vertices_with_property<CGAL::ON_BOUNDARY,CGAL::ON_BOUNDARY>(other, vertices);
+      return this->get_vertices_with_property(other, vertices,CGAL::ON_BOUNDARY,CGAL::ON_BOUNDARY);
    }
 
   /**
@@ -1424,7 +1430,7 @@ class Surface
    */
    vertex_vector get_close_vertices(Surface &other)
    {
-      return this->get_close_vertices_with_property<0,false>(other);
+      return this->get_close_vertices_with_property(other, 0, false);
    }    
   
   /**
@@ -1434,7 +1440,7 @@ class Surface
    */
    vertex_vector get_close_vertices(Surface &other, vertex_vector &mvertices)
    {
-      return this->get_close_vertices_with_property<0,false>(other,mvertices);
+      return this->get_close_vertices_with_property(other,mvertices, 0,false);
    } 
 
 
@@ -1449,11 +1455,11 @@ class Surface
    * @param other SVMTK surface object, itself is an option.
    * @returns a vector of vertices. 
    */
-   template<int A, bool B> 
-   vertex_vector get_close_vertices_with_property(Surface &other)
+   //template<int A, bool B> 
+   vertex_vector get_close_vertices_with_property(Surface &other, int  A , bool B)
    {
       vertex_vector vertices =this->get_vertices();
-      return get_close_vertices_with_property<A,B>(other, vertices);
+      return get_close_vertices_with_property(other, vertices, A, B);
    }  
                     
   /** 
@@ -1465,7 +1471,7 @@ class Surface
    vertex_vector get_narrow_gaps() 
    {
       vertex_vector vertices = this->get_vertices();
-      return this->get_close_vertices_with_property<1,true>(*this,vertices);
+      return this->get_close_vertices_with_property(*this,vertices, 1, true);
    }
       
   /**
@@ -1476,7 +1482,7 @@ class Surface
    vertex_vector get_needle_vertices()
    {
       vertex_vector vertices = this->get_vertices();
-      return this->get_close_vertices_with_property<1,false>(*this, vertices);
+      return this->get_close_vertices_with_property(*this, vertices, 1 , false);
    }
    
   /**
@@ -1489,10 +1495,10 @@ class Surface
    *             If false; close vertices in positiv normal direction are skipped.
    * @param other SVMTK surface object, itself is an option.
    * @param[in,out] mvertices a vector of vertices. 
-   * @returns a vector of vertices. 
+   * @returns a vector of vertices. FIXME 
    */
-   template<int A, bool B> 
-   vertex_vector get_close_vertices_with_property(Surface &other, vertex_vector& mvertices) 
+   //template<int A, bool B> 
+   vertex_vector get_close_vertices_with_property(Surface &other, vertex_vector& mvertices, int A , bool B) 
    {                     
       assert_non_empty_mesh();
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);
@@ -1566,7 +1572,7 @@ class Surface
    {
       assert_non_empty_mesh();
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh); 
-      return manipulate_close_vertex_selection<1,true>(*this, -abs(adjustment),smoothing,max_iter);
+      return manipulate_close_vertex_selection(*this, -abs(adjustment),smoothing,max_iter, 1, true);
    }
 
   // DocString: separate_close_vertices
@@ -1587,7 +1593,7 @@ class Surface
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh); 
       if( adjustment<0 )
          throw  InvalidArgumentError("Adjusment must be positive.");
-      return manipulate_close_vertex_selection_with_direction<1,false>(*this,adjustment, smoothing ,max_iter); 
+      return manipulate_close_vertex_selection_with_direction(*this,adjustment, smoothing ,max_iter, 1 ,false); 
    }
 
   // DocString: embed
@@ -1606,7 +1612,7 @@ class Surface
    {
       assert_non_empty_mesh();
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh); 
-      return manipulate_vertex_selection<CGAL::ON_UNBOUNDED_SIDE,CGAL::ON_BOUNDARY>(other, -abs(adjustment), smoothing, max_iter);  
+      return manipulate_vertex_selection(other, -abs(adjustment), smoothing, max_iter ,CGAL::ON_UNBOUNDED_SIDE,CGAL::ON_BOUNDARY);  
    }
  
   // DocString: expose
@@ -1624,7 +1630,7 @@ class Surface
    {
       assert_non_empty_mesh();
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh); 
-     return manipulate_vertex_selection<CGAL::ON_BOUNDED_SIDE,CGAL::ON_BOUNDARY>(other, -abs(adjustment), smoothing, max_iter);
+     return manipulate_vertex_selection(other, -abs(adjustment), smoothing, max_iter, CGAL::ON_BOUNDED_SIDE,CGAL::ON_BOUNDARY);
    }
   
   // DocString: enclose
@@ -1643,7 +1649,7 @@ class Surface
    {
       assert_non_empty_mesh();
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh); 
-      return manipulate_vertex_selection<CGAL::ON_BOUNDED_SIDE,CGAL::ON_BOUNDARY>(other, abs(adjustment), smoothing, max_iter);   
+      return manipulate_vertex_selection(other, abs(adjustment), smoothing, max_iter, CGAL::ON_BOUNDED_SIDE,CGAL::ON_BOUNDARY);   
    }
 
    // DocString: separate 
@@ -1662,7 +1668,7 @@ class Surface
       
       //std::pair<bool,bool> queries = other.check_vertices<CGAL::ON_BOUNDED_SIDE,CGAL::ON_UNBOUNDED_SIDE>(*this);
       //queries = check_vertices<CGAL::ON_BOUNDED_SIDE,CGAL::ON_UNBOUNDED_SIDE>(other);
-      return manipulate_close_vertex_selection<0,false>(other, adjustment, smoothing, max_iter);
+      return manipulate_close_vertex_selection( other, adjustment, smoothing, max_iter, 0 , false);
 
    }
 
@@ -1676,12 +1682,13 @@ class Surface
    * @returns std::pair<bool,int>. True if algorithm complets before max_iter is reached. The integer is the number of vertex manipulation that
    * is completed.  
    */
-   template< CGAL::Bounded_side A , CGAL::Bounded_side B> 
-   std::pair<bool,int> manipulate_vertex_selection(Surface &other, double adjustment,  double smoothing, int max_iter)
+   //template< CGAL::Bounded_side A , CGAL::Bounded_side B> 
+   std::pair<bool,int> manipulate_vertex_selection(Surface &other, double adjustment, 
+      double smoothing, int max_iter, CGAL::Bounded_side A , CGAL::Bounded_side B )
    {
 
       double smth = smoothing;
-      vertex_vector vertices = get_vertices_with_property<A,B>(other);
+      vertex_vector vertices = get_vertices_with_property(other, A, B);
         
       double displacement_bound = get_lower_displacment_bound();
       double srf = get_smoothing_reduction_factor();
@@ -1698,18 +1705,18 @@ class Surface
           
          if ( max_element->second.squared_length() < displacement_bound ) 
             smth = srf*smth;
-         vertices = get_vertices_with_property<A,B>(other,vertices);
+         vertices = get_vertices_with_property(other,vertices, A, B);
           
          if( this->num_self_intersections()>0 ) 
          {
             this->repair_self_intersections(); 
-            vertices = get_vertices_with_property<A,B>(other);
+            vertices = get_vertices_with_property(other,A,B);
             smth = smoothing;     
          }
           
          if( vertices.empty() ) 
          {
-            vertices = get_vertices_with_property<A,B>(other);
+            vertices = get_vertices_with_property(other,A,B);
             smth = smoothing;
          }
                        
@@ -1738,14 +1745,15 @@ class Surface
    * reached. The integer is the number of vertex manipulation that
    * is completed.  
    */
-   template<int A, bool B = false>
-   std::pair<bool,int> manipulate_close_vertex_selection(Surface &other, double adjustment,  double smoothing, int max_iter)
+   //template<int A, bool B = false>
+   std::pair<bool,int> manipulate_close_vertex_selection(Surface &other, double adjustment, 
+      double smoothing, int max_iter, int A , bool B=false)
    { 
       double displacement_bound = get_lower_displacment_bound();
       double srf = get_smoothing_reduction_factor();
 
       double smth = smoothing;
-      vertex_vector vertices = get_close_vertices_with_property<A,B>(other);
+      vertex_vector vertices = get_close_vertices_with_property(other, A, B);
       int iter = 0;
 
       while( !vertices.empty() )
@@ -1759,17 +1767,17 @@ class Surface
          if ( max_element->second.squared_length() < displacement_bound) 
             smth = srf*smth;
                    
-         vertices = get_close_vertices_with_property<A,B>(other,vertices); 
+         vertices = get_close_vertices_with_property(other,vertices, A, B); 
 
          if( this->num_self_intersections()>0 ) 
          {
             this->repair_self_intersections(); 
-            vertices = get_close_vertices_with_property<A,B>(other);
+            vertices = get_close_vertices_with_property(other, A, B);
             smth= smoothing;    
          }
          if( vertices.empty()  )  
          {
-            vertices = get_close_vertices_with_property<A,B>(other); 
+            vertices = get_close_vertices_with_property(other,A,B); 
             smth = smoothing;
          }          
          if( ++iter>max_iter )
@@ -1795,21 +1803,22 @@ class Surface
    *         the number of vertex manipulation that is completed.  
    *  
    */
-   template<int A, bool B>
-   std::pair<bool,int> manipulate_close_vertex_selection_with_direction(Surface &other, double adjustment, double smoothing,int max_iter)
+   //template<int A, bool B>
+   std::pair<bool,int> manipulate_close_vertex_selection_with_direction(Surface &other, 
+      double adjustment, double smoothing,int max_iter, int A, bool B)
    {   
       double displacement_bound = get_lower_displacment_bound();
       double srf = get_smoothing_reduction_factor();
 
       double smth = smoothing;  
-      vertex_vector vertices  =  get_close_vertices_with_property<A,B>(other); 
+      vertex_vector vertices  =  get_close_vertices_with_property(other, A ,B); 
       add_adjacent_vertices(vertices,60);
       int iter = 0;
 
       while( !vertices.empty() )
       {  
          // adjustment is in negative direction 
-         vertex_vector_map vertex_displacement = get_close_vertex_displacement<A>(other, vertices, adjustment, smoothing); 
+         vertex_vector_map vertex_displacement = get_close_vertex_displacement(other, vertices, adjustment, smoothing,A); 
          
          auto max_element = std::max_element( vertex_displacement.begin(), vertex_displacement.end(), find_largest_displacement());    
          
@@ -1818,19 +1827,19 @@ class Surface
         
          set_adjacent_vertices(vertex_displacement);
           
-         vertices = get_close_vertices_with_property<A,B>(other, vertices); 
+         vertices = get_close_vertices_with_property(other, vertices, A,B); 
 
          if( this->num_self_intersections()>0 ) 
          {
             this->repair_self_intersections(); 
-            vertices = get_close_vertices_with_property<A,B>(other);
+            vertices = get_close_vertices_with_property(other,A,B);
             add_adjacent_vertices(vertices,60);                
             smth = smoothing;   
          }
                
          if( vertices.empty()  )  
          {   
-            vertices  = get_close_vertices_with_property<A,B>(other);
+            vertices  = get_close_vertices_with_property(other, A, B);
             add_adjacent_vertices(vertices,60);       
             smth = smoothing;   
          }
@@ -2241,8 +2250,8 @@ class Surface
    * @param end call of std::vector
    * @param mulitplier of the normal vector that determines the vertes movement.
    */
-   template<typename InputIterator >
-   void adjust_vertices_in_region(InputIterator begin , InputIterator  end, const double c)
+   //template<typename InputIterator >
+   void adjust_vertices_in_region(vertex_vector::iterator begin , vertex_vector::iterator  end, const double c)
    { 
       assert_non_empty_mesh();
       std::vector<std::pair<vertex_descriptor, Point_3> > adjust; 
@@ -2256,8 +2265,8 @@ class Surface
          mesh.point(s.first) = s.second;
    }
 
-   template<typename InputIterator >
-   void adjust_vertices_in_region(InputIterator begin ,InputIterator  end, const Vector_3 disp)
+   //template<typename InputIterator >
+   void adjust_vertices_in_region(vertex_vector::iterator begin ,vertex_vector::iterator  end, const Vector_3 disp)
    { 
       assert_non_empty_mesh();
       std::vector<std::pair<vertex_descriptor, Point_3> > adjust; 
@@ -2280,8 +2289,7 @@ class Surface
    * @param template iterator end.
    * @param const double c 
    */
-   template<typename InputIterator>
-   void smooth_laplacian_region(InputIterator  begin , InputIterator  end ,const double c)
+   void smooth_laplacian_region(vertex_vector::iterator  begin , vertex_vector::iterator end ,const double c)
    {
       assert_non_empty_mesh();
       CGAL::Polygon_mesh_processing::remove_isolated_vertices(mesh);
@@ -2367,12 +2375,34 @@ class Surface
    * @note The Laplacian smoothin parameters are set, but the 
    *       user can combine smooth_laplacian. 
    * @see [Articel]( https://www.doi.org/10.1109/ICCV.1995.466848) 
-   * @param template iterator begin 
-   * @param template iterator end 
+   * @param TODO
    * @param nb_iter number of iterations of smoothing  
    */
-   template<typename InputIterator > 
-   void smooth_taubin_region(InputIterator begin , InputIterator end ,const size_t nb_iter)
+   void smooth_taubin_region(vertex_vector::iterator  begin , vertex_vector::iterator end , const size_t nb_iter)
+   {
+      assert_non_empty_mesh();
+      for(size_t i = 0; i < nb_iter; ++i) 
+      {
+         this->smooth_laplacian_region(begin,end,0.8);
+         this->smooth_laplacian_region(begin,end,-0.805);
+      }
+   }
+
+  /** 
+   * @brief Taubin smothing of specified surface mesh vertices 
+   *
+   * Taubin smaoothing of the input vertices. This corresponds to a 
+   * Laplacian smoothing with value \lambda, followed by a Laplacian 
+   * smoothing with value \mu: Given the requriment :     
+   *               $ \lambda < -\mu $    
+   *
+   * @note The Laplacian smoothin parameters are set, but the 
+   *       user can combine smooth_laplacian. 
+   * @see [Articel]( https://www.doi.org/10.1109/ICCV.1995.466848) 
+   * @param TODO 
+   * @param nb_iter number of iterations of smoothing  
+   */
+   void smooth_taubin_region(vertex_vector_map::iterator  begin , vertex_vector_map::iterator  end , const size_t nb_iter)
    {
       assert_non_empty_mesh();
       for(size_t i = 0; i < nb_iter; ++i) 
@@ -2514,7 +2544,6 @@ class Surface
    * @param plane_3 a wrapped CGAL Plane_3 object 
    * @returns slice SVMTK Slice object.
    */
-   template<typename Slice>
    std::shared_ptr<Slice> get_slice(Plane_3 plane_3)  
    {
       assert_non_empty_mesh();  
@@ -2524,15 +2553,15 @@ class Surface
       slicer(plane_3, std::back_inserter(polylines_3D));
 
       std::vector<std::vector<Point_2>> polylines_2;
+      
       for(auto pol = polylines_3D.begin(); pol != polylines_3D.end(); ++pol) 
       {
-         std::vector<Point_2> result;
          std::vector<Point_2> polyline_2;
          for(auto pit = pol->begin(); pit != pol->end(); ++pit)
             polyline_2.push_back(plane_3.to_2d(*pit));
          polylines_2.push_back(polyline_2);
       }
-      std::shared_ptr<Slice> slice(new Slice(plane_3,polylines_2)); 
+      std::shared_ptr<Slice> slice = std::make_shared<Slice>(plane_3,polylines_2); 
       return slice;
    }  
 
@@ -2549,14 +2578,13 @@ class Surface
    * @returns a SVMTK slice object. 
    * @overload
    */
-   template<typename Slice>
    std::shared_ptr<Slice> get_slice(double x1,double x2, double x3 ,double x4)
    {
       assert_non_empty_mesh();
       if( x1==0 && x2==0 && x3==0 )
          throw InvalidArgumentError("Invalid plane parameters.");
       Plane_3 plane = Plane_3(x1, x2, x3, x4);
-      return this->get_slice<Slice>(plane);
+      return this->get_slice(plane);
    }
 
   /**
@@ -2896,7 +2924,6 @@ class Surface
    * @param radius of the clip surface.
    * @return SVMTK Surface object, circle in plane 
    */ 
-
    std::shared_ptr<Surface> get_perpendicular_cut(Point_3 query, double  radius)
    {
       Polylines polylines = this->mean_curvature_flow();
@@ -2982,9 +3009,12 @@ class Surface
    {
       assert_non_empty_mesh();
       CGAL::Polygon_mesh_processing::triangulate_faces(mesh);
-      BOOST_FOREACH(face_descriptor fd, faces(mesh))
+      //BOOST_FOREACH(face_descriptor fd, faces(mesh))
+      for ( auto fd : faces(mesh) )
+      {
          if( next(next(halfedge(fd, mesh), mesh), mesh)!=prev(halfedge(fd, mesh), mesh) )
             std::cerr << "Error: non-triangular face left in mesh." << std::endl;
+      }
      return true;
    }
 
@@ -3002,6 +3032,11 @@ class Surface
       return result;
    } 
 
+  /**
+   * 
+   * 
+   * 
+   */
    Point_3 get_point(vertex_descriptor vd) 
    {
       assert_non_empty_mesh();
@@ -3041,8 +3076,11 @@ class Surface
          return false;
    }
    
-   /**
-   * TODO 
+  /**
+   * @brief Checks if a point on the boundary of the surface mesh.
+   *  
+   * @param point_3 point.
+   * @returns bool true if point is inside surface otherwise false. 
    */
    bool is_point_on_boundary(Point_3 point_3) 
    {
@@ -3065,8 +3103,9 @@ class Surface
    void adjust_boundary(const double c)
    {
       assert_non_empty_mesh();
-      Mesh::Vertex_range::iterator  vb = mesh.vertices().begin(), ve=mesh.vertices().end();
-      adjust_vertices_in_region(vb, ve,c);
+      //Mesh::Vertex_range::iterator  vb = mesh.vertices().begin(), ve=mesh.vertices().end();
+      vertex_vector vertices= get_vertices();
+      adjust_vertices_in_region(vertices.begin(), vertices.end(),c);
    }
    
   // DocString: adjust_boundary
@@ -3079,7 +3118,7 @@ class Surface
    void adjust_boundary(Surface other,const double c)
    {
       assert_non_empty_mesh();
-      vertex_vector vertices = get_vertices_with_property<CGAL::ON_BOUNDED_SIDE,CGAL::ON_BOUNDARY>(other); 
+      vertex_vector vertices = get_vertices_with_property(other,CGAL::ON_BOUNDED_SIDE,CGAL::ON_BOUNDARY); 
 
       adjust_vertices_in_region(vertices.begin(), vertices.end(), c);
    }
@@ -3099,9 +3138,10 @@ class Surface
    void smooth_laplacian(const double c, int nb_iter)
    {
       assert_non_empty_mesh();
-      Mesh::Vertex_range::iterator  vb = mesh.vertices().begin(), ve=mesh.vertices().end();
+      //Mesh::Vertex_range::iterator  vb = mesh.vertices().begin(), ve=mesh.vertices().end();
+      vertex_vector vertices = get_vertices();
       for(int i=0; i<nb_iter; ++i)
-         this->smooth_laplacian_region(vb, ve,c);
+         this->smooth_laplacian_region(vertices.begin(), vertices.end(),c);
    }
 
   // DocString: smooth_shape
@@ -3120,13 +3160,12 @@ class Surface
       CGAL::Polygon_mesh_processing::smooth_shape(mesh, time, CGAL::Polygon_mesh_processing::parameters::number_of_iterations(nb_iter));
    }
 
-
    //move to utility
    struct sort_vectors_by_length {
-      template<typename T>
-      bool operator()(const std::vector<T> & a, const std::vector<T> & b)
+      bool operator()(const std::vector<Point_3> & a, const std::vector<Point_3> & b)
          { return ( length_polyline_3(a.begin(), a.end())>length_polyline_3(b.begin(), b.end()) );}                   
-   };   
+   };  
+
   // DocString: mean_curvature_flow 
   /** 
    * @brief Computes the centerline of the surface.
@@ -3161,7 +3200,6 @@ class Surface
             return polylines_3;
          }         
       };
-  
       Polylines polylines_3;
       Skeleton skeleton;
       CGAL::extract_mean_curvature_flow_skeleton(mesh, skeleton);
@@ -3179,7 +3217,7 @@ class Surface
    Polylines mean_curvature_flow( std::string ordering) 
    {
       Polylines output = mean_curvature_flow();
-      output = ordering_polylines_3(output,ordering);
+      ordering_polylines_3(output,ordering);
       return output;
    } 
   
@@ -3244,19 +3282,19 @@ class Surface
    void make_cube( double x0, double y0, double  z0,  double x1, double y1, double z1, double edge_length) 
    {
       typedef boost::multi_array<int, 3> array_type;
-     
+      
+      clear();     
+      
       std::vector<face_vector> sides;
-      clear(); 
+ 
       if( x0==x1 or y0==y1 or z0==z1 ) 
          throw InvalidArgumentError("Invalid argument.");
       double dx =(x1-x0);  
       double dy =(y1-y0);
       double dz =(z1-z0);
      
-
       if( abs(dx)<edge_length || abs(dy)<edge_length ||  abs(dz)<edge_length) 
          edge_length = std::min( abs(dx), std::min(abs(dy), abs(dz)));
-
 
       int Nx = abs(static_cast<int>(dx/edge_length));
       int Ny = abs(static_cast<int>(dy/edge_length));
@@ -3567,14 +3605,14 @@ class Surface
   /**
    * \struct 
    * @brief Implicit function for a sphere with static center and radius.
-   * 
+   *  TODO 
    */
    struct sphere_wrapper{      
       public:
          static double radius;
          static double x0;
-         static double y0;
-         static double z0;
+         static double y0 ;
+         static double z0 ;
          static double function(double x, double y, double z){return (x-x0)*(x -x0) + (y-y0)*(y -y0) + (z-z0)*(z -z0) - radius*radius;}
         
    };
@@ -3604,10 +3642,10 @@ class Surface
       sphere.y0=y0;
       sphere.z0=z0;
       
-      auto bounding = Kernel::Sphere_3(Point_3(x0,y0,z0), FT(r0*r0));   
-      std::shared_ptr<Domain>   domain( new Domain(sphere.function, bounding,  error_bound));
+      auto bounding = Sphere_3(Point_3(x0,y0,z0), FT(r0*r0));   
+      std::shared_ptr<Domain>   domain = std::make_shared<Domain>(sphere.function, bounding,  error_bound);
       domain->create_surface_mesh(edge_length);
-      auto surface = domain->template get_boundary<Surface>(1);
+      auto surface = domain->get_boundary(1);
       this->mesh = surface->get_mesh();
    }
    
@@ -3801,9 +3839,9 @@ class Surface
    * @brief Computes the interesect distance in the facet normal direction. 
    * @returns vector of pairs, consistent of triangle points and distance  
    */       
-   boost::unordered_map<Triangle_3,double, TriangleHash<Kernel>> get_collision_distance(Surface other)
+   boost::unordered_map<Triangle_3,double, TriangleHash> get_collision_distance(Surface other)
    {  
-      boost::unordered_map<Triangle_3,double, TriangleHash<Kernel> > Tridepth;
+      boost::unordered_map<Triangle_3,double, TriangleHash> Tridepth;
       double distance;       
      
       struct Skip
@@ -3858,9 +3896,9 @@ class Surface
    * @brief Computes the collision sphere radius for each facet in the normal direction.
    * @returns map of triangle and hydrallic radius 
    */       
-   boost::unordered_map<Triangle_3,double, TriangleHash<Kernel>> get_collision_spheres()
+   boost::unordered_map<Triangle_3,double, TriangleHash> get_collision_spheres()
    {  
-      boost::unordered_map<Triangle_3,double, TriangleHash<Kernel> > Tridepth;    
+      boost::unordered_map<Triangle_3,double, TriangleHash> Tridepth;    
       double beta,min_beta;
        
       double proximity = std::min(1000, num_vertices() );  
@@ -3977,6 +4015,9 @@ class Surface
       remove_faces(removal);         
    }
    
+   /** 
+   * @brief TODO   
+   */
    Vector_3 average_normal_vertex( vertex_vector&  vertices)
    {
       Vector_3 n1 ;
@@ -4015,7 +4056,7 @@ class Surface
   /**
    * @brief Sets the displacement ratio.
    * @note  The displacment ratio times average egde length determines the lower displacement bound 
-   * 
+   * TODO
    */ 
    void set_displacment_ratio(double displacment_ratio) 
    {
@@ -4023,9 +4064,11 @@ class Surface
    }
 
   /**
-   * @brief  
+   * @brief Smoothing factor is used to reduce the smoothing factor in displacement if the displacement is small.  
    * 
-   * 
+   * @note TODO 
+   *
+   * @returns smoothing reducation factor
    */
    double get_smoothing_reduction_factor() 
    {
@@ -4034,7 +4077,7 @@ class Surface
 
   /**
    * @brief 
-   * 
+   * TODO 
    * 
    */       
    double get_lower_displacment_bound() 
@@ -4044,20 +4087,20 @@ class Surface
     
    protected:
       Mesh mesh;
-      double  _stratio; 
-      double  _prratio; 
-      double  _smreduc;     
+      double  _stratio; // parameter to determine the lower_displacment_bound.
+      double  _prratio; // proximity ratio between non-adjacent point, default is sqrt(3) approx 1.73.
+      double  _smreduc; // reduction in smoothing when subsequent displacments is less than lower_displacment_bound.     
 };
 
 /**
-* @brief Inline declaration of static variables in header files requrie c++ version equal or greate than 7 
+* @brief Inline declaration of static variables in header files requrie c++ version equal or greater than 7 
 *       with the compiler option c++1z/c++17.
 * @hideinitializer 
 */
 inline double Surface::sphere_wrapper::radius = 0; // inline declaration of static variable radius for sphere wrapper.
-inline double Surface::sphere_wrapper::x0 = 0;     // inline declaration of static variable radius for sphere wrapper.
-inline double Surface::sphere_wrapper::y0 = 0;     // inline declaration of static variable radius for sphere wrapper.
-inline double Surface::sphere_wrapper::z0 = 0;     // inline declaration of static variable radius for sphere wrapper.
+inline double Surface::sphere_wrapper::x0 = 0;     // inline declaration of static variable x-coordinate of center for sphere wrapper.
+inline double Surface::sphere_wrapper::y0 = 0;     // inline declaration of static variable y-coordinate of center for sphere wrapper.
+inline double Surface::sphere_wrapper::z0 = 0;     // inline declaration of static variable z-coordinate of center for sphere wrapper.
 
 /** 
 * @brief Constructs a convex hull from a vector of points
@@ -4067,10 +4110,9 @@ inline double Surface::sphere_wrapper::z0 = 0;     // inline declaration of stat
 * @param point_vector a vector of template points, default option is surface points.
 * @returns SVMTK Surface object.
 */
-template< typename Surface, typename Point_3 = typename Surface::Point_3>
-std::shared_ptr<Surface> convex_hull(std::vector<Point_3 >& point_vector)
+std::shared_ptr<Surface> convex_hull(std::vector<Surface::Point_3 >& point_vector)
 {
-   typename Surface::Polyhedron_3 polyhedron;
+   Surface::Polyhedron_3 polyhedron;
    CGAL::convex_hull_3(point_vector.begin(), point_vector.end(), polyhedron);
    return std::make_shared<Surface>(Surface(polyhedron));
 }
@@ -4091,11 +4133,10 @@ std::shared_ptr<Surface> convex_hull(std::vector<Point_3 >& point_vector)
 * @param max_iter maximum number of iteration.
 * @returns true if complete.
 */
-template<typename Surface>
 bool separate_surface_overlapp(Surface& surf1, Surface& surf2, double edge_movement, double smoothing, int max_iter)
 {
-   typedef typename Surface::vertex_vector_map vertex_vector_map;
-   typedef typename Surface::vertex_vector vertex_vector;
+   typedef Surface::vertex_vector_map vertex_vector_map;
+   typedef Surface::vertex_vector vertex_vector;
 
    vertex_vector s1vertices  = surf1.get_vertices_inside(surf2);
    vertex_vector s2vertices  = surf2.get_vertices_inside(surf1);
@@ -4119,8 +4160,8 @@ bool separate_surface_overlapp(Surface& surf1, Surface& surf2, double edge_movem
       surf1.set_adjacent_vertices(vertex_displacement_1);
       surf2.set_adjacent_vertices(vertex_displacement_2);    
       
-      auto max_element_1 = std::max_element( vertex_displacement_1.begin(), vertex_displacement_1.end(), typename Surface::find_largest_displacement());    
-      auto max_element_2 = std::max_element( vertex_displacement_2.begin(), vertex_displacement_2.end(), typename Surface::find_largest_displacement());    
+      auto max_element_1 = std::max_element( vertex_displacement_1.begin(), vertex_displacement_1.end(), Surface::find_largest_displacement());    
+      auto max_element_2 = std::max_element( vertex_displacement_2.begin(), vertex_displacement_2.end(), Surface::find_largest_displacement());    
 
       if(  max_element_1->second.squared_length() < s1ael ) 
          smth1 = srf1*smth1; 
@@ -4183,11 +4224,10 @@ bool separate_surface_overlapp(Surface& surf1, Surface& surf2, double edge_movem
  * @param max_iter maximum number of iteration.
  * @returns true if complete.
  */
-template<typename Surface>
 bool separate_surface_overlapp(Surface& surf1, Surface& surf2, Surface& other, double edge_movement, double smoothing, int max_iter)
 {
-   typedef typename Surface::vertex_vector_map vertex_vector_map;
-   typedef typename Surface::vertex_vector vertex_vector;
+   typedef Surface::vertex_vector_map vertex_vector_map;
+   typedef Surface::vertex_vector vertex_vector;
 
    vertex_vector s1vertices  = surf1.get_vertices_inside(surf2);  
    vertex_vector s2vertices  = surf2.get_vertices_inside(surf1);
@@ -4213,8 +4253,8 @@ bool separate_surface_overlapp(Surface& surf1, Surface& surf2, Surface& other, d
       surf1.set_adjacent_vertices(vertex_displacement_1);
       surf2.set_adjacent_vertices(vertex_displacement_2);           
         
-      auto max_element_1 = std::max_element( vertex_displacement_1.begin(), vertex_displacement_1.end(), typename Surface::find_largest_displacement());    
-      auto max_element_2 = std::max_element( vertex_displacement_2.begin(), vertex_displacement_2.end(), typename Surface::find_largest_displacement());    
+      auto max_element_1 = std::max_element( vertex_displacement_1.begin(), vertex_displacement_1.end(), Surface::find_largest_displacement());    
+      auto max_element_2 = std::max_element( vertex_displacement_2.begin(), vertex_displacement_2.end(), Surface::find_largest_displacement());    
 
       if(  max_element_1->second.squared_length() < s1ael ) 
          smth1 = srf1*smth1; 
@@ -4283,11 +4323,10 @@ bool separate_surface_overlapp(Surface& surf1, Surface& surf2, Surface& other, d
 * @returns true if complete. 
 * @note  for backwards compatiblity : abs(edge_movement) 
 */
-template< typename Surface>
 bool separate_close_surfaces(Surface& surf1, Surface& surf2, Surface& other, double edge_movement, double smoothing, int max_iter)
 {
-   typedef typename Surface::vertex_vector_map vertex_vector_map;
-   typedef typename Surface::vertex_vector vertex_vector;
+   typedef Surface::vertex_vector_map vertex_vector_map;
+   typedef Surface::vertex_vector vertex_vector;
 
    vertex_vector s1vertices =  surf1.get_close_vertices(surf2);
    vertex_vector s2vertices =  surf2.get_close_vertices(surf1);
@@ -4312,8 +4351,8 @@ bool separate_close_surfaces(Surface& surf1, Surface& surf2, Surface& other, dou
       vertex_vector_map vertex_displacement_1 = surf1.get_vertex_displacement(s1vertices, -abs(edge_movement), smth1);     
       vertex_vector_map vertex_displacement_2 = surf2.get_vertex_displacement(s2vertices, -abs(edge_movement), smth2);         
  
-      auto max_element_1 = std::max_element( vertex_displacement_1.begin(), vertex_displacement_1.end(), typename Surface::find_largest_displacement());    
-      auto max_element_2 = std::max_element( vertex_displacement_2.begin(), vertex_displacement_2.end(), typename Surface::find_largest_displacement());    
+      auto max_element_1 = std::max_element( vertex_displacement_1.begin(), vertex_displacement_1.end(), Surface::find_largest_displacement());    
+      auto max_element_2 = std::max_element( vertex_displacement_2.begin(), vertex_displacement_2.end(), Surface::find_largest_displacement());    
       
       surf1.set_adjacent_vertices(vertex_displacement_1);
       surf2.set_adjacent_vertices(vertex_displacement_2);           
@@ -4384,11 +4423,10 @@ bool separate_close_surfaces(Surface& surf1, Surface& surf2, Surface& other, dou
 * @param max_iter maximum number of iteration.
 * @returns true if complete.
 */
-template<typename Surface> 
 bool separate_close_surfaces(Surface& surf1, Surface& surf2, double edge_movement, double smoothing, int max_iter)
 {
-   typedef typename Surface::vertex_vector_map vertex_vector_map;
-   typedef typename Surface::vertex_vector vertex_vector;  
+   typedef Surface::vertex_vector_map vertex_vector_map;
+   typedef Surface::vertex_vector vertex_vector;  
  
    vertex_vector s1vertices = surf1.get_close_vertices(surf2);   
    vertex_vector s2vertices = surf2.get_close_vertices(surf1);
@@ -4411,8 +4449,8 @@ bool separate_close_surfaces(Surface& surf1, Surface& surf2, double edge_movemen
       surf1.set_adjacent_vertices(vertex_displacement_1);
       surf2.set_adjacent_vertices(vertex_displacement_2);  
         
-      auto max_element_1 = std::max_element( vertex_displacement_1.begin(), vertex_displacement_1.end(), typename Surface::find_largest_displacement());    
-      auto max_element_2 = std::max_element( vertex_displacement_2.begin(), vertex_displacement_2.end(), typename Surface::find_largest_displacement());   
+      auto max_element_1 = std::max_element( vertex_displacement_1.begin(), vertex_displacement_1.end(), Surface::find_largest_displacement());    
+      auto max_element_2 = std::max_element( vertex_displacement_2.begin(), vertex_displacement_2.end(), Surface::find_largest_displacement());   
 
       if(  max_element_1->second.squared_length() < s1ael ) 
          smth1 = srf1*smth1; 
@@ -4478,12 +4516,11 @@ bool separate_close_surfaces(Surface& surf1, Surface& surf2, double edge_movemen
 * @param max_iter maximum number of iteration. 
 * @returns a SVMTK Surface object.
 */
-template<typename Surface> 
 std::shared_ptr<Surface> union_partially_overlapping_surfaces( Surface& surf1, Surface& surf2, double angle_in_degree, double adjustment, double smoothing, int max_iter )
 {
-   typedef typename Surface::vertex_vector_map vertex_vector_map;
-   typedef typename Surface::vertex_vector vertex_vector;
-   typedef typename Surface::Vector_3 Vector_3; 
+   typedef  Surface::vertex_vector_map vertex_vector_map;
+   typedef  Surface::vertex_vector vertex_vector;
+   typedef  Surface::Vector_3 Vector_3; 
 
    vertex_vector s1vertices,s2vertices;
      
@@ -4513,8 +4550,8 @@ std::shared_ptr<Surface> union_partially_overlapping_surfaces( Surface& surf1, S
       vertex_vector_map vertex_displacement_1 = surf1.get_constant_vertex_displacement(s1vertices, disp1 , smth1);
       vertex_vector_map vertex_displacement_2 = surf2.get_constant_vertex_displacement(s2vertices, disp2 , smth2);                
             
-      auto max_element_1 = std::max_element( vertex_displacement_1.begin(), vertex_displacement_1.end(), typename Surface::find_largest_displacement());    
-      auto max_element_2 = std::max_element( vertex_displacement_2.begin(), vertex_displacement_2.end(), typename Surface::find_largest_displacement());    
+      auto max_element_1 = std::max_element( vertex_displacement_1.begin(), vertex_displacement_1.end(), Surface::find_largest_displacement());    
+      auto max_element_2 = std::max_element( vertex_displacement_2.begin(), vertex_displacement_2.end(), Surface::find_largest_displacement());    
                   
       surf1.set_adjacent_vertices(vertex_displacement_1); 
       surf2.set_adjacent_vertices(vertex_displacement_2);            
@@ -4579,7 +4616,6 @@ std::shared_ptr<Surface> union_partially_overlapping_surfaces( Surface& surf1, S
    return result;
 }
 
-template<typename Surface> 
 bool enclose( Surface& surf1, Surface& surf2, double adjustment, double smoothing, int max_iter )
 {
    auto ael = surf1.average_edge_length();
@@ -4592,7 +4628,6 @@ bool enclose( Surface& surf1, Surface& surf2, double adjustment, double smoothin
    return (result_1.first and result_2.first);
 }
 
-template<typename Surface> 
 bool expose( Surface& surf1, Surface& surf2, double adjustment, double smoothing, int max_iter )
 {
    auto ael = surf1.average_edge_length();
@@ -4605,7 +4640,6 @@ bool expose( Surface& surf1, Surface& surf2, double adjustment, double smoothing
    return (result_1.first and result_2.first);
 }
 
-template<typename Surface> 
 bool embed( Surface& surf1, Surface& surf2, double adjustment, double smoothing, int max_iter )
 {  
    auto ael = surf1.average_edge_length();
