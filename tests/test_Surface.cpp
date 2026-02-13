@@ -2,6 +2,7 @@
 
 #include "Surface.h" 
 
+
 TEST_CASE("Points inside and outside surface")
 {
     typedef Surface::Point_3 Point_3;

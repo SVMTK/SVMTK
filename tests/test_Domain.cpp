@@ -3,8 +3,6 @@
 #include "Surface.h"
 #include "Domain.h"
 
-
-
 TEST_CASE("Minimum bounding sphere")
 {
     Surface surface; 

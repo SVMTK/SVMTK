@@ -2544,6 +2544,7 @@ class Surface
    * @param plane_3 a wrapped CGAL Plane_3 object 
    * @returns slice SVMTK Slice object.
    */
+   template<typename Slice>
    std::shared_ptr<Slice> get_slice(Plane_3 plane_3)  
    {
       assert_non_empty_mesh();  
@@ -2578,13 +2579,14 @@ class Surface
    * @returns a SVMTK slice object. 
    * @overload
    */
+   template<typename Slice>
    std::shared_ptr<Slice> get_slice(double x1,double x2, double x3 ,double x4)
    {
       assert_non_empty_mesh();
       if( x1==0 && x2==0 && x3==0 )
          throw InvalidArgumentError("Invalid plane parameters.");
       Plane_3 plane = Plane_3(x1, x2, x3, x4);
-      return this->get_slice(plane);
+      return this->get_slice<Slice>(plane);
    }
 
   /**
@@ -4110,7 +4112,7 @@ inline double Surface::sphere_wrapper::z0 = 0;     // inline declaration of stat
 * @param point_vector a vector of template points, default option is surface points.
 * @returns SVMTK Surface object.
 */
-std::shared_ptr<Surface> convex_hull(std::vector<Surface::Point_3 >& point_vector)
+inline std::shared_ptr<Surface> convex_hull(std::vector<Surface::Point_3 >& point_vector)
 {
    Surface::Polyhedron_3 polyhedron;
    CGAL::convex_hull_3(point_vector.begin(), point_vector.end(), polyhedron);
@@ -4133,7 +4135,7 @@ std::shared_ptr<Surface> convex_hull(std::vector<Surface::Point_3 >& point_vecto
 * @param max_iter maximum number of iteration.
 * @returns true if complete.
 */
-bool separate_surface_overlapp(Surface& surf1, Surface& surf2, double edge_movement, double smoothing, int max_iter)
+inline bool separate_surface_overlapp(Surface& surf1, Surface& surf2, double edge_movement, double smoothing, int max_iter)
 {
    typedef Surface::vertex_vector_map vertex_vector_map;
    typedef Surface::vertex_vector vertex_vector;
@@ -4224,7 +4226,7 @@ bool separate_surface_overlapp(Surface& surf1, Surface& surf2, double edge_movem
  * @param max_iter maximum number of iteration.
  * @returns true if complete.
  */
-bool separate_surface_overlapp(Surface& surf1, Surface& surf2, Surface& other, double edge_movement, double smoothing, int max_iter)
+inline bool separate_surface_overlapp(Surface& surf1, Surface& surf2, Surface& other, double edge_movement, double smoothing, int max_iter)
 {
    typedef Surface::vertex_vector_map vertex_vector_map;
    typedef Surface::vertex_vector vertex_vector;
@@ -4323,7 +4325,7 @@ bool separate_surface_overlapp(Surface& surf1, Surface& surf2, Surface& other, d
 * @returns true if complete. 
 * @note  for backwards compatiblity : abs(edge_movement) 
 */
-bool separate_close_surfaces(Surface& surf1, Surface& surf2, Surface& other, double edge_movement, double smoothing, int max_iter)
+inline bool separate_close_surfaces(Surface& surf1, Surface& surf2, Surface& other, double edge_movement, double smoothing, int max_iter)
 {
    typedef Surface::vertex_vector_map vertex_vector_map;
    typedef Surface::vertex_vector vertex_vector;
@@ -4423,7 +4425,7 @@ bool separate_close_surfaces(Surface& surf1, Surface& surf2, Surface& other, dou
 * @param max_iter maximum number of iteration.
 * @returns true if complete.
 */
-bool separate_close_surfaces(Surface& surf1, Surface& surf2, double edge_movement, double smoothing, int max_iter)
+inline bool separate_close_surfaces(Surface& surf1, Surface& surf2, double edge_movement, double smoothing, int max_iter)
 {
    typedef Surface::vertex_vector_map vertex_vector_map;
    typedef Surface::vertex_vector vertex_vector;  
@@ -4516,7 +4518,7 @@ bool separate_close_surfaces(Surface& surf1, Surface& surf2, double edge_movemen
 * @param max_iter maximum number of iteration. 
 * @returns a SVMTK Surface object.
 */
-std::shared_ptr<Surface> union_partially_overlapping_surfaces( Surface& surf1, Surface& surf2, double angle_in_degree, double adjustment, double smoothing, int max_iter )
+inline std::shared_ptr<Surface> union_partially_overlapping_surfaces( Surface& surf1, Surface& surf2, double angle_in_degree, double adjustment, double smoothing, int max_iter )
 {
    typedef  Surface::vertex_vector_map vertex_vector_map;
    typedef  Surface::vertex_vector vertex_vector;
@@ -4616,7 +4618,7 @@ std::shared_ptr<Surface> union_partially_overlapping_surfaces( Surface& surf1, S
    return result;
 }
 
-bool enclose( Surface& surf1, Surface& surf2, double adjustment, double smoothing, int max_iter )
+inline bool enclose( Surface& surf1, Surface& surf2, double adjustment, double smoothing, int max_iter )
 {
    auto ael = surf1.average_edge_length();
    auto result_1 = surf1.enclose(surf2 , abs(adjustment), smoothing, max_iter);
@@ -4628,7 +4630,7 @@ bool enclose( Surface& surf1, Surface& surf2, double adjustment, double smoothin
    return (result_1.first and result_2.first);
 }
 
-bool expose( Surface& surf1, Surface& surf2, double adjustment, double smoothing, int max_iter )
+inline bool expose( Surface& surf1, Surface& surf2, double adjustment, double smoothing, int max_iter )
 {
    auto ael = surf1.average_edge_length();
    auto result_1 =  surf1.expose(surf2  , -abs(adjustment),smoothing, max_iter);
@@ -4640,7 +4642,7 @@ bool expose( Surface& surf1, Surface& surf2, double adjustment, double smoothing
    return (result_1.first and result_2.first);
 }
 
-bool embed( Surface& surf1, Surface& surf2, double adjustment, double smoothing, int max_iter )
+inline bool embed( Surface& surf1, Surface& surf2, double adjustment, double smoothing, int max_iter )
 {  
    auto ael = surf1.average_edge_length();
    auto result_1 = surf1.embed(surf2   , -abs(adjustment), smoothing, max_iter);

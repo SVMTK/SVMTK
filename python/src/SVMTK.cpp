@@ -439,8 +439,8 @@ PYBIND11_MODULE(SVMTK, m)
           .def("num_facets",       &Slice::num_facets,      DOC(Slice, num_facets))
           .def("num_vertices",     &Slice::num_vertices,    DOC(Slice, num_vertices))
 
-          .def("slice_mesh", &Slice::slice_mesh , DOC(Slice, slice_mesh))
-          .def("slice_surfaces", &Slice::slice_surfaces, DOC(Slice, slice_surfaces))
+          .def("slice_mesh", &Slice::slice_mesh<Domain,Surface> , DOC(Slice, slice_mesh))
+          .def("slice_surfaces", &Slice::slice_surfaces<Surface>, DOC(Slice, slice_surfaces))
        
           .def("smooth_constraints",    &Slice::smooth_constraints ,  DOC(Slice, smooth_constraints))
           .def("bifurcation_split",     &Slice::bifurcation_split,    DOC(Slice,bifurcation_split) ) 
@@ -452,13 +452,13 @@ PYBIND11_MODULE(SVMTK, m)
           .def("remove_subdomain", py::overload_cast<int>(&Slice::remove_subdomain),             DOC(Slice, remove_subdomain))
           .def("remove_subdomain", py::overload_cast<std::vector<int>>(&Slice::remove_subdomain),DOC(Slice, remove_subdomain, 2))
 
-          .def("export_as_surface", py::overload_cast<>(&Slice::export_as_surface),                    DOC(Slice, export_as_surface))
-          .def("export_as_surface", py::overload_cast<std::vector<double>>(&Slice::export_as_surface), DOC(Slice, export_as_surface))  
+          .def("export_as_surface", py::overload_cast<>(&Slice::export_as_surface<Surface>),                    DOC(Slice, export_as_surface))
+          .def("export_as_surface", py::overload_cast<std::vector<double>>(&Slice::export_as_surface<Surface>), DOC(Slice, export_as_surface))  
 
           .def("reconstruct_constraints",&Slice::reconstruct_constraints, py::arg("target_edge_length"), py::arg("merge")=true, DOC(Slice,reconstruct_constraints))
 
-          .def("add_surface_domains", py::overload_cast<std::vector<Surface>, AbstractMap &>(&Slice::add_surface_domains),    DOC(Slice, add_surface_domains))
-          .def("add_surface_domains", py::overload_cast<std::vector<Surface>>(&Slice::add_surface_domains),                   DOC(Slice, add_surface_domains, 2))
+          .def("add_surface_domains", py::overload_cast<std::vector<Surface>, AbstractMap &>(&Slice::add_surface_domains<Surface>),    DOC(Slice, add_surface_domains))
+          .def("add_surface_domains", py::overload_cast<std::vector<Surface>>(&Slice::add_surface_domains<Surface>),                   DOC(Slice, add_surface_domains, 2))
         
           .def("add_constraint", py::overload_cast<std::vector<Point_2>>(&Slice::add_constraint), DOC(Slice, add_constraint))
           .def("add_constraint", [](Slice &self, std::vector<std::array<double,2>> pyarray) {
@@ -605,10 +605,10 @@ PYBIND11_MODULE(SVMTK, m)
                py::arg("invert") = false, 
                py::arg("preserve_manifold") = true, DOC(Surface, clip, 5))
 
-          .def("get_slice", py::overload_cast<double, double, double, double>(&Surface::get_slice), py::return_value_policy::move ,DOC(Surface, get_slice))
-          .def("get_slice", py::overload_cast<Plane_3>(&Surface::get_slice),py::return_value_policy::move,  DOC(Surface, get_slice, 2))
+          .def("get_slice", py::overload_cast<double, double, double, double>(&Surface::get_slice<Slice>), py::return_value_policy::move ,DOC(Surface, get_slice))
+          .def("get_slice", py::overload_cast<Plane_3>(&Surface::get_slice<Slice>),py::return_value_policy::move,  DOC(Surface, get_slice, 2))
           .def("get_slice", [] ( Surface& self, std::tuple<double,double,double,double> plane){
-               self.get_slice( Wrapper_plane_3(plane));
+               self.get_slice<Slice>( Wrapper_plane_3(plane));
           }, DOC(Surface,get_slice,3))
         
           .def("intersection",&Surface::surface_intersection,    DOC(Surface, surface_intersection))

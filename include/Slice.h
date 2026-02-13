@@ -1213,12 +1213,12 @@ class Slice
    * @tparam Surface SVMTK Surface object.
    * @param surfaces a vector of SVMTK Surface objects.
    */
-   //template<typename Surface> 
+   template<typename Surface> 
    void slice_surfaces(std::vector<Surface> surfaces) 
    {
       for(auto surf : surfaces) 
       {
-         std::shared_ptr<Slice> temp = surf.get_slice(this->plane);              
+         std::shared_ptr<Slice> temp = surf.template get_slice<Slice>(this->plane);              
          this->add_constraints(*temp.get()); 
       }
    }  
@@ -1226,14 +1226,14 @@ class Slice
    /**
    * TODO 
    */
-   //template<typename Domain, typename Surface> 
+   template<typename Domain, typename Surface> 
    void slice_mesh(std::shared_ptr<Domain> domain) 
    {
       auto surfaces = domain->get_boundaries(); 
        
       for(auto surf : surfaces) 
       {
-         std::shared_ptr<Slice> temp = surf->get_slice(this->plane);              
+         std::shared_ptr<Slice> temp = surf->template get_slice<Slice>(this->plane);              
          this->add_constraints(*temp.get()); 
       }
    }    
@@ -1263,7 +1263,7 @@ class Slice
    * @returns a SVMTK Surface object. 
    * @throws EmptyMeshError if cdt variable is empty.
    */
-   //template<typename Surface> 
+   template<typename Surface> 
    std::shared_ptr<Surface> export_as_surface() 
    {
       assert_non_empty_mesh(); 
@@ -1296,7 +1296,7 @@ class Slice
    * @returns a SVMTK Surface object. 
    * @throws EmptyMeshError if cdt variable is empty.
    */      
-   //template<typename Surface> 
+   template<typename Surface> 
    std::shared_ptr<Surface> export_as_surface( std::vector<double> z ) 
    {
       assert_non_empty_mesh(); 
@@ -1453,7 +1453,7 @@ class Slice
       * @param surfaces a vector of SVMTK surface objects 
       * @param map derived from SVMTK AbstractMap objects, @see SubdomainMap.h 
       */
-      //template<typename Surface> 
+      template<typename Surface> 
       void add_surface_domains(std::vector<Surface> surfaces, AbstractMap& map) 
       {
          assert_non_empty_mesh();
@@ -1638,7 +1638,7 @@ class Slice
       * @param surfaces a vector of SVMTK surface objects 
       * @overload 
       */
-      //template<typename Surface> 
+      template<typename Surface> 
       void add_surface_domains(std::vector<Surface> surfaces)
       {
          DefaultMap map =DefaultMap();

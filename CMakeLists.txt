@@ -15,7 +15,7 @@ include(FeatureSummary)
 
 set(SVMTK_VERSION_RELEASE 2)
 set(SVMKT_VERSION_MAJOR "2")
-set(SVMTK_VERSION_MINOR "0")
+set(SVMTK_VERSION_MINOR "1")
 set(SVMTK_VERSION_MICRO "0")
 set(SVMTK_VERSION "${SVMTK_VERSION_MAJOR}.${SVMTK_VERSION_MINOR}.${SVMTK_VERSION_MICRO}")
 set(SVMTK_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include) 
@@ -23,8 +23,6 @@ set(SVMTK_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 
 option(BUILD_TESTING OFF "Build SVMTK tests")
 add_feature_info(BUILD_TESTING BUILD_TESTING  "Build SVMTK tests")
@@ -86,11 +84,15 @@ else()
   find_package(pybind11 REQUIRED)
 endif()
 
-pybind11_add_module(SVMTK SHARED python/src/SVMTK.cpp)
-set( CMAKE_CXX_FLAGS "-fPIC -flto=auto -std=gnu++1z -frounding-math -lgmpxx -lgmp -Wall -I${Boost_INCLUDE_DIRS}")   
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+add_library(SVMTKCPP INTERFACE) 
 
-target_link_libraries(SVMTK PRIVATE CGAL::CGAL ${CGAL_3RD_PARTY_LIBRARIES} ${GMP_LIBRARIES}
+pybind11_add_module(SVMTK SHARED python/src/SVMTK.cpp)
+
+set( CMAKE_CXX_FLAGS "-fPIC -flto=auto -fvisibility=hidden -std=gnu++1z -frounding-math -lgmpxx -lgmp -Wall -I${Boost_INCLUDE_DIRS}")   
+
+target_include_directories(SVMTKCPP INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+target_link_libraries(SVMTK PRIVATE CGAL::CGAL SVMTKCPP ${CGAL_3RD_PARTY_LIBRARIES} ${GMP_LIBRARIES}
                             ${MPFR_LIBRARIES} ${Eigen3} ${Boost}) 
 
 get_target_property(OUT SVMTK LINK_LIBRARIES)

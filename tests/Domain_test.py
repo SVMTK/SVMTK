@@ -15,6 +15,7 @@ class Domain_Test(unittest.TestCase):
         facets = domain.get_facets(False)
         marked = domain.get_facets(True)
         self.assertEqual(points.shape, (domain.num_vertices(),3))        
+        # CGAL doesn't load all facets and cells
         del domain
 
     def test_refine(self):
